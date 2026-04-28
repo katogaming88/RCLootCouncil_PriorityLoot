@@ -1,13 +1,13 @@
 # RCLootCouncil – PriorityLoot
 
-A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) to surface BiS priority and Droptimizer data directly inside the voting frame and raider loot popup.
+A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) to surface BiS priority data directly inside the voting frame and raider loot popup.
 
 ---
 
 ## Features
 
-- **Officer voting frame** — adds a sortable *Priority* column showing each candidate's BiS rank (1st / 2nd / 3rd) or Droptimizer % gain for the dropped item.
-- **Raider loot frame** — appends the local player's own priority beneath the item link so raiders can immediately see whether an item is an upgrade for them.
+- **Officer voting frame** — adds a sortable *Priority* column showing each candidate's BiS rank (1st / 2nd / 3rd) for the dropped item.
+- **Raider loot frame** — overlays the local player's own priority rank below each item button so raiders can immediately see where an item sits in their BiS list.
 - **Offline-first** — data is imported once per week by an officer via a single in-game paste; no external server, desktop client, or API key required.
 - **Optional for raiders** — raiders who do not install the addon see the default RCLootCouncil UI with no changes.
 
@@ -35,10 +35,10 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 
 ## Weekly Officer Workflow
 
-1. Export your roster's BiS / Droptimizer data from your preferred planning tool (e.g. WoWAudit, Warcraftlogs) as a **Base64-encoded JSON string** matching the format below.
+1. Export your roster's BiS data from your preferred planning tool (e.g. WoWAudit, Warcraftlogs) as a **Base64-encoded JSON string** matching the format below.
 2. In-game, type `/rclp import`.
 3. Paste the export string into the text box and click **Confirm**.
-4. The addon prints a confirmation with the number of players imported. Data persists via SavedVariables until the next import or a manual reset.
+4. The addon prints a confirmation with the number of players and priority items imported. Data persists via SavedVariables until the next import or a manual reset.
 
 ---
 
@@ -58,6 +58,9 @@ The import string is a **Base64-encoded JSON** blob. When decoded, the expected 
 
 ```json
 {
+  "priority": {
+    "12345": ["Playername-Realm", "Playername2-Realm", "Playername3-Realm"]
+  },
   "players": {
     "Playername-Realm": {
       "helm":      { "bis": [111, 222, 333] },
@@ -66,29 +69,40 @@ The import string is a **Base64-encoded JSON** blob. When decoded, the expected 
       "chest":     { "bis": [111, 222, 333] },
       "gloves":    { "bis": [111, 222, 333] },
       "legs":      { "bis": [111, 222, 333] },
-      "ring":      { "bis": [111, 222, 333] },
-      "trinket":   { "bis": [111, 222, 333] },
-      "weapon":    { "bis": [111, 222, 333] },
-      "cloak":     { "droptimizer": 12.4 },
-      "bracers":   { "droptimizer": 8.1 },
-      "belt":      { "droptimizer": 5.7 }
+      "ring1":     { "bis": [111, 222, 333] },
+      "ring2":     { "bis": [111, 222, 333] },
+      "trinket1":  { "bis": [111, 222, 333] },
+      "trinket2":  { "bis": [111, 222, 333] },
+      "mh2h":      { "bis": [111, 222, 333] },
+      "oh":        { "bis": [111, 222, 333] }
     }
   }
 }
 ```
 
+**`priority`** (optional) — item-centric lookup. Keyed by item ID string; value is an ordered array of `Name-Realm` strings. When a `priority` entry exists for the dropped item it takes precedence over the player's `players` BiS list. Players absent from the list display as **N/A**.
+
+**`players`** (required) — player-centric fallback. Keyed by `Name-Realm`; each slot holds a `bis` array of item IDs ordered by priority (index 1 = highest).
+
 **Player keys** must match the `Name-Realm` format RCLootCouncil uses internally.  
-**Item IDs** are integers — the same IDs returned by `GetItemInfo()`.  
-**`bis` arrays** are ordered: index 1 = highest priority, index 3 = lowest.
+**Item IDs** are integers — the same IDs returned by `GetItemInfo()`.
 
-### Slot categories
+### Slot keys
 
-| Category | Slots | Display |
-|---|---|---|
-| Core | Helm, Neck, Shoulders, Chest, Gloves, Legs, Rings, Trinkets, Weapons | BiS rank: **1st** (green) · **2nd** (yellow) · **3rd** (orange) |
-| Secondary | Cloak, Bracers, Belt | Droptimizer gain: **≥10%** green · **5–9%** yellow · **<5%** orange |
+| Key(s) | Covers |
+|---|---|
+| `helm` | Head |
+| `neck` | Neck |
+| `shoulders` | Shoulders |
+| `chest` | Chest / Robe |
+| `gloves` | Hands |
+| `legs` | Legs |
+| `ring1`, `ring2` | Finger (both slots checked) |
+| `trinket1`, `trinket2` | Trinket (both slots checked) |
+| `mh2h` | Main-hand, Two-handed, Weapon |
+| `oh` | Off-hand |
 
-Items not present in a player's list display as grey **N/A**.
+Secondary armor slots (Cloak, Bracers, Belt, Boots) are not part of the import. The Priority column defers to wowaudit wishlists for those item types.
 
 ---
 
@@ -97,11 +111,13 @@ Items not present in a player's list display as grey **N/A**.
 ```
 RCLootCouncil_PriorityLoot/
 ├── RCLootCouncil_PriorityLoot.toc   — metadata, load order, saved variables
-├── Core.lua                          — addon init, slash commands, login hook
-├── Data.lua                          — SavedVariable read/write, priority lookup
-├── Import.lua                        — in-game import UI, Base64 decoder
-├── UI.lua                            — voting frame column injection
-├── LootFrame.lua                     — raider loot frame overlay
+├── Core.lua                          — addon init, slash commands
+├── Data/
+│   └── db.lua                        — SavedVariable read/write, priority lookup
+├── Modules/
+│   ├── votingFrame.lua               — voting frame column injection
+│   ├── lootFrame.lua                 — raider loot frame overlay
+│   └── importFrame.lua               — in-game import UI, Base64 decoder
 └── Libs/
     └── LibJSON.lua                   — bundled pure-Lua JSON decoder
 ```
@@ -112,9 +128,9 @@ RCLootCouncil_PriorityLoot/
 
 | Value | Colour |
 |---|---|
-| 1st BiS / ≥10% Droptimizer | Green `#00FF00` |
-| 2nd BiS / 5–9% Droptimizer | Yellow `#FFFF00` |
-| 3rd BiS / <5% Droptimizer | Orange `#FF8000` |
+| 1st BiS | Green `#00FF00` |
+| 2nd BiS | Yellow `#FFFF00` |
+| 3rd BiS (or lower) | Orange `#FF8000` |
 | Not on list / no data | Grey `#999999` |
 
 ---
@@ -122,6 +138,20 @@ RCLootCouncil_PriorityLoot/
 ## SavedVariables
 
 Data is stored in `RCLPriorityDB` (declared in `.toc`). WoW persists this table automatically between sessions per account. Use `/rclp reset` to wipe it, or delete the entry from your `WTF/` saved variables file manually.
+
+---
+
+## Versioning
+
+`MAJOR.MINOR.PATCH`
+
+| Segment | Bumped when… |
+|---|---|
+| `MAJOR` | WoW expansion launch · new or removed dependency · priority data source type change · major UI overhaul · first stable release |
+| `MINOR` | Column added to a new RCLootCouncil frame · new priority tier/category system · new standalone UI surface (options panel, minimap button, etc.) |
+| `PATCH` | Bug fixes · `.toc` interface version bumps · UX polish |
+
+Priority data is imported by officers — changes to player priority entries do not affect the version number.
 
 ---
 
