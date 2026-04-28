@@ -1,0 +1,14 @@
+## Interface: 120005
+## Title: RCLootCouncil - Priority Loot
+## Notes: Displays BiS loot priority data in the RCLootCouncil voting and loot frames.
+## Author:
+## Version: 0.0.1
+## Dependencies: RCLootCouncil
+## SavedVariables: RCLPriorityDB
+
+Libs\LibJSON.lua
+Core.lua
+Data\db.lua
+Modules\votingFrame.lua
+Modules\lootFrame.lua
+Modules\importFrame.lua
