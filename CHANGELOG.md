@@ -11,6 +11,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.0] – 2026-04-30
+
+### Added
+
+- `Modules/prioPreviewFrame.lua` — new `/rclp prio` slash command opens a draggable, scrollable popup showing all imported priority lists (item name + ranked player order) and the full player roster; toggles on repeat invocation; mousewheel scrolling supported.
+- `Core.lua` — registered `prio` subcommand in the slash handler and updated the `/rclp` help text.
+
+### Changed
+
+- `SpreadsheetExport.gs` — combined into a single "Team Phoenix" script:
+  - **Priority Order dropdowns** — new menu items to fill player dropdown validation lists on individual rows or all rows at once, based on who has the item in their BiS List.
+  - **WCL performance scores** — fetches ilvl-adjusted bracket percentages from Warcraft Logs for the last N reports; writes a *Recent Score* (last 2 reports) and *Trend Score* (last 8 reports) to the Roster & Scoring sheet with colour-coded trend direction.
+  - **Commit draft scores** — copies Recent Scores into the permanent Performance column after officer review.
+  - `Utilities.Charset.UTF_8` passed explicitly to `base64Encode` to ensure accented characters in player names survive the encode/decode round-trip.
+
+---
+
 ## [0.0.1] – 2026-04-27
 
 ### Added

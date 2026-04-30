@@ -8,6 +8,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 
 - **Officer voting frame** — adds a sortable *Priority* column showing each candidate's BiS rank (1st / 2nd / 3rd) for the dropped item.
 - **Raider loot frame** — overlays the local player's own priority rank below each item button so raiders can immediately see where an item sits in their BiS list.
+- **Priority preview** — `/rclp prio` opens a scrollable popup showing all imported priority lists and the full player roster, so officers can verify data before a raid.
 - **Offline-first** — data is imported once per week by an officer via a single in-game paste; no external server, desktop client, or API key required.
 - **Optional for raiders** — raiders who do not install the addon see the default RCLootCouncil UI with no changes.
 
@@ -47,6 +48,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 | Command | Description |
 |---|---|
 | `/rclp import` | Open the import window. |
+| `/rclp prio` | Open a scrollable preview of all imported priority data (toggle). |
 | `/rclp reset` | Wipe all stored priority data from SavedVariables. |
 | `/rclp` | Print command usage. |
 
@@ -112,12 +114,15 @@ Secondary armor slots (Cloak, Bracers, Belt, Boots) are not part of the import. 
 RCLootCouncil_PriorityLoot/
 ├── RCLootCouncil_PriorityLoot.toc   — metadata, load order, saved variables
 ├── Core.lua                          — addon init, slash commands
+├── SpreadsheetExport.gs              — Google Apps Script: exports BiS/priority data,
+│                                       fills Priority Order dropdowns, fetches WCL scores
 ├── Data/
 │   └── db.lua                        — SavedVariable read/write, priority lookup
 ├── Modules/
 │   ├── votingFrame.lua               — voting frame column injection
 │   ├── lootFrame.lua                 — raider loot frame overlay
-│   └── importFrame.lua               — in-game import UI, Base64 decoder
+│   ├── importFrame.lua               — in-game import UI, Base64 decoder
+│   └── prioPreviewFrame.lua          — /rclp prio scrollable data preview
 └── Libs/
     └── LibJSON.lua                   — bundled pure-Lua JSON decoder
 ```

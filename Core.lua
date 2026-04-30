@@ -19,12 +19,15 @@ SlashCmdList["RCLP"] = function(input)
     local cmd = strtrim(input or "")
     if cmd == "import" then
         RCLPL_ShowImportFrame()
+    elseif cmd == "prio" then
+        RCLPL_ShowPrioPreview()
     elseif cmd == "reset" then
         RCLPL_Data_ResetData()
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r All priority data cleared.")
     else
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
         print("  /rclp import  — open the priority data import window")
+        print("  /rclp prio    — preview imported priority data")
         print("  /rclp reset   — clear all stored priority data")
     end
 end
