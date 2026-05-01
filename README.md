@@ -1,5 +1,8 @@
 # RCLootCouncil – PriorityLoot
 
+[![CI](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/actions/workflows/ci.yml/badge.svg)](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) to surface BiS priority data directly inside the voting frame and raider loot popup.
 
 ---
@@ -157,6 +160,27 @@ Data is stored in `RCLPriorityDB` (declared in `.toc`). WoW persists this table 
 | `PATCH` | Bug fixes · `.toc` interface version bumps · UX polish |
 
 Priority data is imported by officers — changes to player priority entries do not affect the version number.
+
+---
+
+## Development
+
+For the full per-platform setup (Lua 5.1, LuaRocks, `luacheck`, `busted` on Linux, macOS, and Windows + MSYS2 / Git Bash) see [`docs/SETUP.md`](docs/SETUP.md). Once installed:
+
+```bash
+luacheck .                  # lint
+bash scripts/run_tests.sh   # 29 specs covering Data/db.lua
+```
+
+Both should exit 0 before you push. CI runs the same commands on every push and PR via `.github/workflows/ci.yml`.
+
+### Roadmap
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the phased improvement plan, branching strategy, and commit/version conventions.
+
+### Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full setup, branch and commit conventions, PR checklist, and style notes. Bug reports and feature requests use the templates under `.github/ISSUE_TEMPLATE/`.
 
 ---
 
