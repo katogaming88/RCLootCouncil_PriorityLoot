@@ -62,7 +62,7 @@ function RCLPLootFrame:OnInitialize()
         if type(buttons) ~= "table" then return end
         for _, btn in ipairs(buttons) do
             if btn and btn:IsVisible() then
-                local ok2, err = pcall(UpdateItemButton, btn, playerName)
+                local ok2 = pcall(UpdateItemButton, btn, playerName)
                 if not ok2 then
                     local ov = overlayPool[btn]
                     if ov then ov:SetText("") end

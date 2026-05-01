@@ -1,1 +1,7 @@
 .claude/
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+dist/

@@ -34,11 +34,34 @@ jobs:
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.claude/' \
+            --exclude='.vscode/' \
+            --exclude='.idea/' \
             --exclude='.gitignore' \
+            --exclude='.luacheckrc' \
+            --exclude='.busted' \
             --exclude='dist/' \
+            --exclude='docs/' \
+            --exclude='spec/' \
+            --exclude='scripts/' \
             --exclude='*.gs' \
             --exclude='*.md' \
             . "dist/${ADDON}/"
+          # Sanity check: only ship files that .toc loads, plus libs,
+          # the .toc itself, and LICENSE. If anything else slips through,
+          # fail the build so dead code does not silently rejoin the zip.
+          UNEXPECTED=$(find "dist/${ADDON}" -type f \
+            -not -name '*.toc' \
+            -not -name 'LICENSE' \
+            -not -path "*/Libs/*" \
+            -not -path "*/Modules/*" \
+            -not -path "*/Data/*" \
+            -not -name 'Core.lua' \
+            | sort)
+          if [ -n "$UNEXPECTED" ]; then
+            echo "::error::Unexpected files in addon zip:"
+            echo "$UNEXPECTED"
+            exit 1
+          fi
           cd dist
           zip -r "../${ZIP}" "${ADDON}/"
           echo "zip=${ZIP}" >> "$GITHUB_OUTPUT"
