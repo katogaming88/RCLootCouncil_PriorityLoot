@@ -250,7 +250,7 @@ function showExportDialog(encoded, playerCount, priorityCount) {
     Exported <strong>${playerCount}</strong> player(s) and
     <strong>${priorityCount}</strong> priority override(s).
   </p>
-  <p>Select all and copy, then paste into the in-game <code>/rclp import</code> window.</p>
+  <p>Select all and copy, then paste into the in-game <code>/rcpl import</code> window.</p>
   <textarea id="out" readonly>${encoded}</textarea>
   <br>
   <button onclick="selectAll()">Select All</button>
@@ -1273,7 +1273,7 @@ function createAboutTab() {
     ['Before each raid — refresh scores',
      'Run Refresh WCL Performance Scores from the ⚔ Team Phoenix menu. Review the draft scores in columns J (Recent) and K (Trend). When satisfied, run Commit Draft Scores → Performance to write them to the Performance column and update loot priority standings.'],
     ['During raid — assigning loot',
-     'When an item drops, find or add it in Priority Order and run Fill dropdowns for selected item row to show only eligible players. Use the ranked list alongside your judgment to assign. After each raid, run Export priority data and paste the output into /rclp import in-game. This syncs the full priority list to the RCLootCouncil_PriorityLoot addon, so loot council members can see who has priority on each item directly in the RCLootCouncil voting frame — no spreadsheet required during raid.'],
+     'When an item drops, find or add it in Priority Order and run Fill dropdowns for selected item row to show only eligible players. Use the ranked list alongside your judgment to assign. After each raid, run Export priority data and paste the output into /rcpl import in-game. This syncs the full priority list to the RCLootCouncil_PriorityLoot addon, so loot council members can see who has priority on each item directly in the RCLootCouncil voting frame — no spreadsheet required during raid.'],
     ['Adding new items mid-tier',
      'Add the item to Item Lookup first. Re-run Set BiS List slot dropdowns to refresh BiS List validations. Then add the item to Priority Order and run Fill dropdowns for selected item row for that row.'],
   ];
