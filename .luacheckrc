@@ -56,7 +56,7 @@ read_globals = {
 -- ── Globals defined by this addon --------------------------------------------
 globals = {
     -- WoW slash command registration (writable in the WoW global env)
-    "SLASH_RCLP1", "SlashCmdList",
+    "SLASH_RCPL1", "SlashCmdList",
 
     -- SavedVariable
     "RCLPriorityDB",

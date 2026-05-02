@@ -14,8 +14,8 @@ function RCLPAddon:OnInitialize()
     if type(RCLPriorityDB.priority) ~= "table" then RCLPriorityDB.priority = {} end
 end
 
-SLASH_RCLP1 = "/rclp"
-SlashCmdList["RCLP"] = function(input)
+SLASH_RCPL1 = "/rcpl"
+SlashCmdList["RCPL"] = function(input)
     local cmd = strtrim(input or "")
     if cmd == "import" then
         RCLPL_ShowImportFrame()
@@ -26,8 +26,8 @@ SlashCmdList["RCLP"] = function(input)
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r All priority data cleared.")
     else
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
-        print("  /rclp import  — open the priority data import window")
-        print("  /rclp prio    — preview imported priority data")
-        print("  /rclp reset   — clear all stored priority data")
+        print("  /rcpl import  — open the priority data import window")
+        print("  /rcpl prio    — preview imported priority data")
+        print("  /rcpl reset   — clear all stored priority data")
     end
 end
