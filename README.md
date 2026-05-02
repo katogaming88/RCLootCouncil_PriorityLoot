@@ -23,6 +23,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 |---|---|
 | [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) | Required. Loaded before this addon via `.toc` dependency. |
 | WoW patch 12.0.5+ | Interface version `120005`. |
+| Priority Google Sheet | **Required for officers.** The accompanying Google Sheet (running `SpreadsheetExport.gs`) is what generates the Base64 import string. A public template is not yet available — contact the addon author for access. Raiders who never run `/rclp import` do not need it. |
 
 ---
 
@@ -39,7 +40,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 
 ## Weekly Officer Workflow
 
-1. Export your roster's BiS data from your preferred planning tool (e.g. WoWAudit, Warcraftlogs) as a **Base64-encoded JSON string** matching the format below.
+1. Open the Priority Google Sheet and run the export function — this produces a **Base64-encoded JSON string** matching the format below. (The sheet is not yet publicly available; contact the addon author for access.)
 2. In-game, type `/rclp import`.
 3. Paste the export string into the text box and click **Confirm**.
 4. The addon prints a confirmation with the number of players and priority items imported. Data persists via SavedVariables until the next import or a manual reset.
