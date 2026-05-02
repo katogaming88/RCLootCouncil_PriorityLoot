@@ -22,6 +22,8 @@ local CORE_EQUIPLOC = {
     INVTYPE_2HWEAPON        = { "mh2h" },
     INVTYPE_WEAPONMAINHAND  = { "mh2h" },
     INVTYPE_WEAPONOFFHAND   = { "oh" },
+    INVTYPE_SHIELD          = { "oh" },
+    INVTYPE_HOLDABLE        = { "oh" },
 }
 
 local COLOR_GREEN  = { r = 0.0, g = 1.0, b = 0.0 }
