@@ -54,7 +54,8 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
     if IsNewer(RCLPL_VERSION, message) then
         versionWarned = true
         print(string.format(
-            "|cFFFF8000[RCLootCouncil_PriorityLoot]|r %s has version %s (you have %s). Get the update: github.com/katogaming88/RCLootCouncil_PriorityLoot",
+            "|cFFFF8000[RCLootCouncil_PriorityLoot]|r %s has version %s (you have %s)." ..
+            " Get the update: github.com/katogaming88/RCLootCouncil_PriorityLoot",
             sender, message, RCLPL_VERSION
         ))
     end
