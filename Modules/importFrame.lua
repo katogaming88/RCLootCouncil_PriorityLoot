@@ -46,6 +46,7 @@ local function CreateImportFrame()
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop",  f.StopMovingOrSizing)
     f:SetClampedToScreen(true)
+    f:SetFrameStrata("DIALOG")
 
     f.TitleText:SetText("RCLootCouncil – Import Priority Data")
 
@@ -119,6 +120,7 @@ local function CreateImportFrame()
 
     f.editBox    = editBox
     f.statusText = statusText
+    f:Hide()
     return f
 end
 
