@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.3] - 2026-05-04
+
+### Fixed
+
+- `Modules/importFrame.lua` — `/rcpl import` now opens the window on the first invocation. `CreateFrame` returns a frame that is visible by default; the frame was being immediately hidden because `IsShown()` returned true before the caller could toggle it. Added `f:Hide()` at the end of `CreateImportFrame` so the lazy-created frame starts hidden.
+- `Modules/importFrame.lua` — import window frame strata raised from the default `MEDIUM` to `DIALOG`, matching WoW's built-in dialog level so the window renders above the voting and loot frames.
+
+---
+
 ## [0.1.2] - 2026-05-01
 
 **Shield/holdable slot support, slash command rename, and docs clarification.** No import-format changes.
