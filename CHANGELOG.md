@@ -13,9 +13,13 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.1.5] - 2026-05-05
 
+### Fixed
+
+- `Modules/lootFrame.lua` — corrected RCLootCouncil module lookup from `GetActiveModule("lootframe")` to `GetModule("RCLootFrame")`; added `Open` and `Refresh` to hook candidates; added `lf.frame` as a fallback path when searching for item buttons. These combined meant the loot frame overlay never attached.
+
 ### Changed
 
-- `Data/db.lua` — loot frame priority overlay now prefixes the ordinal with `Prio:` (e.g. `Prio: 1st`, `Prio: 7th`) so the label is self-explanatory without other context.
+- `Modules/lootFrame.lua` — priority overlay on the loot frame now shows `Prio: 1st`, `Prio: 7th`, etc. so the label is self-explanatory without surrounding context. The voting frame column continues to show bare ordinals (`1st`, `2nd`) since the column header already reads `Priority`.
 
 ---
 
