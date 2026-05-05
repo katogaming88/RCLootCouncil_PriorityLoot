@@ -8,7 +8,7 @@ local RCLPAddon = addon:NewModule("RCLootCouncil_PriorityLoot", "AceTimer-3.0", 
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCLPAddon
 
-local RCLPL_VERSION     = "0.1.4"
+local RCLPL_VERSION     = "0.1.5"
 local RCLPL_COMM_PREFIX = "RCLPL_Ver"
 
 local versionWarned      = false

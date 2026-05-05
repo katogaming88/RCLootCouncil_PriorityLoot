@@ -32,11 +32,13 @@ local COLOR_ORANGE = { r = 1.0, g = 0.5, b = 0.0 }
 local COLOR_GREY   = { r = 0.6, g = 0.6, b = 0.6 }
 
 local function OrdinalLabel(n)
-    if     n == 1 then return "1st"
-    elseif n == 2 then return "2nd"
-    elseif n == 3 then return "3rd"
-    else               return n .. "th"
+    local suffix
+    if     n == 1 then suffix = "1st"
+    elseif n == 2 then suffix = "2nd"
+    elseif n == 3 then suffix = "3rd"
+    else               suffix = n .. "th"
     end
+    return "Prio: " .. suffix
 end
 
 local function RankColor(rank)

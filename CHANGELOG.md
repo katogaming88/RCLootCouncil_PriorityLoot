@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.5] - 2026-05-05
+
+### Changed
+
+- `Data/db.lua` — loot frame priority overlay now prefixes the ordinal with `Prio:` (e.g. `Prio: 1st`, `Prio: 7th`) so the label is self-explanatory without other context.
+
+---
+
 ## [0.1.4] - 2026-05-04
 
 ### Added
