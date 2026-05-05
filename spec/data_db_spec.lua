@@ -71,21 +71,21 @@ describe("RCLPL_Data_GetPlayerPriority", function()
 
         it("returns 1st green for the rank-1 player", function()
             local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD")
-            assert.equals("1st", text)
+            assert.equals("Prio: 1st", text)
             assert.equals(0.0, color.r)
             assert.equals(1.0, color.g)
         end)
 
         it("returns 2nd yellow for the rank-2 player", function()
             local text, color = RCLPL_Data_GetPlayerPriority("Bob-Realm", 12345, "INVTYPE_HEAD")
-            assert.equals("2nd", text)
+            assert.equals("Prio: 2nd", text)
             assert.equals(1.0, color.r)
             assert.equals(1.0, color.g)
         end)
 
         it("returns 3rd orange for the rank-3 player", function()
             local text, color = RCLPL_Data_GetPlayerPriority("Carol-Realm", 12345, "INVTYPE_HEAD")
-            assert.equals("3rd", text)
+            assert.equals("Prio: 3rd", text)
             assert.equals(1.0, color.r)
             assert.equals(0.5, color.g)
         end)
@@ -106,7 +106,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                 "P1", "P2", "P3", "P4", "P5",
             }
             local text = RCLPL_Data_GetPlayerPriority("P5", 7, "INVTYPE_HEAD")
-            assert.equals("5th", text)
+            assert.equals("Prio: 5th", text)
         end)
     end)
 
@@ -118,7 +118,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
             local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_HEAD")
-            assert.equals("1st", text)
+            assert.equals("Prio: 1st", text)
             assert.equals(1.0, color.g)
         end)
 
@@ -127,7 +127,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
             local text = RCLPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_HEAD")
-            assert.equals("2nd", text)
+            assert.equals("Prio: 2nd", text)
         end)
 
         it("matches rank-3 BiS item with orange color", function()
@@ -135,7 +135,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
             local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_HEAD")
-            assert.equals("3rd", text)
+            assert.equals("Prio: 3rd", text)
             assert.equals(0.5, color.g)
         end)
 
@@ -166,10 +166,10 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                     ring2 = { bis = { 300, 400 } },
                 },
             }
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_FINGER"))
-            assert.equals("2nd", RCLPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_FINGER"))
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_FINGER"))
-            assert.equals("2nd", RCLPL_Data_GetPlayerPriority("Alice-Realm", 400, "INVTYPE_FINGER"))
+            assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_FINGER"))
+            assert.equals("Prio: 2nd", RCLPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_FINGER"))
+            assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_FINGER"))
+            assert.equals("Prio: 2nd", RCLPL_Data_GetPlayerPriority("Alice-Realm", 400, "INVTYPE_FINGER"))
             assert.equals("N/A", RCLPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_FINGER"))
         end)
 
@@ -180,8 +180,8 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                     trinket2 = { bis = { 60 } },
                 },
             }
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 50, "INVTYPE_TRINKET"))
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 60, "INVTYPE_TRINKET"))
+            assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 50, "INVTYPE_TRINKET"))
+            assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 60, "INVTYPE_TRINKET"))
         end)
     end)
 
@@ -191,23 +191,23 @@ describe("RCLPL_Data_GetPlayerPriority", function()
         _G.RCLPriorityDB.players = {
             ["Alice-Realm"] = { mh2h = { bis = { 77 } } },
         }
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_2HWEAPON"))
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPON"))
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPONMAINHAND"))
+        assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_2HWEAPON"))
+        assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPON"))
+        assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPONMAINHAND"))
     end)
 
     it("maps INVTYPE_WEAPONOFFHAND to oh", function()
         _G.RCLPriorityDB.players = {
             ["Alice-Realm"] = { oh = { bis = { 88 } } },
         }
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 88, "INVTYPE_WEAPONOFFHAND"))
+        assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 88, "INVTYPE_WEAPONOFFHAND"))
     end)
 
     it("maps INVTYPE_ROBE and INVTYPE_CHEST both to chest", function()
         _G.RCLPriorityDB.players = {
             ["Alice-Realm"] = { chest = { bis = { 42 } } },
         }
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_CHEST"))
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_ROBE"))
+        assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_CHEST"))
+        assert.equals("Prio: 1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_ROBE"))
     end)
 end)
