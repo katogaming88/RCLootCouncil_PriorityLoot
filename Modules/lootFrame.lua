@@ -35,7 +35,7 @@ local function UpdateItemButton(itemButton, playerName)
     if text == "N/A" then overlay:SetText("") return end
 
     overlay:SetTextColor(color.r, color.g, color.b)
-    overlay:SetText(text)
+    overlay:SetText("Prio: " .. text)
 end
 
 local HOOK_CANDIDATES = { "Update", "UpdateItems", "Show", "OnShow" }
