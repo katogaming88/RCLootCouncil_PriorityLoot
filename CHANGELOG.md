@@ -15,7 +15,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- `Modules/lootFrame.lua` — corrected RCLootCouncil module lookup from `GetActiveModule("lootframe")` to `GetModule("RCLootFrame")`; added `Open` and `Refresh` to hook candidates; added `lf.frame` as a fallback path when searching for item buttons. These combined meant the loot frame overlay never attached.
+- `Modules/lootFrame.lua` — rewrote hook to match the actual RCLootCouncil loot frame structure. Previously iterated a non-existent `itemButtons` array and read a non-existent `.itemID` property. Now hooks `RCLootFrame:Update`, iterates `EntryManager.entries`, reads `itemID` via `C_Item.GetItemInfoInstant(entry.item.link)` and `equipLoc` from `entry.item.equipLoc`. Overlay is anchored to the bottom of `entry.icon`.
 
 ### Changed
 
