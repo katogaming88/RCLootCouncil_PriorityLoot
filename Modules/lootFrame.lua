@@ -38,27 +38,29 @@ local function UpdateItemButton(itemButton, playerName)
     overlay:SetText("Prio: " .. text)
 end
 
-local HOOK_CANDIDATES = { "Update", "UpdateItems", "Show", "OnShow" }
+local HOOK_CANDIDATES = { "Open", "Update", "UpdateItems", "Show", "OnShow", "Refresh" }
 
 function RCLPLootFrame:OnInitialize()
-    local ok, lootFrame = pcall(function()
-        return addon:GetActiveModule("lootframe")
+    local ok, rcLootFrame = pcall(function()
+        return addon:GetModule("RCLootFrame")
     end)
-    if not ok or not lootFrame then return end
+    if not ok or not rcLootFrame then return end
 
     local hookedMethod
     for _, name in ipairs(HOOK_CANDIDATES) do
-        if type(lootFrame[name]) == "function" then
+        if type(rcLootFrame[name]) == "function" then
             hookedMethod = name
             break
         end
     end
     if not hookedMethod then return end
 
-    local playerName = UnitName("player", true)
+    local playerName = UnitName("player")
 
-    self:SecureHook(lootFrame, hookedMethod, function(lf)
+    self:SecureHook(rcLootFrame, hookedMethod, function(lf)
+        local frame = lf.frame
         local buttons = lf.itemButtons or lf.buttons
+                     or (frame and (frame.itemButtons or frame.buttons))
         if type(buttons) ~= "table" then return end
         for _, btn in ipairs(buttons) do
             if btn and btn:IsVisible() then
