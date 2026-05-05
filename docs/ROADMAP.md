@@ -79,6 +79,13 @@ Current `SaveImportedData` wipes `RCLPriorityDB.players` and `.priority` before 
 
 **Acceptance:** `spec/import_save_spec.lua` gains "mid-import error preserves prior state" plus diff-calculation specs. Subtitle in `/rclp prio` shows the diff and the stale-data note when applicable.
 
+### 1.5 Raid-scoped version sync (shipped in v0.1.4)
+Branch: `feat/raid-version-check` · Version: minor
+
+Layered on top of the guild-channel login broadcast (v0.1.4 PR #4): on `READY_CHECK` inside a raid, every PriorityLoot user broadcasts their version on the RAID channel. Each user warns themselves when behind; the raid leader also sees a one-line summary of outdated raid members. Closes the gap for non-guild raid composition (PUGs, cross-guild rosters) and gives the raid leader concrete visibility.
+
+Future follow-ups parked unless a real signal warrants them: a `PLAYER_ENTERING_WORLD` / `GROUP_ROSTER_UPDATE` one-shot broadcast (largely redundant with the guild login signal for guild members), folding the guild-broadcast code into `Modules/version.lua` to remove the small `IsNewer` duplication, and replacing the hard-coded `RCLPL_VERSION` constant in `Core.lua` with the `C_AddOns.GetAddOnMetadata` read pattern that `Modules/version.lua` already uses.
+
 ---
 
 ## Phase 2 - UX

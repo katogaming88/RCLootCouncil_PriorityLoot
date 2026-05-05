@@ -11,6 +11,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.4] - 2026-05-05
+
+### Added
+
+- `Modules/version.lua` - raid-scoped version check on READY_CHECK. When a ready check fires inside a raid, every PriorityLoot user broadcasts their addon version on the RAID channel. After a 4 second collection window, any user whose version is below the highest seen prints a private warning to their own chat. Raid leaders also see a one-line summary listing each outdated raid member and their version, so they can ask laggards to update before the pull. Per-session suppression keeps repeat ready checks quiet when nothing has changed; a new gap or a new outdated peer set re-warns.
+- `.luacheckrc` - new globals for the version module: `IsInRaid`, `IsInGroup`, `UnitIsGroupLeader`, `GetNumGroupMembers`, `GetRaidRosterInfo`, `Ambiguate`, `C_AddOns`.
+- `spec/version_spec.lua` - 28 specs covering the pure functions in `Modules/version.lua` (`ParseSemver`, `IsNewer`, `HighestVersion`, `CollectOutdated`, `FingerprintOutdated`, `EvaluatePoll`). Numeric semver compare (`0.1.10` greater than `0.1.2`), malformed inputs, leader summary suppression, and re-warn on gap change.
+
+### Changed
+
+- `RCLootCouncil_PriorityLoot.toc` - added `Modules\version.lua` to the load order.
+
+---
+
 ## [0.1.3] - 2026-05-04
 
 ### Fixed

@@ -14,6 +14,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 - **Priority preview** — `/rcpl prio` opens a scrollable popup showing all imported priority lists and the full player roster, so officers can verify data before a raid.
 - **Offline-first** — data is imported once per week by an officer via a single in-game paste; no external server, desktop client, or API key required.
 - **Optional for raiders** — raiders who do not install the addon see the default RCLootCouncil UI with no changes.
+- **Version check on ready check.** When a ready check fires in a raid, every PriorityLoot user silently broadcasts their addon version. Anyone running an older version sees a private chat warning naming the highest version in the raid; the raid leader also sees a one-line summary of who in the raid is outdated. Repeat ready checks stay quiet unless something changes.
 
 ---
 
