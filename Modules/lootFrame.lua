@@ -7,6 +7,10 @@ local RCLPLootFrame = RCLPAddon:NewModule("RCLPLootFrame", "AceHook-3.0", "AceTi
 
 local overlayPool = {}
 
+local function GetItemIDFromLink(link)
+    return tonumber((link or ""):match("item:(%d+):"))
+end
+
 local function GetOrCreateOverlay(icon)
     if overlayPool[icon] then return overlayPool[icon] end
     local fs = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -26,7 +30,7 @@ local function UpdateEntry(entry, playerName)
     local item = entry.item
     if not item or not item.link then overlay:SetText("") return end
 
-    local itemID = C_Item.GetItemInfoInstant(item.link)
+    local itemID = GetItemIDFromLink(item.link)
     if not itemID then overlay:SetText("") return end
 
     local equipLoc = item.equipLoc
@@ -47,11 +51,10 @@ function RCLPLootFrame:OnInitialize()
 
     local playerName = UnitName("player")
 
-    self:SecureHook(rcLootFrame, "Update", function(lf)
-        for _, entry in ipairs(lf.EntryManager.entries) do
-            if type(entry) == "table" then
-                pcall(UpdateEntry, entry, playerName)
-            end
+    self:SecureHook(rcLootFrame.EntryManager, "GetEntry", function(em, item)
+        local entry = em.entries[item]
+        if type(entry) == "table" then
+            pcall(UpdateEntry, entry, playerName)
         end
     end)
 end
