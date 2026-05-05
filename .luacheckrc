@@ -49,8 +49,12 @@ read_globals = {
 
     -- WoW-side helpers occasionally reached for
     "GetTime", "GetServerTime", "GetRealmName", "GetLocale",
-    "C_Timer", "TooltipDataProcessor", "Settings", "Enum",
+    "C_Timer", "C_AddOns", "TooltipDataProcessor", "Settings", "Enum",
     "Mixin", "CreateFromMixins",
+
+    -- Group / raid status (used by Modules\version.lua)
+    "IsInRaid", "IsInGroup", "UnitIsGroupLeader",
+    "GetNumGroupMembers", "GetRaidRosterInfo", "Ambiguate",
 }
 
 -- ── Globals defined by this addon --------------------------------------------
