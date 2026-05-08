@@ -105,6 +105,19 @@ Branch: `feat/slash-ux` · Version: minor (new subcommands)
 
 **Acceptance:** both new subcommands have specs covering output shape and round-trip.
 
+### 2.6 Version check — raid leader out-of-date report
+Branch: `feat/version-check-leader-report` · Version: minor
+
+Currently the guild broadcast tells each officer individually when someone has a newer version. There is no surface that gives the raid leader a view of who in the group is running an outdated version on login or `/reload`.
+
+- On `BroadcastVersion`, if the local player is the raid or party leader, collect version replies from all group members (reuse the `RCPL_Ver` WHISPER reply flow) and after a short timeout (same pattern as `/rcpl version`) print a single report to the leader only: green for current, yellow for outdated, grey for no addon.
+- Only fires when the player is group leader to avoid spamming every member on login.
+- Report is printed to chat with the `[RCPL]` prefix, not broadcast to the group.
+- No new slash command needed; this is automatic on login/`/reload` when leading a group.
+- Tests: mock `IsRaidLeader`/`IsPartyLeader`, simulate version replies, assert correct colour-coded output.
+
+**Acceptance:** logging in or `/reload`-ing as the active raid/party leader prints a per-member version summary to the leader's chat. Non-leaders see nothing extra.
+
 ---
 
 ## Phase 3 - Loot integration
