@@ -25,7 +25,6 @@ local Log = RCPL_Log or {
 }
 
 local versionWarned       = false
-local repliedTo           = {}   -- per-sender dedup keyed by AceComm sender string; resets on /reload
 local versionCheckResults = nil  -- nil = no check in progress, table = collecting
 local versionCheckTimer   = nil
 
@@ -84,16 +83,18 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
         Log.debug("OnVersionReceived: ignoring self-loopback from %s", tostring(sender))
         return
     end
-    -- Reply once per distinct sender so every new arrival learns our version,
-    -- including those who arrive after we already replied to someone else this
-    -- session. Bounded chattiness: ~2N messages per fresh login in an N-user
-    -- guild; terminates because each pair has at most one reply in each
-    -- direction. Reply on the same distribution we received the message on,
-    -- so the path stays correct if BroadcastVersion ever adds RAID/PARTY.
-    if sender and sender ~= "" and not repliedTo[sender] and IsInGuild() then
-        repliedTo[sender] = true
-        self:SendCommMessage(RCPL_COMM_PREFIX, RCPL_VERSION, distribution)
-        Log.debug("Reply sent to %s on %s", tostring(sender), tostring(distribution))
+    -- Whisper our version directly back to the broadcaster instead of
+    -- replying on GUILD. WHISPER replies are only delivered to the original
+    -- broadcaster, so other guildmates never see them and can't mistake them
+    -- for a fresh broadcast that needs another reply. That eliminates the
+    -- reply loop without any session or per-sender dedup, which means every
+    -- broadcast (login or /reload) gets a fresh round of replies from every
+    -- online guildmate, even guildmates who have already replied to this
+    -- sender earlier in the session. The distribution check breaks the
+    -- trivial "our own whisper arrives back at us" loop.
+    if sender and sender ~= "" and distribution ~= "WHISPER" then
+        self:SendCommMessage(RCPL_COMM_PREFIX, RCPL_VERSION, "WHISPER", sender)
+        Log.debug("Whispered version reply to %s", tostring(sender))
     end
     if versionWarned then return end
     if IsNewer(RCPL_VERSION, message) then
