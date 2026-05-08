@@ -10,7 +10,7 @@ RCLPAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCLPAddon
 
-local RCPL_VERSION       = "0.1.10"
+local RCPL_VERSION       = "0.1.11"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -206,14 +206,14 @@ end
 local function HandleLogSubcommand(rest)
     rest = rest or ""
     if rest == "" or rest == "show" then
-        if RCPL_Log then RCPL_Log.Show() else print("|cFFFF4444[RCLP]|r logger not loaded") end
+        if RCPL_Log then RCPL_Log.Show() else print("|cFFFF4444[RCPL]|r logger not loaded") end
     elseif rest == "dump" then
-        if RCPL_Log then RCPL_Log.DumpToChat() else print("|cFFFF4444[RCLP]|r logger not loaded") end
+        if RCPL_Log then RCPL_Log.DumpToChat() else print("|cFFFF4444[RCPL]|r logger not loaded") end
     elseif rest == "clear" then
         if RCPL_Log then RCPL_Log.Clear() end
-        print("|cFF00FF00[RCLP]|r log cleared.")
+        print("|cFF00FF00[RCPL]|r log cleared.")
     else
-        print("|cFF00FF00[RCLP]|r log subcommands:")
+        print("|cFF00FF00[RCPL]|r log subcommands:")
         print("  /rcpl log         open the log window")
         print("  /rcpl log dump    dump entries to chat")
         print("  /rcpl log clear   clear the in-memory log")
@@ -253,11 +253,11 @@ SlashCmdList["RCPL"] = function(input)
         else
             state = RCPL_Log and RCPL_Log.ToggleDebug()
         end
-        print(string.format("|cFF00FF00[RCLP]|r debug logging %s",
+        print(string.format("|cFF00FF00[RCPL]|r debug logging %s",
             state and "|cFF00FF00ON|r" or "|cFFFF4444OFF|r"))
     elseif cmd == "log" then
         HandleLogSubcommand(rest)
     else
-        print(string.format("|cFFFF4444[RCLP]|r unknown command: %s", cmd))
+        print(string.format("|cFFFF4444[RCPL]|r unknown command: %s", cmd))
     end
 end
