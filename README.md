@@ -13,6 +13,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 - **Raider loot frame** — overlays the local player's own priority rank below each item button so raiders can immediately see where an item sits in their BiS list.
 - **Priority preview** — `/rcpl prio` opens a scrollable popup showing all imported priority lists and the full player roster, so officers can verify data before a raid.
 - **Offline-first** — data is imported once per week by an officer via a single in-game paste; no external server, desktop client, or API key required.
+- **Guild version broadcast** — on login the addon quietly announces its version to the guild. Officers running an older version receive a one-time chat warning naming the sender and their version so the guild stays in sync without manual coordination.
 - **Optional for raiders** — raiders who do not install the addon see the default RCLootCouncil UI with no changes.
 
 ---
@@ -133,8 +134,13 @@ RCLootCouncil_PriorityLoot/
 │   ├── lootFrame.lua                 raider loot frame overlay
 │   ├── importFrame.lua               in-game import UI, Base64 decoder
 │   └── prioPreviewFrame.lua          /rcpl prio scrollable data preview
-└── Libs/
-    └── LibJSON.lua                   bundled pure-Lua JSON decoder
+├── Libs/
+│   └── LibJSON.lua                   bundled pure-Lua JSON decoder
+└── spec/
+    ├── wow_mocks.lua                 WoW API stubs for unit tests
+    ├── data_db_spec.lua              priority lookup and slot resolution specs
+    ├── import_save_spec.lua          import parsing and save specs
+    └── log_spec.lua                  logger level gating and ring buffer specs
 ```
 
 The Google Apps Script that produces the import string lives inside the Priority Sheet itself; it is not shipped with the addon.
@@ -178,7 +184,7 @@ For the full per-platform setup (Lua 5.1, LuaRocks, `luacheck`, `busted` on Linu
 
 ```bash
 luacheck .                  # lint
-bash scripts/run_tests.sh   # 29 specs covering Data/db.lua
+bash scripts/run_tests.sh   # 44 specs covering db, import, and logging
 ```
 
 Both should exit 0 before you push. CI runs the same commands on every push and PR via `.github/workflows/ci.yml`.
