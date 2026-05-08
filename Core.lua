@@ -10,7 +10,7 @@ RCLPAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCLPAddon
 
-local RCPL_VERSION       = "0.1.9"
+local RCPL_VERSION       = "0.1.10"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -25,7 +25,7 @@ local Log = RCPL_Log or {
 }
 
 local versionWarned       = false
-local hasRepliedToOthers  = false
+local repliedTo           = {}   -- per-sender dedup keyed by AceComm sender string; resets on /reload
 local versionCheckResults = nil  -- nil = no check in progress, table = collecting
 local versionCheckTimer   = nil
 
@@ -84,11 +84,16 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
         Log.debug("OnVersionReceived: ignoring self-loopback from %s", tostring(sender))
         return
     end
-    -- Reply once so players already online when we log in can see our version.
-    if not hasRepliedToOthers and IsInGuild() then
-        hasRepliedToOthers = true
-        self:SendCommMessage(RCPL_COMM_PREFIX, RCPL_VERSION, "GUILD")
-        Log.debug("Reply-once broadcast sent in response to %s", tostring(sender))
+    -- Reply once per distinct sender so every new arrival learns our version,
+    -- including those who arrive after we already replied to someone else this
+    -- session. Bounded chattiness: ~2N messages per fresh login in an N-user
+    -- guild; terminates because each pair has at most one reply in each
+    -- direction. Reply on the same distribution we received the message on,
+    -- so the path stays correct if BroadcastVersion ever adds RAID/PARTY.
+    if sender and sender ~= "" and not repliedTo[sender] and IsInGuild() then
+        repliedTo[sender] = true
+        self:SendCommMessage(RCPL_COMM_PREFIX, RCPL_VERSION, distribution)
+        Log.debug("Reply sent to %s on %s", tostring(sender), tostring(distribution))
     end
     if versionWarned then return end
     if IsNewer(RCPL_VERSION, message) then

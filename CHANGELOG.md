@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.10] - 2026-05-08
+
+### Fixed
+
+- `Core.lua` - replaced the per-session `hasRepliedToOthers` boolean with a per-sender `repliedTo` table. The previous boolean blocked every reply after the first one in a session, so any guildmate who had already replied to one earlier broadcast would silently ignore every subsequent fresh-login broadcast. The orange `out of date` warning therefore never fired for the player who needed it most: the one logging in late. The new gate replies exactly once to each distinct sender per session, while preserving the reply-loop guard.
+- `Core.lua` - `OnVersionReceived` now replies on the same `distribution` it received the message on rather than a hardcoded `"GUILD"`, and guards against nil or empty `sender` strings from malformed comm packets. No observable behaviour change today since broadcasts are still GUILD-only, but it removes a future trap.
+
+---
+
 ## [0.1.9] - 2026-05-08
 
 ### Fixed
