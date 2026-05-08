@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.10] - 2026-05-08
+
+### Fixed
+
+- `Core.lua` - replies to a guild version broadcast now go directly to the broadcaster as a WHISPER on the `RCPL_Ver` AceComm prefix, instead of being broadcast back on GUILD where every other guildmate would see them and treat each one as a fresh broadcast that needed another reply. The previous design used a per-session `hasRepliedToOthers` boolean to break that loop, but the boolean also blocked every reply after the first one per session, so any guildmate who had already replied to one earlier broadcast would silently ignore every subsequent broadcast (including the same player reloading). The orange `out of date` warning therefore never fired for the player who needed it most: the one who just logged in or just reloaded. WHISPER replies only reach the original broadcaster, so no dedup is needed and every load (login or `/reload`) gets a fresh round of replies from every online guildmate.
+- `Core.lua` - `OnVersionReceived` skips the reply path when the incoming `distribution` is `WHISPER` (that is our own whisper coming back) and guards against nil or empty `sender` strings from malformed comm packets.
+
+---
+
 ## [0.1.9] - 2026-05-08
 
 ### Fixed

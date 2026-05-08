@@ -10,7 +10,7 @@ RCLPAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCLPAddon
 
-local RCPL_VERSION       = "0.1.9"
+local RCPL_VERSION       = "0.1.10"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -25,7 +25,6 @@ local Log = RCPL_Log or {
 }
 
 local versionWarned       = false
-local hasRepliedToOthers  = false
 local versionCheckResults = nil  -- nil = no check in progress, table = collecting
 local versionCheckTimer   = nil
 
@@ -84,11 +83,23 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
         Log.debug("OnVersionReceived: ignoring self-loopback from %s", tostring(sender))
         return
     end
-    -- Reply once so players already online when we log in can see our version.
-    if not hasRepliedToOthers and IsInGuild() then
-        hasRepliedToOthers = true
-        self:SendCommMessage(RCPL_COMM_PREFIX, RCPL_VERSION, "GUILD")
-        Log.debug("Reply-once broadcast sent in response to %s", tostring(sender))
+    -- Whisper our version directly back to the broadcaster instead of
+    -- replying on GUILD. WHISPER replies are only delivered to the original
+    -- broadcaster, so other guildmates never see them and can't mistake them
+    -- for a fresh broadcast that needs another reply. That eliminates the
+    -- reply loop without any session or per-sender dedup, which means every
+    -- broadcast (login or /reload) gets a fresh round of replies from every
+    -- online guildmate, even guildmates who have already replied to this
+    -- sender earlier in the session. The distribution check breaks the
+    -- trivial "our own whisper arrives back at us" loop.
+    --
+    -- The IsInGuild() guard from the old design is intentionally gone:
+    -- WHISPER addon messages don't require shared guild membership, and a
+    -- RCPL_Ver message could only reach us via a channel where reply makes
+    -- sense (currently GUILD, which already implies we are guildies).
+    if sender and sender ~= "" and distribution ~= "WHISPER" then
+        self:SendCommMessage(RCPL_COMM_PREFIX, RCPL_VERSION, "WHISPER", sender)
+        Log.debug("Whispered version reply to %s", tostring(sender))
     end
     if versionWarned then return end
     if IsNewer(RCPL_VERSION, message) then
