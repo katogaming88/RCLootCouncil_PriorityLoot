@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # scripts/run_tests.sh
 #
 # Run busted from the repo root with LUA_PATH set so spec.wow_mocks resolves.
@@ -6,7 +6,7 @@
 # (lessons.md 2026-04-20).  On Linux/macOS this is a thin wrapper around
 # `busted`; extra args forward to busted.
 
-set -euo pipefail
+set -eu
 
 cd "$(dirname "$0")/.."
 
