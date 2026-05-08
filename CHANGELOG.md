@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.8] - 2026-05-08
+
+### Fixed
+
+- `docs/ROADMAP.md`, `Modules/importFrame.lua`, `Modules/prioPreviewFrame.lua` - corrected `/rclp` typo to `/rcpl` in section 2.5 of the roadmap, the importFrame header comment, and two in-game help strings.
+
+---
+
 ## [0.1.7] - 2026-05-08
 
 ### Added
