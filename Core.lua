@@ -92,6 +92,11 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
     -- online guildmate, even guildmates who have already replied to this
     -- sender earlier in the session. The distribution check breaks the
     -- trivial "our own whisper arrives back at us" loop.
+    --
+    -- The IsInGuild() guard from the old design is intentionally gone:
+    -- WHISPER addon messages don't require shared guild membership, and a
+    -- RCPL_Ver message could only reach us via a channel where reply makes
+    -- sense (currently GUILD, which already implies we are guildies).
     if sender and sender ~= "" and distribution ~= "WHISPER" then
         self:SendCommMessage(RCPL_COMM_PREFIX, RCPL_VERSION, "WHISPER", sender)
         Log.debug("Whispered version reply to %s", tostring(sender))
