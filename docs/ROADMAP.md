@@ -56,15 +56,16 @@ Currently `RCLPL_Data_SaveImportedData` only checks types at the outer level. Of
 
 **Acceptance:** `spec/import_save_spec.lua` gains coverage for at least 6 invalid-shape scenarios. The chat output on a partial-bad import says "imported N players, M priority items, K invalid entries dropped."
 
-### 1.2 Centralised logging
-Branch: `feat/log-module` · Version: minor (new `/rclp debug` subcommand)
+### 1.2 Centralised logging — shipped in v0.1.7
 
-- `Modules/log.lua`: `Log.info(msg, ...)`, `Log.warn`, `Log.error`, `Log.debug`. Prefix `|cFF00FF00[RCLP]|r`. `Log.debug` only fires when `RCLPriorityDB.debug == true`.
-- Replace every `print(...)` call across `Core.lua`, `Data/db.lua`, and `Modules/*.lua` with the appropriate `Log.*`.
-- New slash subcommand: `/rclp debug` toggles `RCLPriorityDB.debug` and prints the new state.
-- Re-introduce error logging in `Modules/lootFrame.lua:65` (the pcall whose `err` was dropped during Phase 0 lint cleanup) via `Log.debug`.
+`Modules/log.lua` ships with `debug`, `info`, `warn`, `error` levels behind a chat prefix of `|cFF00FF00[RCLP]|r`. Every call records into a 500-entry in-memory ring buffer regardless of debug state; `debug` calls only mirror to chat when `RCLPriorityDB.debug` is true. New slash surface: `/rcpl debug` toggles the persisted flag, `/rcpl log` opens an AceGUI viewer over the recorded history (with `dump` and `clear` subcommands).
 
-**Acceptance:** zero `print(` calls outside `Modules/log.lua`. `/rclp debug` toggle works. `Log.debug` output gated correctly.
+The diagnostic instrumentation in `Core.lua` covers the lifecycle (`OnInitialize`, `OnEnable`) and the comm flow (`BroadcastVersion`, `OnVersionReceived`, `OnVersionCheckMessage`). Together this is enough to see whether the version-check broadcast fires, what `IsInGuild()` reported, what comm prefixes registered, and what arrived from each sender.
+
+Two follow-ups deferred:
+
+- Replacing the remaining `print(...)` calls in `Data/db.lua`, `Modules/importFrame.lua`, and the `/rcpl version` ordinal table is left for a later pass; v0.1.7 routes only the lifecycle and comm paths through the logger because that is where the open diagnostic gap lives.
+- Re-introducing error logging in `Modules/lootFrame.lua:65` (the pcall whose `err` was dropped during Phase 0 lint cleanup) lands with whichever PR next touches that file.
 
 ### 1.3 Idempotent import + import diff
 Branch: `feat/idempotent-import` · Version: patch

@@ -11,6 +11,28 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.7] - 2026-05-08
+
+### Added
+
+- `Modules/log.lua` - centralised logger with `debug`, `info`, `warn`, `error` levels. Every call records into a 500-entry in-memory ring buffer regardless of debug state; `debug` calls only mirror to chat when debug mode is on. The buffer is volatile and resets on `/reload`.
+- `Core.lua` - `/rcpl debug` toggles the persisted `RCLPriorityDB.debug` flag (also accepts `on`/`off`/`1`/`0`). Without arguments it flips the current state and prints the new value.
+- `Core.lua` - `/rcpl log` opens an AceGUI window with the full log; falls back to a chat dump when AceGUI is unavailable. `/rcpl log dump` prints the buffer to chat directly. `/rcpl log clear` empties the buffer.
+- `Core.lua` - diagnostic `Log.debug` calls inside the lifecycle (`OnInitialize`, `OnEnable`) and the comm hooks (`BroadcastVersion`, `OnVersionReceived`, `OnVersionCheckMessage`). Enable `/rcpl debug on` to see whether the version-check broadcast is firing, what `IsInGuild()` returned, what comm prefixes registered, and what messages arrived from each sender.
+- `spec/log_spec.lua` - covers level gating against the `RCLPriorityDB.debug` flag, ring-buffer cap behaviour, format-string handling, and the persisted toggle round trip.
+
+### Changed
+
+- `Core.lua` - slash command help table reformatted to drop the em-dash separators in favour of plain spacing, so the printed list reads consistently with the other addon prefixes the user already sees in chat.
+- `RCLootCouncil_PriorityLoot.toc` - `Modules/log.lua` added to the load order ahead of `Core.lua` so every downstream file can call `RCLPL_Log` safely.
+
+### Fixed
+
+- `README.md` - removed stale `SpreadsheetExport.gs` reference from the File Structure section. The script was deleted from the repo in v0.1.3 (PR #3) but the README never caught up. Officers still run the script inside the Google Sheet itself; it is not bundled with the addon.
+- `README.md` - Slash Commands table now lists `/rcpl version`, `/rcpl debug`, and `/rcpl log` alongside the existing entries.
+
+---
+
 ## [0.1.6] - 2026-05-08
 
 ### Added

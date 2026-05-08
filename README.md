@@ -54,7 +54,14 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 | `/rcpl import` | Open the import window. |
 | `/rcpl prio` | Open a scrollable preview of all imported priority data (toggle). |
 | `/rcpl reset` | Wipe all stored priority data from SavedVariables. |
+| `/rcpl version` | Check addon versions across your raid or party. Aliases: `ver`, `v`. |
+| `/rcpl debug` | Toggle debug logging on or off. Persisted across sessions in `RCLPriorityDB.debug`. Accepts `on`, `off`, `1`, `0`. |
+| `/rcpl log` | Open the in-memory log window. Subcommands: `dump` (prints to chat), `clear` (empties the buffer). |
 | `/rcpl` | Print command usage. |
+
+### Logging
+
+Every comm and lifecycle event passes through `Modules/log.lua`, which keeps the last 500 entries in an in-memory ring buffer. The buffer resets on `/reload`. By default only `info`, `warn`, and `error` entries print to chat; turning on `/rcpl debug` mirrors `debug` entries to chat as well so you can watch the version-check broadcast and the per-sender response flow in real time. Even with debug off, `/rcpl log` still shows the full recorded history, so you can flip debug mode on after a problem has already happened and replay what was captured.
 
 ---
 
@@ -116,20 +123,21 @@ Secondary armor slots (Cloak, Bracers, Belt, Boots) are not part of the import. 
 
 ```
 RCLootCouncil_PriorityLoot/
-├── RCLootCouncil_PriorityLoot.toc   — metadata, load order, saved variables
-├── Core.lua                          — addon init, slash commands
-├── SpreadsheetExport.gs              — Google Apps Script: exports BiS/priority data,
-│                                       fills Priority Order dropdowns, fetches WCL scores
+├── RCLootCouncil_PriorityLoot.toc    metadata, load order, saved variables
+├── Core.lua                          addon init, slash commands, comm hooks
 ├── Data/
-│   └── db.lua                        — SavedVariable read/write, priority lookup
+│   └── db.lua                        SavedVariable read/write, priority lookup
 ├── Modules/
-│   ├── votingFrame.lua               — voting frame column injection
-│   ├── lootFrame.lua                 — raider loot frame overlay
-│   ├── importFrame.lua               — in-game import UI, Base64 decoder
-│   └── prioPreviewFrame.lua          — /rcpl prio scrollable data preview
+│   ├── log.lua                       centralised logger, ring buffer, /rcpl log
+│   ├── votingFrame.lua               voting frame column injection
+│   ├── lootFrame.lua                 raider loot frame overlay
+│   ├── importFrame.lua               in-game import UI, Base64 decoder
+│   └── prioPreviewFrame.lua          /rcpl prio scrollable data preview
 └── Libs/
-    └── LibJSON.lua                   — bundled pure-Lua JSON decoder
+    └── LibJSON.lua                   bundled pure-Lua JSON decoder
 ```
+
+The Google Apps Script that produces the import string lives inside the Priority Sheet itself; it is not shipped with the addon.
 
 ---
 

@@ -73,6 +73,9 @@ globals = {
     "RCLPL_Data_ResetData",
     "RCLPL_ShowImportFrame",
     "RCLPL_ShowPrioPreview",
+
+    -- Centralised logger (Modules/log.lua); used across Core.lua and modules
+    "RCLPL_Log",
 }
 
 -- ── Per-file overrides --------------------------------------------------------

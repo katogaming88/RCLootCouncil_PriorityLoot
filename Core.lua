@@ -10,10 +10,19 @@ RCLPAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCLPAddon
 
-local RCLPL_VERSION      = "0.1.6"
+local RCLPL_VERSION      = "0.1.7"
 local RCLPL_COMM_PREFIX  = "RCLPL_Ver"
 local RCLPL_CHECK_PREFIX = "RCLPL_Chk"
 local CHECK_TIMEOUT      = 10
+
+-- Modules/log.lua loads before Core.lua (see .toc), so RCLPL_Log is always
+-- available by the time any function below executes. Capture as a local for
+-- speed; if the global is ever missing, fall back to no-ops to avoid hard
+-- failures inside lifecycle callbacks.
+local Log = RCLPL_Log or {
+    debug = function() end, info = function() end,
+    warn = function() end, error = function() end,
+}
 
 local versionWarned       = false
 local hasRepliedToOthers  = false
@@ -41,51 +50,78 @@ local function GetUnitFullName(unit)
 end
 
 function RCLPAddon:OnInitialize()
+    Log.debug("OnInitialize fired (version=%s)", RCLPL_VERSION)
     if type(RCLPriorityDB) ~= "table" then RCLPriorityDB = {} end
     if type(RCLPriorityDB.players) ~= "table" then RCLPriorityDB.players = {} end
     if type(RCLPriorityDB.priority) ~= "table" then RCLPriorityDB.priority = {} end
     self:RegisterComm(RCLPL_COMM_PREFIX, "OnVersionReceived")
     self:RegisterComm(RCLPL_CHECK_PREFIX, "OnVersionCheckMessage")
+    Log.debug("Comm prefixes registered: %s, %s", RCLPL_COMM_PREFIX, RCLPL_CHECK_PREFIX)
 end
 
 function RCLPAddon:OnEnable()
+    Log.debug("OnEnable fired, scheduling BroadcastVersion in 5s")
     -- Delay 5s so the guild channel is ready before we broadcast.
     self:ScheduleTimer("BroadcastVersion", 5)
 end
 
 function RCLPAddon:BroadcastVersion()
-    if not IsInGuild() then return end
+    local inGuild = IsInGuild()
+    Log.debug("BroadcastVersion fired (IsInGuild=%s, version=%s)", tostring(inGuild), RCLPL_VERSION)
+    if not inGuild then
+        Log.debug("BroadcastVersion bailing: player not in a guild")
+        return
+    end
     self:SendCommMessage(RCLPL_COMM_PREFIX, RCLPL_VERSION, "GUILD")
+    Log.debug("Sent guild version broadcast (%s on %s)", RCLPL_VERSION, RCLPL_COMM_PREFIX)
 end
 
 function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
-    if sender == UnitName("player") then return end
+    Log.debug("OnVersionReceived: prefix=%s message=%s dist=%s sender=%s self=%s",
+        tostring(prefix), tostring(message), tostring(distribution),
+        tostring(sender), tostring(UnitName("player")))
+    if sender == UnitName("player") then
+        Log.debug("OnVersionReceived: ignoring self-loopback from %s", tostring(sender))
+        return
+    end
     -- Reply once so players already online when we log in can see our version.
     if not hasRepliedToOthers and IsInGuild() then
         hasRepliedToOthers = true
         self:SendCommMessage(RCLPL_COMM_PREFIX, RCLPL_VERSION, "GUILD")
+        Log.debug("Reply-once broadcast sent in response to %s", tostring(sender))
     end
     if versionWarned then return end
     if IsNewer(RCLPL_VERSION, message) then
         versionWarned = true
+        Log.info("Newer version detected from %s: %s (you have %s)",
+            tostring(sender), tostring(message), RCLPL_VERSION)
         print(string.format(
             "|cFFFF8000[RCLootCouncil_PriorityLoot]|r %s has version %s (you have %s)." ..
             " Get the update: github.com/katogaming88/RCLootCouncil_PriorityLoot",
             sender, message, RCLPL_VERSION
         ))
+    else
+        Log.debug("Received version %s from %s; not newer than local %s",
+            tostring(message), tostring(sender), RCLPL_VERSION)
     end
 end
 
 -- Handles both incoming REQUEST and version-response messages on RCLPL_Chk.
 function RCLPAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
+    Log.debug("OnVersionCheckMessage: prefix=%s message=%s dist=%s sender=%s",
+        tostring(prefix), tostring(message), tostring(distribution), tostring(sender))
     if sender == UnitName("player") then return end
     if message == "REQUEST" then
         local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
         if channel then
             self:SendCommMessage(RCLPL_CHECK_PREFIX, RCLPL_VERSION, channel)
+            Log.debug("Replied to version REQUEST from %s on %s", tostring(sender), channel)
+        else
+            Log.debug("Ignoring REQUEST from %s; not in raid or party", tostring(sender))
         end
     elseif versionCheckResults then
         versionCheckResults[sender] = message
+        Log.debug("Recorded version response: %s = %s", tostring(sender), tostring(message))
     end
 end
 
@@ -156,10 +192,39 @@ function RCLPAddon:PrintVersionCheckResults()
     versionCheckResults = nil
 end
 
+local function HandleLogSubcommand(rest)
+    rest = rest or ""
+    if rest == "" or rest == "show" then
+        if RCLPL_Log then RCLPL_Log.Show() else print("|cFFFF4444[RCLP]|r logger not loaded") end
+    elseif rest == "dump" then
+        if RCLPL_Log then RCLPL_Log.DumpToChat() else print("|cFFFF4444[RCLP]|r logger not loaded") end
+    elseif rest == "clear" then
+        if RCLPL_Log then RCLPL_Log.Clear() end
+        print("|cFF00FF00[RCLP]|r log cleared.")
+    else
+        print("|cFF00FF00[RCLP]|r log subcommands:")
+        print("  /rcpl log         open the log window")
+        print("  /rcpl log dump    dump entries to chat")
+        print("  /rcpl log clear   clear the in-memory log")
+    end
+end
+
 SLASH_RCPL1 = "/rcpl"
 SlashCmdList["RCPL"] = function(input)
-    local cmd = strtrim(input or "")
-    if cmd == "import" then
+    local raw = strtrim(input or "")
+    local cmd, rest = raw:match("^(%S+)%s*(.-)$")
+    cmd = cmd or ""
+    rest = strtrim(rest or "")
+
+    if cmd == "" then
+        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
+        print("  /rcpl import      open the priority data import window")
+        print("  /rcpl prio        preview imported priority data")
+        print("  /rcpl reset       clear all stored priority data")
+        print("  /rcpl version     check addon versions across your raid/party")
+        print("  /rcpl debug       toggle debug logging on or off")
+        print("  /rcpl log         open the log window (also: dump, clear)")
+    elseif cmd == "import" then
         RCLPL_ShowImportFrame()
     elseif cmd == "prio" then
         RCLPL_ShowPrioPreview()
@@ -168,11 +233,20 @@ SlashCmdList["RCPL"] = function(input)
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r All priority data cleared.")
     elseif cmd == "version" or cmd == "ver" or cmd == "v" then
         RCLPAddon:StartVersionCheck()
+    elseif cmd == "debug" then
+        local state
+        if rest == "on" or rest == "true" or rest == "1" then
+            state = RCLPL_Log and RCLPL_Log.SetDebug(true)
+        elseif rest == "off" or rest == "false" or rest == "0" then
+            state = RCLPL_Log and RCLPL_Log.SetDebug(false)
+        else
+            state = RCLPL_Log and RCLPL_Log.ToggleDebug()
+        end
+        print(string.format("|cFF00FF00[RCLP]|r debug logging %s",
+            state and "|cFF00FF00ON|r" or "|cFFFF4444OFF|r"))
+    elseif cmd == "log" then
+        HandleLogSubcommand(rest)
     else
-        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
-        print("  /rcpl import   — open the priority data import window")
-        print("  /rcpl prio     — preview imported priority data")
-        print("  /rcpl reset    — clear all stored priority data")
-        print("  /rcpl version  — check addon versions across your raid/party")
+        print(string.format("|cFFFF4444[RCLP]|r unknown command: %s", cmd))
     end
 end
