@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.9] - 2026-05-08
+
+### Fixed
+
+- `Core.lua` - `RCPL_VERSION` constant was not bumped alongside `.toc` in v0.1.8, causing `/rcpl version` to report the wrong version in-game.
+
+---
+
 ## [0.1.8] - 2026-05-08
 
 ### Fixed
