@@ -11,23 +11,22 @@ local function GetItemIDFromLink(link)
     return tonumber((link or ""):match("item:(%d+):"))
 end
 
-local function GetOrCreateOverlay(icon)
+local function GetOrCreateOverlay(entry)
+    local icon = entry.icon
     if overlayPool[icon] then return overlayPool[icon] end
-    local fs = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    fs:SetPoint("BOTTOMLEFT",  icon, "BOTTOMLEFT",  2, 2)
-    fs:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -2, 2)
-    fs:SetJustifyH("LEFT")
+    local fs = entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    fs:SetPoint("TOP", entry.frame, "BOTTOM", 0, 12)
+    fs:SetJustifyH("CENTER")
     fs:SetText("")
     overlayPool[icon] = fs
     return fs
 end
 
-local function UpdateEntry(entry, playerName)
+local function UpdateEntry(entry, item, playerName)
     local icon = entry.icon
     if not icon then return end
-    local overlay = GetOrCreateOverlay(icon)
+    local overlay = GetOrCreateOverlay(entry)
 
-    local item = entry.item
     if not item or not item.link then overlay:SetText("") return end
 
     local itemID = GetItemIDFromLink(item.link)
@@ -37,7 +36,7 @@ local function UpdateEntry(entry, playerName)
     if not equipLoc or equipLoc == "" then overlay:SetText("") return end
 
     local text, color = RCLPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
-    if text == "N/A" then overlay:SetText("") return end
+    if text == "N/A" or text:find("wowaudit") then overlay:SetText("") return end
 
     overlay:SetTextColor(color.r, color.g, color.b)
     overlay:SetText("Prio: " .. text)
@@ -50,11 +49,13 @@ function RCLPLootFrame:OnInitialize()
     if not ok or not rcLootFrame then return end
 
     local playerName = UnitName("player")
+    local realm = GetRealmName()
+    if realm and realm ~= "" then playerName = playerName .. "-" .. realm end
 
     self:SecureHook(rcLootFrame.EntryManager, "GetEntry", function(em, item)
         local entry = em.entries[item]
         if type(entry) == "table" then
-            pcall(UpdateEntry, entry, playerName)
+            pcall(UpdateEntry, entry, item, playerName)
         end
     end)
 end
