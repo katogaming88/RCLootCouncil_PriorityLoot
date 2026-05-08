@@ -4,15 +4,21 @@
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
 local RCLPAddon = addon:NewModule("RCLootCouncil_PriorityLoot", "AceTimer-3.0", "AceComm-3.0")
+-- RCLootCouncil sets defaultModuleState=false for sub-modules; opt back in so OnEnable fires.
+RCLPAddon:SetEnabledState(true)
 
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCLPAddon
 
-local RCLPL_VERSION     = "0.1.5"
-local RCLPL_COMM_PREFIX = "RCLPL_Ver"
+local RCLPL_VERSION      = "0.1.6"
+local RCLPL_COMM_PREFIX  = "RCLPL_Ver"
+local RCLPL_CHECK_PREFIX = "RCLPL_Chk"
+local CHECK_TIMEOUT      = 10
 
-local versionWarned      = false
-local hasRepliedToOthers = false
+local versionWarned       = false
+local hasRepliedToOthers  = false
+local versionCheckResults = nil  -- nil = no check in progress, table = collecting
+local versionCheckTimer   = nil
 
 -- Returns true when other is a strictly higher semver than current.
 local function IsNewer(current, other)
@@ -26,11 +32,20 @@ local function IsNewer(current, other)
     return o3 > c3
 end
 
+-- Returns "Name" for same-realm units, "Name-Realm" for cross-realm.
+local function GetUnitFullName(unit)
+    local name, realm = UnitName(unit)
+    if not name then return nil end
+    if realm and realm ~= "" then return name .. "-" .. realm end
+    return name
+end
+
 function RCLPAddon:OnInitialize()
     if type(RCLPriorityDB) ~= "table" then RCLPriorityDB = {} end
     if type(RCLPriorityDB.players) ~= "table" then RCLPriorityDB.players = {} end
     if type(RCLPriorityDB.priority) ~= "table" then RCLPriorityDB.priority = {} end
     self:RegisterComm(RCLPL_COMM_PREFIX, "OnVersionReceived")
+    self:RegisterComm(RCLPL_CHECK_PREFIX, "OnVersionCheckMessage")
 end
 
 function RCLPAddon:OnEnable()
@@ -61,6 +76,86 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
     end
 end
 
+-- Handles both incoming REQUEST and version-response messages on RCLPL_Chk.
+function RCLPAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
+    if sender == UnitName("player") then return end
+    if message == "REQUEST" then
+        local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
+        if channel then
+            self:SendCommMessage(RCLPL_CHECK_PREFIX, RCLPL_VERSION, channel)
+        end
+    elseif versionCheckResults then
+        versionCheckResults[sender] = message
+    end
+end
+
+function RCLPAddon:StartVersionCheck()
+    local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
+    if not channel then
+        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r You must be in a group to check versions.")
+        return
+    end
+    versionCheckResults = {}
+    versionCheckResults[UnitName("player")] = RCLPL_VERSION
+    self:SendCommMessage(RCLPL_CHECK_PREFIX, "REQUEST", channel)
+    print(string.format(
+        "|cFF00FF00[RCLootCouncil_PriorityLoot]|r Checking addon versions... (results in %ds)",
+        CHECK_TIMEOUT
+    ))
+    if versionCheckTimer then self:CancelTimer(versionCheckTimer) end
+    versionCheckTimer = self:ScheduleTimer("PrintVersionCheckResults", CHECK_TIMEOUT)
+end
+
+function RCLPAddon:PrintVersionCheckResults()
+    versionCheckTimer = nil
+    local myName = UnitName("player")
+    local withAddon, withoutAddon = {}, {}
+
+    local function processUnit(unit)
+        local name = GetUnitFullName(unit)
+        if not name then return end
+        local ver = versionCheckResults[name]
+        if ver then
+            withAddon[#withAddon + 1] = { name = name, version = ver }
+        else
+            withoutAddon[#withoutAddon + 1] = name
+        end
+    end
+
+    if IsInRaid() then
+        for i = 1, GetNumGroupMembers() do processUnit("raid" .. i) end
+    else
+        processUnit("player")
+        for i = 1, GetNumGroupMembers() do processUnit("party" .. i) end
+    end
+
+    table.sort(withAddon, function(a, b) return a.name < b.name end)
+    table.sort(withoutAddon)
+
+    local total = #withAddon + #withoutAddon
+    print(string.format(
+        "|cFF00FF00[RCLootCouncil_PriorityLoot]|r Version check (%d/%d have addon):",
+        #withAddon, total
+    ))
+    for _, entry in ipairs(withAddon) do
+        local color
+        if entry.version == RCLPL_VERSION then
+            color = "|cFF00FF00"
+        elseif IsNewer(RCLPL_VERSION, entry.version) then
+            color = "|cFFFF8000"
+        else
+            color = "|cFFFFFF00"
+        end
+        local tag = entry.name == myName and " (you)" or ""
+        print(string.format("  %s%s|r — %s%s", color, entry.name, entry.version, tag))
+    end
+    for _, name in ipairs(withoutAddon) do
+        print(string.format("  |cFFAAAAAA%s|r — not installed", name))
+    end
+
+    versionCheckResults = nil
+end
+
 SLASH_RCPL1 = "/rcpl"
 SlashCmdList["RCPL"] = function(input)
     local cmd = strtrim(input or "")
@@ -71,10 +166,13 @@ SlashCmdList["RCPL"] = function(input)
     elseif cmd == "reset" then
         RCLPL_Data_ResetData()
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r All priority data cleared.")
+    elseif cmd == "version" or cmd == "ver" or cmd == "v" then
+        RCLPAddon:StartVersionCheck()
     else
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
-        print("  /rcpl import  — open the priority data import window")
-        print("  /rcpl prio    — preview imported priority data")
-        print("  /rcpl reset   — clear all stored priority data")
+        print("  /rcpl import   — open the priority data import window")
+        print("  /rcpl prio     — preview imported priority data")
+        print("  /rcpl reset    — clear all stored priority data")
+        print("  /rcpl version  — check addon versions across your raid/party")
     end
 end
