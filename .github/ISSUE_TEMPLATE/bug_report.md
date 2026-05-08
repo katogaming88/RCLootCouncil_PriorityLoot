@@ -21,7 +21,7 @@ labels: bug
 
 - WoW version: <!-- e.g. 12.0.5.55000 (Midnight, retail) -->
 - RCLootCouncil version:
-- RCLootCouncil_PriorityLoot version: <!-- /rclp prints version, or check the .toc -->
+- RCLootCouncil_PriorityLoot version: <!-- /rcpl prints version, or check the .toc -->
 - Other relevant addons: <!-- wowaudit, ElvUI, etc. -->
 
 ## Saved data

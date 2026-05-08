@@ -51,7 +51,7 @@ Currently `RCPL_Data_SaveImportedData` only checks types at the outer level. Off
 
 - Validate each `players[name][slotKey].bis` entry: array of integers, length up to 10, slot key in known set.
 - Validate each `priority[itemID]` entry: itemID is a numeric string, list is array of strings matching `Name-Realm` format.
-- Reject and report counts of invalid entries instead of silently dropping. Show counts in the chat success line and in the `/rclp prio` subtitle.
+- Reject and report counts of invalid entries instead of silently dropping. Show counts in the chat success line and in the `/rcpl prio` subtitle.
 - Tests: malformed inputs at every level produce specific error messages; valid input still parses identically to today.
 
 **Acceptance:** `spec/import_save_spec.lua` gains coverage for at least 6 invalid-shape scenarios. The chat output on a partial-bad import says "imported N players, M priority items, K invalid entries dropped."
@@ -74,11 +74,11 @@ Current `SaveImportedData` wipes `RCLPriorityDB.players` and `.priority` before 
 
 - Build the new tables locally, then atomically swap.
 - Compute and print a diff: "X players added, Y changed, Z removed; A items added, B items removed."
-- Show the same diff in the `/rclp prio` subtitle when last-import data is recent.
+- Show the same diff in the `/rcpl prio` subtitle when last-import data is recent.
 - Include a stale-data note in the subtitle when `importedAt` is more than 7 days old (folds in roadmap item 1.4 below as a 5-line addition; no separate PR).
 - Tests: simulate mid-import error, assert old data preserved; assert diff calculation against synthetic before/after fixtures.
 
-**Acceptance:** `spec/import_save_spec.lua` gains "mid-import error preserves prior state" plus diff-calculation specs. Subtitle in `/rclp prio` shows the diff and the stale-data note when applicable.
+**Acceptance:** `spec/import_save_spec.lua` gains "mid-import error preserves prior state" plus diff-calculation specs. Subtitle in `/rcpl prio` shows the diff and the stale-data note when applicable.
 
 ---
 
@@ -95,6 +95,30 @@ Highest-value feature on the roadmap. Hover any item with a known itemID (bag, b
 - Tests: tooltip handler called with known item produces expected lines via mock GameTooltip.
 
 **Acceptance:** hovering items in bag, bank, AH, and equipment manager all show the priority line. Items without a known itemID (e.g. quest items, currencies) no-op without errors.
+
+### 2.2 Interface Options panel
+Branch: `feat/interface-options` · Version: minor
+
+Expose settings via the standard WoW interface panel (ESC → Options → Addons → RCLootCouncil_PriorityLoot) using AceConfig-3.0 + AceConfigDialog-3.0.
+
+- Register an options table with AceConfig and open it via `InterfaceOptionsFrame_OpenToCategory` (or the modern `Settings.OpenToCategory` on 12.x+).
+- Initial settings to expose: debug mode toggle (currently only via `/rcpl debug`), import frame scale, prio preview frame scale.
+- Settings persist in `RCLPriorityDB` so they survive reloads.
+- `/rcpl config` (or `/rcpl options`) opens the same panel as a convenience alias.
+
+**Acceptance:** opening ESC → Options → Addons shows an RCPL entry. All exposed settings save and reload correctly. `/rcpl config` opens the panel.
+
+### 2.3 Changelog popup on new version
+Branch: `feat/changelog-popup` · Version: minor
+
+When the addon version has changed since the last login (detected by comparing `RCPL_VERSION` to `RCLPriorityDB.lastSeenVersion`), display a brief changelog popup so officers know what changed without checking GitHub.
+
+- Pop a small AceGUI frame on `PLAYER_ENTERING_WORLD` (once per session, not per zone) showing the new version number and the top-level bullet points for the current version from an embedded `CHANGELOG_SUMMARY` table in `Core.lua`.
+- Provide a "Don't show again for this version" checkbox and a global "Disable changelog popup" toggle stored in `RCLPriorityDB.showChangelog` (default `true`). The global toggle is also exposed in the Interface Options panel (2.2).
+- Update `RCLPriorityDB.lastSeenVersion` on first display so the popup does not re-fire on subsequent logins at the same version.
+- Tests: popup fires when version differs; does not fire when version matches; does not fire when `showChangelog` is false.
+
+**Acceptance:** logging in after an addon update shows the popup once. Checking "Disable changelog popup" in options suppresses it permanently. The popup does not appear on logins where the version has not changed.
 
 ### 2.5 Slash command UX
 Branch: `feat/slash-ux` · Version: minor (new subcommands)
@@ -129,7 +153,7 @@ Tier-set 4-piece bonuses are a meaningful DPS/HPS swing in modern WoW. Tracking 
 
 - Extend the import schema: `players[name].tierPieces = N` (single integer 0..4 for the current season; or `{ N, M }` if the addon ever needs to track two simultaneous set bonuses). Backward compatible: missing field treated as nil.
 - Surface in the voting frame `Priority` column: append "(N/4)" suffix when known. Colour adjusts when the player would hit a bonus threshold (2/4 or 4/4) with the current item.
-- Surface in `/rclp prio` per-player roster line.
+- Surface in `/rcpl prio` per-player roster line.
 - `SpreadsheetExport.gs` companion change: add a "Tier Pieces" column to the Roster sheet, fold into the export.
 - Tests: additive schema does not break v0.1.0-shape imports; resolver returns the suffix; voting frame DoCellUpdate handles missing `tierPieces` as no-suffix.
 
@@ -142,12 +166,12 @@ Closes the loop: when an officer awards an item via RCLootCouncil, the priority 
 
 - Hook RCLootCouncil's awarding flow (probably `RCLootCouncilML:GiveLoot` or the `RCMLAwardSuccess` AceComm message; investigate at implementation time).
 - Persist in `RCLPriorityDB.awarded[itemID][playerName] = timestamp`.
-- `/rclp prio` filters out awarded items by default; `/rclp prio all` shows them.
+- `/rcpl prio` filters out awarded items by default; `/rcpl prio all` shows them.
 - Voting frame `Priority` column shows "(received)" suffix in grey for already-awarded items so officers know not to assign again.
 - For tier tokens specifically (Phase 3.2): an award also bumps the awardee's `tierPieces` count, so the "(N/4)" suffix updates without a re-import.
 - Tests: simulated award message updates the saved table; resolver respects the filter; tier-token awards bump tierPieces.
 
-**Acceptance:** awarding an item once removes that player+item pair from outstanding priority; `/rclp prio all` still surfaces it for audit. Tier-token awards bump the awardee's tier count by 1.
+**Acceptance:** awarding an item once removes that player+item pair from outstanding priority; `/rcpl prio all` still surfaces it for audit. Tier-token awards bump the awardee's tier count by 1.
 
 ---
 
@@ -178,10 +202,10 @@ Not a milestone. Next time `SpreadsheetExport.gs` is touched, add a `// Version:
 These items were considered and parked until a real usage signal warrants them. Documented here so they are not forgotten and so future contributors can see prior reasoning.
 
 ### 1.4 Stale-data login warning
-A "your import is N days old" nag at PLAYER_LOGIN. Risk: goes from useful to muted within two weeks. Phase 1.3 already shows the staleness in `/rclp prio` subtitle, where the user already opened the UI. Promote to keep only if officers report missing the in-UI surface.
+A "your import is N days old" nag at PLAYER_LOGIN. Risk: goes from useful to muted within two weeks. Phase 1.3 already shows the staleness in `/rcpl prio` subtitle, where the user already opened the UI. Promote to keep only if officers report missing the in-UI surface.
 
 ### 2.4 Diff viewer on re-import
-Visual tab in `/rclp prio` showing colour-coded added/changed/removed rows from the most recent import. Phase 1.3's chat-output diff covers the data; visual viewer is polish on polish. Promote when an officer asks.
+Visual tab in `/rcpl prio` showing colour-coded added/changed/removed rows from the most recent import. Phase 1.3's chat-output diff covers the data; visual viewer is polish on polish. Promote when an officer asks.
 
 ### 3.1 Multi-team profiles
 N named profiles in `RCLPriorityDB.profiles[name]` with active-profile pointer. Real value if you run this addon for more than one raid team; zero value otherwise. Promote when juggling teams becomes real, or when another guild adopts the addon and asks. If promoted, schema change cascades through Phases 1 and 2 - so decide before Phase 1.1 ships if possible.
