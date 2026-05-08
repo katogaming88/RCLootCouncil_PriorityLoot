@@ -3,13 +3,13 @@
 -- Based on rxi/json.lua (MIT), stripped of all require/io/os/pcre dependencies.
 --
 -- Usage:
---   local ok, result = pcall(function() return LibRCLPJSON:decode(jsonString) end)
+--   local ok, result = pcall(function() return LibRCPLJSON:decode(jsonString) end)
 --
--- Exposes a single global: LibRCLPJSON
+-- Exposes a single global: LibRCPLJSON
 -- Methods:
---   LibRCLPJSON:decode(str)  → Lua value (table, string, number, boolean, nil)
+--   LibRCPLJSON:decode(str)  → Lua value (table, string, number, boolean, nil)
 
-LibRCLPJSON = {}
+LibRCPLJSON = {}
 
 -- ─── Error helper ─────────────────────────────────────────────────────────────
 
@@ -216,9 +216,9 @@ end
 
 -- ─── Public API ───────────────────────────────────────────────────────────────
 
-function LibRCLPJSON:decode(str)
+function LibRCPLJSON:decode(str)
     if type(str) ~= "string" then
-        error("LibRCLPJSON:decode expects a string, got " .. type(str))
+        error("LibRCPLJSON:decode expects a string, got " .. type(str))
     end
     local value, _ = decode_value(str, 1)
     return value

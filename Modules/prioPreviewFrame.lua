@@ -176,7 +176,7 @@ end
 
 -- ── Public API ────────────────────────────────────────────────────────────────
 
-function RCLPL_ShowPrioPreview()
+function RCPL_ShowPrioPreview()
     if not frame then Build() end
     if frame:IsShown() then
         frame:Hide()

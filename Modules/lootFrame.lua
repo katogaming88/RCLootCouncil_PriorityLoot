@@ -3,7 +3,7 @@
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
 local RCLPAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
-local RCLPLootFrame = RCLPAddon:NewModule("RCLPLootFrame", "AceHook-3.0", "AceTimer-3.0")
+local RCPLootFrame = RCLPAddon:NewModule("RCPLootFrame", "AceHook-3.0", "AceTimer-3.0")
 
 local overlayPool = {}
 
@@ -35,14 +35,14 @@ local function UpdateEntry(entry, item, playerName)
     local equipLoc = item.equipLoc
     if not equipLoc or equipLoc == "" then overlay:SetText("") return end
 
-    local text, color = RCLPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
+    local text, color = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
     if text == "N/A" or text:find("wowaudit") then overlay:SetText("") return end
 
     overlay:SetTextColor(color.r, color.g, color.b)
     overlay:SetText("Prio: " .. text)
 end
 
-function RCLPLootFrame:OnInitialize()
+function RCPLootFrame:OnInitialize()
     local ok, rcLootFrame = pcall(function()
         return addon:GetModule("RCLootFrame")
     end)
