@@ -1,5 +1,5 @@
 -- Modules/prioPreviewFrame.lua
--- Scrollable popup showing imported priority data.  Opened via /rclp prio.
+-- Scrollable popup showing imported priority data.  Opened via /rcpl prio.
 
 local LINE_H     = 16   -- px per line for GameFontNormalSmall
 local CONTENT_W  = 440  -- inner text width (frame 500 - margins)
@@ -93,7 +93,7 @@ local function Populate()
 
     if type(RCLPriorityDB) ~= "table" then
         frame.subtitle:SetText("No data imported.")
-        add("|cFFFF6666No priority data found.|r  Use /rclp import to load data.")
+        add("|cFFFF6666No priority data found.|r  Use /rcpl import to load data.")
     else
         local importedAt  = RCLPriorityDB.importedAt or "unknown"
         local priority    = type(RCLPriorityDB.priority) == "table" and RCLPriorityDB.priority or {}
@@ -109,7 +109,7 @@ local function Populate()
         ))
 
         if itemCount == 0 and playerCount == 0 then
-            add("|cFFFF6666No data imported yet.|r  Use /rclp import.")
+            add("|cFFFF6666No data imported yet.|r  Use /rcpl import.")
         else
             -- ── Priority lists ────────────────────────────────────────────────
             if itemCount > 0 then

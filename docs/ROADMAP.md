@@ -99,9 +99,9 @@ Highest-value feature on the roadmap. Hover any item with a known itemID (bag, b
 ### 2.5 Slash command UX
 Branch: `feat/slash-ux` · Version: minor (new subcommands)
 
-- `/rclp status` - prints counts (players, priority items), `importedAt`, days-old, debug state.
-- `/rclp export` - re-encodes current `RCLPriorityDB` to base64 for backup or cross-account share. Uses the same JSON shape as the import format, so an export round-trips through `/rclp import`.
-- Keep existing `/rclp`, `/rclp import`, `/rclp prio`, `/rclp reset`.
+- `/rcpl status` - prints counts (players, priority items), `importedAt`, days-old, debug state.
+- `/rcpl export` - re-encodes current `RCLPriorityDB` to base64 for backup or cross-account share. Uses the same JSON shape as the import format, so an export round-trips through `/rcpl import`.
+- Keep existing `/rcpl`, `/rcpl import`, `/rcpl prio`, `/rcpl reset`.
 
 **Acceptance:** both new subcommands have specs covering output shape and round-trip.
 

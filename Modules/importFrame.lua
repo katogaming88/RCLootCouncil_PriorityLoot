@@ -1,5 +1,5 @@
 -- Modules\importFrame.lua
--- In-game import UI. Opens with /rclp import.
+-- In-game import UI. Opens with /rcpl import.
 
 local B64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
