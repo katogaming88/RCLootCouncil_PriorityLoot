@@ -25,6 +25,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `Core.lua` - slash command help table reformatted to drop the em-dash separators in favour of plain spacing, so the printed list reads consistently with the other addon prefixes the user already sees in chat.
 - `RCLootCouncil_PriorityLoot.toc` - `Modules/log.lua` added to the load order ahead of `Core.lua` so every downstream file can call `RCPL_Log` safely.
+- Renamed internal `RCLPL` prefix to `RCPL` throughout (`RCLPL_Data_*` → `RCPL_Data_*`, `RCLPL_Show*` → `RCPL_Show*`, `RCLPL_Log` → `RCPL_Log`, etc.). No behaviour change.
 
 ### Fixed
 
@@ -38,10 +39,6 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - `Core.lua` — `/rcpl version` slash command (aliases: `ver`, `v`) queries raid/party members for their installed addon version. Sends a request via AceComm on the `RCPL_Chk` prefix, collects responses for 10 seconds, then prints a colour-coded table: green = current, yellow = outdated, orange = newer than you, grey = not installed.
-
-### Changed
-
-- Renamed internal `RCLPL` prefix to `RCPL` throughout (`RCLPL_Data_*` → `RCPL_Data_*`, `RCLPL_Show*` → `RCPL_Show*`, `LibRCLPJSON` → `LibRCPLJSON`, `RCLPL_Log` → `RCPL_Log`, etc.). No behaviour change.
 
 ### Fixed
 
