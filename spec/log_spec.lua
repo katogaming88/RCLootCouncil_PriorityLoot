@@ -13,11 +13,11 @@
 local mocks = require "spec.wow_mocks"
 
 local function reloadLogger()
-    -- log.lua sets _G.RCLPL_Log on every load; reset and reload to get a
+    -- log.lua sets _G.RCPL_Log on every load; reset and reload to get a
     -- clean buffer between tests.
-    _G.RCLPL_Log = nil
+    _G.RCPL_Log = nil
     dofile("Modules/log.lua")
-    return _G.RCLPL_Log
+    return _G.RCPL_Log
 end
 
 describe("Modules/log.lua", function()

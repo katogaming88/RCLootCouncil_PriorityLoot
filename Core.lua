@@ -102,7 +102,7 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
         ))
     else
         Log.debug("Received version %s from %s; not newer than local %s",
-            tostring(message), tostring(sender), RCLPL_VERSION)
+            tostring(message), tostring(sender), RCPL_VERSION)
     end
 end
 
