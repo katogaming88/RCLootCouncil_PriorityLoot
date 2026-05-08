@@ -14,7 +14,7 @@
 -- Persisted state lives in RCLPriorityDB.debug (boolean) and is toggled by
 -- /rcpl debug. Defaults to false.
 
-local PREFIX        = "|cFF00FF00[RCLP]|r"
+local PREFIX        = "|cFF00FF00[RCPL]|r"
 local MAX_ENTRIES   = 500
 local LEVEL_COLORS  = {
     DEBUG = "|cFFAAAAAA",

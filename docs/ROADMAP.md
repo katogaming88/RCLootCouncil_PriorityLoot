@@ -58,7 +58,7 @@ Currently `RCPL_Data_SaveImportedData` only checks types at the outer level. Off
 
 ### 1.2 Centralised logging — shipped in v0.1.7
 
-`Modules/log.lua` ships with `debug`, `info`, `warn`, `error` levels behind a chat prefix of `|cFF00FF00[RCLP]|r`. Every call records into a 500-entry in-memory ring buffer regardless of debug state; `debug` calls only mirror to chat when `RCLPriorityDB.debug` is true. New slash surface: `/rcpl debug` toggles the persisted flag, `/rcpl log` opens an AceGUI viewer over the recorded history (with `dump` and `clear` subcommands).
+`Modules/log.lua` ships with `debug`, `info`, `warn`, `error` levels behind a chat prefix of `|cFF00FF00[RCPL]|r`. Every call records into a 500-entry in-memory ring buffer regardless of debug state; `debug` calls only mirror to chat when `RCLPriorityDB.debug` is true. New slash surface: `/rcpl debug` toggles the persisted flag, `/rcpl log` opens an AceGUI viewer over the recorded history (with `dump` and `clear` subcommands).
 
 The diagnostic instrumentation in `Core.lua` covers the lifecycle (`OnInitialize`, `OnEnable`) and the comm flow (`BroadcastVersion`, `OnVersionReceived`, `OnVersionCheckMessage`). Together this is enough to see whether the version-check broadcast fires, what `IsInGuild()` reported, what comm prefixes registered, and what arrived from each sender.
 

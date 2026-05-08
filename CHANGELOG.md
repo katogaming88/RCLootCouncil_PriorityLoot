@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.11] - 2026-05-08
+
+### Fixed
+
+- `Modules/log.lua`, `Core.lua`, `docs/ROADMAP.md` - chat-log prefix corrected from `[RCLP]` to `[RCPL]` so it matches the addon's actual abbreviation (RC + PL). Missed in the v0.1.7 internal rename and the v0.1.8 `/rclp` typo sweep. Affects the central `PREFIX` constant in the logger module and six hardcoded `print()` strings in `Core.lua`'s slash-command handlers (`log show`, `log dump`, `log clear`, `log` help text, `debug` toggle, unknown-command error).
+
+---
+
 ## [0.1.10] - 2026-05-08
 
 ### Fixed
