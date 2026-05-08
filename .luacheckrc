@@ -49,6 +49,7 @@ read_globals = {
 
     -- WoW-side helpers occasionally reached for
     "GetTime", "GetServerTime", "GetRealmName", "GetLocale",
+    "IsInGuild",
     "C_Timer", "TooltipDataProcessor", "Settings", "Enum",
     "Mixin", "CreateFromMixins",
 }

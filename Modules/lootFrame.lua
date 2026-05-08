@@ -7,67 +7,55 @@ local RCLPLootFrame = RCLPAddon:NewModule("RCLPLootFrame", "AceHook-3.0", "AceTi
 
 local overlayPool = {}
 
-local function GetOrCreateOverlay(itemButton)
-    if overlayPool[itemButton] then return overlayPool[itemButton] end
-    local fs = itemButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    fs:SetPoint("TOPLEFT",  itemButton, "BOTTOMLEFT",  4, 2)
-    fs:SetPoint("TOPRIGHT", itemButton, "BOTTOMRIGHT", -4, 2)
-    fs:SetJustifyH("LEFT")
+local function GetItemIDFromLink(link)
+    return tonumber((link or ""):match("item:(%d+):"))
+end
+
+local function GetOrCreateOverlay(entry)
+    local icon = entry.icon
+    if overlayPool[icon] then return overlayPool[icon] end
+    local fs = entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    fs:SetPoint("TOP", entry.frame, "BOTTOM", 0, 12)
+    fs:SetJustifyH("CENTER")
     fs:SetText("")
-    overlayPool[itemButton] = fs
+    overlayPool[icon] = fs
     return fs
 end
 
-local function UpdateItemButton(itemButton, playerName)
-    local overlay = GetOrCreateOverlay(itemButton)
-    local itemID = itemButton.itemID
+local function UpdateEntry(entry, item, playerName)
+    local icon = entry.icon
+    if not icon then return end
+    local overlay = GetOrCreateOverlay(entry)
+
+    if not item or not item.link then overlay:SetText("") return end
+
+    local itemID = GetItemIDFromLink(item.link)
     if not itemID then overlay:SetText("") return end
 
-    local equipLoc = itemButton.equipLoc
-    if not equipLoc then
-        local _, _, _, _, _, _, _, _, eLoc = GetItemInfo(itemID)
-        equipLoc = eLoc
-    end
-
+    local equipLoc = item.equipLoc
     if not equipLoc or equipLoc == "" then overlay:SetText("") return end
 
     local text, color = RCLPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
-    if text == "N/A" then overlay:SetText("") return end
+    if text == "N/A" or text:find("wowaudit") then overlay:SetText("") return end
 
     overlay:SetTextColor(color.r, color.g, color.b)
-    overlay:SetText(text)
+    overlay:SetText("Prio: " .. text)
 end
 
-local HOOK_CANDIDATES = { "Update", "UpdateItems", "Show", "OnShow" }
-
 function RCLPLootFrame:OnInitialize()
-    local ok, lootFrame = pcall(function()
-        return addon:GetActiveModule("lootframe")
+    local ok, rcLootFrame = pcall(function()
+        return addon:GetModule("RCLootFrame")
     end)
-    if not ok or not lootFrame then return end
+    if not ok or not rcLootFrame then return end
 
-    local hookedMethod
-    for _, name in ipairs(HOOK_CANDIDATES) do
-        if type(lootFrame[name]) == "function" then
-            hookedMethod = name
-            break
-        end
-    end
-    if not hookedMethod then return end
+    local playerName = UnitName("player")
+    local realm = GetRealmName()
+    if realm and realm ~= "" then playerName = playerName .. "-" .. realm end
 
-    local playerName = UnitName("player", true)
-
-    self:SecureHook(lootFrame, hookedMethod, function(lf)
-        local buttons = lf.itemButtons or lf.buttons
-        if type(buttons) ~= "table" then return end
-        for _, btn in ipairs(buttons) do
-            if btn and btn:IsVisible() then
-                local ok2 = pcall(UpdateItemButton, btn, playerName)
-                if not ok2 then
-                    local ov = overlayPool[btn]
-                    if ov then ov:SetText("") end
-                end
-            end
+    self:SecureHook(rcLootFrame.EntryManager, "GetEntry", function(em, item)
+        local entry = em.entries[item]
+        if type(entry) == "table" then
+            pcall(UpdateEntry, entry, item, playerName)
         end
     end)
 end

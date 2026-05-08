@@ -11,6 +11,30 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.5] - 2026-05-05
+
+### Fixed
+
+- `Modules/lootFrame.lua` — rewrote hook to match the actual RCLootCouncil loot frame structure. Now hooks `RCLootFrame.EntryManager:GetEntry` (fires per-item as each entry is set up) instead of `Update` (fired only once on open). Extracts itemID via pattern match on the item link rather than `C_Item.GetItemInfoInstant` to avoid cache-miss failures.
+- `Modules/lootFrame.lua` — overlay now correctly appears. `UpdateEntry` was reading `entry.item`, which is `nil` when the `GetEntry` hook fires (assigned inside `entry:Update(item)`, called within `GetEntry`). The hook now passes the `item` parameter directly.
+- `Modules/lootFrame.lua` — player name is now realm-qualified (`UnitName("player") .. "-" .. GetRealmName()`) to match the `Playername-Realm` keys stored in `RCLPriorityDB`.
+
+### Changed
+
+- `Modules/lootFrame.lua` — priority overlay on the loot frame now shows `Prio: 1st`, `Prio: 7th`, etc. so the label is self-explanatory without surrounding context. The voting frame column continues to show bare ordinals (`1st`, `2nd`) since the column header already reads `Priority`.
+- `Modules/lootFrame.lua` — secondary-slot items (cloak, bracers, belt, boots) now show nothing on the loot frame instead of the raw wowaudit deferral message.
+- `Modules/lootFrame.lua` — priority overlay repositioned to centered below the full loot frame row.
+
+---
+
+## [0.1.4] - 2026-05-04
+
+### Added
+
+- `Core.lua` — guild version-check broadcast: 5 seconds after login the addon announces its version to the GUILD channel via AceComm-3.0. When a guildmate's broadcast carries a higher version, a one-time orange chat message names the sender, their version, your version, and the GitHub repo URL. The addon also replies once when it first receives any guildmate's broadcast, so players already online see your version even when they logged in before you.
+
+---
+
 ## [0.1.3] - 2026-05-04
 
 ### Fixed
