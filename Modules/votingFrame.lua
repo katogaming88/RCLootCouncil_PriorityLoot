@@ -22,7 +22,7 @@ end
 function RCLPVotingFrame:InjectColumn()
     -- Guard against double injection if OnEnable is ever called more than once.
     for _, col in ipairs(RCVotingFrame.scrollCols) do
-        if col.colName == "rclpl_priority" then return end
+        if col.colName == "RCPL_priority" then return end
     end
 
     -- Insert before the wowaudit wishlist column; fall back to position 8
@@ -40,7 +40,7 @@ function RCLPVotingFrame:InjectColumn()
         width        = 60,
         align        = "CENTER",
         DoCellUpdate = RCLPVotingFrame.SetCellPriority,
-        colName      = "rclpl_priority",
+        colName      = "RCPL_priority",
     })
 
     local f = RCVotingFrame.frame
@@ -91,7 +91,7 @@ function RCLPVotingFrame.SetCellPriority(rowFrame, frame, data, cols, row, realr
         return
     end
 
-    local text, color = RCLPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
+    local text, color = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
 
     local sortValue = 0
     local rankNum = tonumber(text:match("^(%d+)"))

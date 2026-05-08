@@ -2,10 +2,10 @@
 -- Centralised logging for RCLootCouncil_PriorityLoot.
 --
 -- API:
---   RCLPL_Log.debug(fmt, ...)  -- only emitted to chat when RCLPriorityDB.debug = true
---   RCLPL_Log.info(fmt, ...)
---   RCLPL_Log.warn(fmt, ...)
---   RCLPL_Log.error(fmt, ...)
+--   RCPL_Log.debug(fmt, ...)  -- only emitted to chat when RCLPriorityDB.debug = true
+--   RCPL_Log.info(fmt, ...)
+--   RCPL_Log.warn(fmt, ...)
+--   RCPL_Log.error(fmt, ...)
 --
 -- Every call records into an in-memory ring buffer regardless of debug state,
 -- so /rcpl log show can replay the recent history even when debug is off.
@@ -131,4 +131,4 @@ function Log.Show()
     frame:AddChild(box)
 end
 
-_G.RCLPL_Log = Log
+_G.RCPL_Log = Log

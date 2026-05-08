@@ -47,7 +47,7 @@ Three real fixes in current behaviour. Ship in this order.
 ### 1.1 Strict import-string schema validation
 Branch: `feat/strict-import-validation` · Version: patch
 
-Currently `RCLPL_Data_SaveImportedData` only checks types at the outer level. Officers paste user-shaped data; bad nested shapes drop silently with no feedback.
+Currently `RCPL_Data_SaveImportedData` only checks types at the outer level. Officers paste user-shaped data; bad nested shapes drop silently with no feedback.
 
 - Validate each `players[name][slotKey].bis` entry: array of integers, length up to 10, slot key in known set.
 - Validate each `priority[itemID]` entry: itemID is a numeric string, list is array of strings matching `Name-Realm` format.

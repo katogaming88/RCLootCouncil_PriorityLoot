@@ -1,6 +1,6 @@
 -- spec/data_db_spec.lua
 --
--- Exhaustive coverage of RCLPL_Data_GetPlayerPriority - the central
+-- Exhaustive coverage of RCPL_Data_GetPlayerPriority - the central
 -- resolver used by both votingFrame.lua and lootFrame.lua.
 --
 -- The resolver lives in Data/db.lua and walks two layers of saved data:
@@ -15,7 +15,7 @@
 
 local mocks = require "spec.wow_mocks"
 
-describe("RCLPL_Data_GetPlayerPriority", function()
+describe("RCPL_Data_GetPlayerPriority", function()
     setup(function()
         mocks.loadAddonSources()
     end)
@@ -29,23 +29,23 @@ describe("RCLPL_Data_GetPlayerPriority", function()
 
     it("returns N/A grey when SavedVariable is absent entirely", function()
         _G.RCLPriorityDB = nil
-        local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD")
+        local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD")
         assert.equals("N/A", text)
         assert.equals(0.6, color.r)  -- grey
     end)
 
     it("returns N/A grey when playerName is not a string", function()
-        local text = RCLPL_Data_GetPlayerPriority(nil, 12345, "INVTYPE_HEAD")
+        local text = RCPL_Data_GetPlayerPriority(nil, 12345, "INVTYPE_HEAD")
         assert.equals("N/A", text)
     end)
 
     it("returns N/A grey when equipLoc is unknown", function()
-        local text = RCLPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_GARBAGE")
+        local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_GARBAGE")
         assert.equals("N/A", text)
     end)
 
     it("returns N/A grey when player has no entry", function()
-        local text = RCLPL_Data_GetPlayerPriority("Bob-Realm", 12345, "INVTYPE_HEAD")
+        local text = RCPL_Data_GetPlayerPriority("Bob-Realm", 12345, "INVTYPE_HEAD")
         assert.equals("N/A", text)
     end)
 
@@ -54,7 +54,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
     it("returns wowaudit-defer message for cloak/wrist/waist/feet", function()
         local secondaries = { "INVTYPE_CLOAK", "INVTYPE_WRIST", "INVTYPE_WAIST", "INVTYPE_FEET" }
         for _, equipLoc in ipairs(secondaries) do
-            local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 999, equipLoc)
+            local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, equipLoc)
             assert.matches("wowaudit", text)
             assert.equals(0.6, color.r)  -- grey
         end
@@ -70,21 +70,21 @@ describe("RCLPL_Data_GetPlayerPriority", function()
         end)
 
         it("returns 1st green for the rank-1 player", function()
-            local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD")
+            local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD")
             assert.equals("1st", text)
             assert.equals(0.0, color.r)
             assert.equals(1.0, color.g)
         end)
 
         it("returns 2nd yellow for the rank-2 player", function()
-            local text, color = RCLPL_Data_GetPlayerPriority("Bob-Realm", 12345, "INVTYPE_HEAD")
+            local text, color = RCPL_Data_GetPlayerPriority("Bob-Realm", 12345, "INVTYPE_HEAD")
             assert.equals("2nd", text)
             assert.equals(1.0, color.r)
             assert.equals(1.0, color.g)
         end)
 
         it("returns 3rd orange for the rank-3 player", function()
-            local text, color = RCLPL_Data_GetPlayerPriority("Carol-Realm", 12345, "INVTYPE_HEAD")
+            local text, color = RCPL_Data_GetPlayerPriority("Carol-Realm", 12345, "INVTYPE_HEAD")
             assert.equals("3rd", text)
             assert.equals(1.0, color.r)
             assert.equals(0.5, color.g)
@@ -97,7 +97,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
             _G.RCLPriorityDB.players["Dave-Realm"] = {
                 helm = { bis = { 12345 } },
             }
-            local text = RCLPL_Data_GetPlayerPriority("Dave-Realm", 12345, "INVTYPE_HEAD")
+            local text = RCPL_Data_GetPlayerPriority("Dave-Realm", 12345, "INVTYPE_HEAD")
             assert.equals("N/A", text)
         end)
 
@@ -105,7 +105,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
             _G.RCLPriorityDB.priority["7"] = {
                 "P1", "P2", "P3", "P4", "P5",
             }
-            local text = RCLPL_Data_GetPlayerPriority("P5", 7, "INVTYPE_HEAD")
+            local text = RCPL_Data_GetPlayerPriority("P5", 7, "INVTYPE_HEAD")
             assert.equals("5th", text)
         end)
     end)
@@ -117,7 +117,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
             _G.RCLPriorityDB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
-            local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_HEAD")
+            local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_HEAD")
             assert.equals("1st", text)
             assert.equals(1.0, color.g)
         end)
@@ -126,7 +126,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
             _G.RCLPriorityDB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
-            local text = RCLPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_HEAD")
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_HEAD")
             assert.equals("2nd", text)
         end)
 
@@ -134,7 +134,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
             _G.RCLPriorityDB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
-            local text, color = RCLPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_HEAD")
+            local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_HEAD")
             assert.equals("3rd", text)
             assert.equals(0.5, color.g)
         end)
@@ -143,7 +143,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
             _G.RCLPriorityDB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200 } } },
             }
-            local text = RCLPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_HEAD")
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_HEAD")
             assert.equals("N/A", text)
         end)
 
@@ -151,7 +151,7 @@ describe("RCLPL_Data_GetPlayerPriority", function()
             _G.RCLPriorityDB.players = {
                 ["Alice-Realm"] = { helm = nil },
             }
-            local text = RCLPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_HEAD")
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_HEAD")
             assert.equals("N/A", text)
         end)
     end)
@@ -166,11 +166,11 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                     ring2 = { bis = { 300, 400 } },
                 },
             }
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_FINGER"))
-            assert.equals("2nd", RCLPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_FINGER"))
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_FINGER"))
-            assert.equals("2nd", RCLPL_Data_GetPlayerPriority("Alice-Realm", 400, "INVTYPE_FINGER"))
-            assert.equals("N/A", RCLPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_FINGER"))
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_FINGER"))
+            assert.equals("2nd", RCPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_FINGER"))
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_FINGER"))
+            assert.equals("2nd", RCPL_Data_GetPlayerPriority("Alice-Realm", 400, "INVTYPE_FINGER"))
+            assert.equals("N/A", RCPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_FINGER"))
         end)
 
         it("checks both trinket1 and trinket2 for INVTYPE_TRINKET", function()
@@ -180,8 +180,8 @@ describe("RCLPL_Data_GetPlayerPriority", function()
                     trinket2 = { bis = { 60 } },
                 },
             }
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 50, "INVTYPE_TRINKET"))
-            assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 60, "INVTYPE_TRINKET"))
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 50, "INVTYPE_TRINKET"))
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 60, "INVTYPE_TRINKET"))
         end)
     end)
 
@@ -191,23 +191,23 @@ describe("RCLPL_Data_GetPlayerPriority", function()
         _G.RCLPriorityDB.players = {
             ["Alice-Realm"] = { mh2h = { bis = { 77 } } },
         }
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_2HWEAPON"))
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPON"))
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPONMAINHAND"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_2HWEAPON"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPON"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_WEAPONMAINHAND"))
     end)
 
     it("maps INVTYPE_WEAPONOFFHAND to oh", function()
         _G.RCLPriorityDB.players = {
             ["Alice-Realm"] = { oh = { bis = { 88 } } },
         }
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 88, "INVTYPE_WEAPONOFFHAND"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 88, "INVTYPE_WEAPONOFFHAND"))
     end)
 
     it("maps INVTYPE_ROBE and INVTYPE_CHEST both to chest", function()
         _G.RCLPriorityDB.players = {
             ["Alice-Realm"] = { chest = { bis = { 42 } } },
         }
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_CHEST"))
-        assert.equals("1st", RCLPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_ROBE"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_CHEST"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_ROBE"))
     end)
 end)

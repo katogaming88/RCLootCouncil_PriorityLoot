@@ -45,7 +45,7 @@ read_globals = {
     "LibStub",
 
     -- Project libs (declared in .toc, exposed as globals)
-    "LibRCLPJSON",
+    "LibRCPLJSON",
 
     -- WoW-side helpers occasionally reached for
     "GetTime", "GetServerTime", "GetRealmName", "GetLocale",
@@ -68,14 +68,14 @@ globals = {
 
     -- Public functions surfaced as globals (called from Core.lua slash handler
     -- and from each other across module boundaries)
-    "RCLPL_Data_SaveImportedData",
-    "RCLPL_Data_GetPlayerPriority",
-    "RCLPL_Data_ResetData",
-    "RCLPL_ShowImportFrame",
-    "RCLPL_ShowPrioPreview",
+    "RCPL_Data_SaveImportedData",
+    "RCPL_Data_GetPlayerPriority",
+    "RCPL_Data_ResetData",
+    "RCPL_ShowImportFrame",
+    "RCPL_ShowPrioPreview",
 
     -- Centralised logger (Modules/log.lua); used across Core.lua and modules
-    "RCLPL_Log",
+    "RCPL_Log",
 }
 
 -- ── Per-file overrides --------------------------------------------------------

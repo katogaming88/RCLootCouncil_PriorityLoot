@@ -37,7 +37,7 @@ end
 local importFrame
 
 local function CreateImportFrame()
-    local f = CreateFrame("Frame", "RCLPL_ImportFrame", UIParent, "BasicFrameTemplateWithInset")
+    local f = CreateFrame("Frame", "RCPL_ImportFrame", UIParent, "BasicFrameTemplateWithInset")
     f:SetSize(500, 340)
     f:SetPoint("CENTER")
     f:SetMovable(true)
@@ -56,11 +56,11 @@ local function CreateImportFrame()
     label:SetJustifyH("LEFT")
     label:SetText("Paste the Base64-encoded priority export string below, then click Confirm.")
 
-    local scrollFrame = CreateFrame("ScrollFrame", "RCLPL_ImportScroll", f, "UIPanelScrollFrameTemplate")
+    local scrollFrame = CreateFrame("ScrollFrame", "RCPL_ImportScroll", f, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT",     f.InsetBg, "TOPLEFT",     10, -34)
     scrollFrame:SetPoint("BOTTOMRIGHT", f.InsetBg, "BOTTOMRIGHT", -28, 40)
 
-    local editBox = CreateFrame("EditBox", "RCLPL_ImportEditBox", scrollFrame)
+    local editBox = CreateFrame("EditBox", "RCPL_ImportEditBox", scrollFrame)
     editBox:SetFontObject(ChatFontNormal)
     editBox:SetMultiLine(true)
     editBox:SetAutoFocus(false)
@@ -76,7 +76,7 @@ local function CreateImportFrame()
     statusText:SetJustifyH("LEFT")
     statusText:SetText("")
 
-    local confirmBtn = CreateFrame("Button", "RCLPL_ImportConfirmBtn", f, "UIPanelButtonTemplate")
+    local confirmBtn = CreateFrame("Button", "RCPL_ImportConfirmBtn", f, "UIPanelButtonTemplate")
     confirmBtn:SetSize(80, 22)
     confirmBtn:SetPoint("BOTTOMRIGHT", f.InsetBg, "BOTTOMRIGHT", -4, 6)
     confirmBtn:SetText("Confirm")
@@ -94,13 +94,13 @@ local function CreateImportFrame()
             return
         end
 
-        local ok, decoded = pcall(function() return LibRCLPJSON:decode(jsonStr) end)
+        local ok, decoded = pcall(function() return LibRCPLJSON:decode(jsonStr) end)
         if not ok or type(decoded) ~= "table" then
             statusText:SetText("|cFFFF4444JSON parse error. Check your export string.|r")
             return
         end
 
-        local playerCount, priorityCount = RCLPL_Data_SaveImportedData(decoded)
+        local playerCount, priorityCount = RCPL_Data_SaveImportedData(decoded)
         if playerCount == 0 then
             statusText:SetText("|cFFFF4444Import succeeded but contained no player entries.|r")
         else
@@ -124,7 +124,7 @@ local function CreateImportFrame()
     return f
 end
 
-function RCLPL_ShowImportFrame()
+function RCPL_ShowImportFrame()
     if not importFrame then importFrame = CreateImportFrame() end
     if importFrame:IsShown() then
         importFrame:Hide()

@@ -46,7 +46,7 @@ local function RankColor(rank)
     end
 end
 
-function RCLPL_Data_SaveImportedData(decoded)
+function RCPL_Data_SaveImportedData(decoded)
     if type(decoded) ~= "table" or type(decoded.players) ~= "table" then
         print("|cFFFF4444[RCLootCouncil_PriorityLoot]|r Import failed: invalid data structure.")
         return 0, 0
@@ -78,7 +78,7 @@ function RCLPL_Data_SaveImportedData(decoded)
     return playerCount, priorityCount
 end
 
-function RCLPL_Data_ResetData()
+function RCPL_Data_ResetData()
     if type(RCLPriorityDB) == "table" then
         RCLPriorityDB.players    = {}
         RCLPriorityDB.priority   = {}
@@ -86,7 +86,7 @@ function RCLPL_Data_ResetData()
     end
 end
 
-function RCLPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
+function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
     if type(RCLPriorityDB) ~= "table"
     or type(RCLPriorityDB.players) ~= "table"
     or type(playerName) ~= "string"
