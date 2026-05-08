@@ -11,6 +11,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.6] - 2026-05-08
+
+### Added
+
+- `Core.lua` — `/rcpl version` slash command (aliases: `ver`, `v`) queries raid/party members for their installed addon version. Sends a request via AceComm on the `RCLPL_Chk` prefix, collects responses for 10 seconds, then prints a colour-coded table: green = current, yellow = outdated, orange = newer than you, grey = not installed.
+
+### Fixed
+
+- `Core.lua` — `OnEnable` was never firing because RCLootCouncil sets `defaultModuleState = false` for all sub-modules. Added `RCLPAddon:SetEnabledState(true)` immediately after `NewModule`. This was silently preventing the guild version-check broadcast from ever running since v0.1.4.
+
+---
+
 ## [0.1.5] - 2026-05-05
 
 ### Fixed
