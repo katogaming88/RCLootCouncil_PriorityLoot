@@ -10,7 +10,7 @@ RCLPAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCLPAddon
 
-local RCPL_VERSION       = "0.1.7"
+local RCPL_VERSION       = "0.1.9"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
