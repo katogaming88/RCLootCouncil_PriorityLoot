@@ -80,79 +80,89 @@ Verify the same way as on Linux.
 
 ---
 
-## Windows (MSYS2 / Git Bash)
+## Windows (Git Bash)
 
-This is the trickiest path. Skip `chocolatey`'s `lua` package: its bundled LuaRocks 2.x cannot parse modern dependency specifications, and the Lua `.lib` files are MSVC-format which MinGW cannot link against.
+This is the trickiest path. Skip `chocolatey`'s `lua` package: its bundled LuaRocks 2.x cannot parse modern dependency specifications.
 
 ### Step 1: Install Lua 5.1 + LuaRocks via the Win32 legacy bundle
 
-Download the latest `LuaRocks-X.Y.Z-windows-32.zip` (the "legacy" Win32 bundle that includes Lua 5.1) from <https://luarocks.org/wiki/rocks/show?package=luarocks>. Extract to `C:\LuaRocks\`.
+Go to <https://luarocks.github.io/luarocks/releases/> and download the file labeled **"legacy Windows package, includes Lua 5.1"** — it looks like `luarocks-X.Y.Z-win32.zip`. Do **not** download the `windows-32.zip` or `windows-64.zip` variants; those are standalone `luarocks.exe` only, with no Lua bundled.
 
-The bundle gives you:
+Extract the zip to a temporary location (e.g. `C:\Users\<you>\Downloads\luarocks-X.Y.Z-win32`). Then open a `cmd` window and run the installer targeting `C:\LuaRocks`:
 
-- `C:\LuaRocks\lua5.1.exe` (no plain `lua.exe`)
-- `C:\LuaRocks\luarocks.bat`
-- `C:\LuaRocks\bin\` for installed rock binaries (`luacheck.bat`, `busted.bat`, etc.)
+```cmd
+cd C:\Users\<you>\Downloads\luarocks-X.Y.Z-win32
+install.bat /L /SELFCONTAINED /P C:\LuaRocks
+```
 
-### Step 2: Install MSVC build tools
+The `/L` flag tells the installer to use the bundled Lua 5.1. The installer will print the detected paths and prompt you to press `<ENTER>`.
 
-You need `cl.exe` on `PATH` so LuaRocks can compile rocks that have C dependencies.
+After installation, add both entries to your Windows user `PATH` (Win+R → `sysdm.cpl` → Advanced → Environment Variables → User variables → Path → Edit → New):
 
-1. Install Visual Studio 2022 Build Tools (free).
-2. **Always launch a "Developer Command Prompt for VS 2022"** before running `luarocks install`. This sets up `cl.exe` and the right environment variables. Do not run installs from a regular `cmd` or Git Bash window.
+```
+C:\LuaRocks
+C:\LuaRocks\systree\bin
+```
+
+Open a fresh `cmd` window and verify:
+
+```cmd
+lua5.1 -v   # Lua 5.1.5
+```
+
+### Step 2: Install Visual Studio Build Tools
+
+You need `cl.exe` on `PATH` so LuaRocks can compile rocks that have C dependencies (`luafilesystem`, `luasystem`).
+
+1. Download and install **Visual Studio Build Tools** (free) from <https://visualstudio.microsoft.com/downloads/> — look under "Tools for Visual Studio".
+2. During installation select the **"Desktop development with C++"** workload.
+3. **Always launch a "Developer Command Prompt"** before running `luarocks install`. This sets up `cl.exe` and the right environment variables. Do not run installs from a regular `cmd` or Git Bash window.
 
 ### Step 3: Install luacheck and busted
 
-From a Developer Command Prompt for VS 2022:
+From a Developer Command Prompt:
 
 ```cmd
-cd C:\LuaRocks
 luarocks install luacheck
 luarocks install busted
 ```
 
-This drops `.bat` shims in `C:\LuaRocks\bin\`.
+### Step 4: Make Lua, luacheck, and busted runnable from Git Bash
 
-### Step 4: Make Lua, luacheck, and busted runnable from Git Bash / MSYS2
+The `.bat` shims that LuaRocks installs **do not work reliably from Git Bash** (`cmd.exe` invocation, path translation, and exit-code handling all fight each other). The fix is to write thin bash wrappers in `~/bin/` (which is on `PATH` for Git Bash via `/etc/profile.d/env.sh`, even in environments that do not source `~/.bashrc`).
 
-The `.bat` shims that LuaRocks installs **do not work reliably from MSYS2 / Git Bash** (`cmd.exe` invocation, path translation, and exit-code handling all fight each other). The fix is to write thin bash wrappers in `~/bin/` (which is on `PATH` for Git Bash via `/etc/profile.d/env.sh`, even in environments that do not source `~/.bashrc`).
-
-Create `~/bin/lua`:
+In a Git Bash window, create the wrappers using heredocs (copy-paste each block as-is — do not type the shebang line directly into the terminal):
 
 ```bash
+mkdir -p ~/bin
+
+cat > ~/bin/lua << 'EOF'
 #!/usr/bin/env bash
 exec /c/LuaRocks/lua5.1.exe "$@"
-```
+EOF
 
-Create `~/bin/luacheck`:
-
-```bash
+cat > ~/bin/luacheck << 'EOF'
 #!/usr/bin/env bash
 LUACHECK_VERSION="1.2.0-1"  # update after `luarocks install luacheck` upgrades
 exec /c/LuaRocks/lua5.1.exe \
   -e "package.path = 'C:/LuaRocks/systree/share/lua/5.1/?.lua;C:/LuaRocks/systree/share/lua/5.1/?/init.lua;' .. package.path" \
   -e "package.cpath = 'C:/LuaRocks/systree/lib/lua/5.1/?.dll;' .. package.cpath" \
-  /c/LuaRocks/systree/lib/luarocks/rocks-5.1/luacheck/${LUACHECK_VERSION}/bin/luacheck.lua "$@"
-```
+  /c/LuaRocks/systree/lib/luarocks/rocks-5.1/luacheck/${LUACHECK_VERSION}/bin/luacheck "$@"
+EOF
 
-Create `~/bin/busted`:
-
-```bash
+cat > ~/bin/busted << 'EOF'
 #!/usr/bin/env bash
-BUSTED_VERSION="2.2.0-1"  # update after `luarocks install busted` upgrades
+BUSTED_VERSION="2.3.0-1"  # update after `luarocks install busted` upgrades
 exec /c/LuaRocks/lua5.1.exe \
   -e "package.path = 'C:/LuaRocks/systree/share/lua/5.1/?.lua;C:/LuaRocks/systree/share/lua/5.1/?/init.lua;' .. package.path" \
   -e "package.cpath = 'C:/LuaRocks/systree/lib/lua/5.1/?.dll;' .. package.cpath" \
   /c/LuaRocks/systree/lib/luarocks/rocks-5.1/busted/${BUSTED_VERSION}/bin/busted "$@"
-```
+EOF
 
-Make them executable:
-
-```bash
 chmod +x ~/bin/lua ~/bin/luacheck ~/bin/busted
 ```
 
-The version suffixes (`1.2.0-1`, `2.2.0-1`) are the LuaRocks rock versions and **must match what was installed**. Check `ls /c/LuaRocks/systree/lib/luarocks/rocks-5.1/luacheck/` to find the actual version string. After running `luarocks install <pkg>` to upgrade, update the variable at the top of each shim.
+The version suffixes (`1.2.0-1`, `2.3.0-1`) are the LuaRocks rock versions and **must match what was installed**. Check `ls /c/LuaRocks/systree/lib/luarocks/rocks-5.1/luacheck/` to find the actual version string. After running `luarocks install <pkg>` to upgrade, update the variable at the top of each shim.
 
 ### Step 5: Verify
 
@@ -161,7 +171,7 @@ In a fresh Git Bash window:
 ```bash
 lua -v             # Lua 5.1.5  Copyright (C) 1994-2012 Lua.org, PUC-Rio
 luacheck --version # Luacheck: 1.2.0
-busted --version   # 2.2.0
+busted --version   # 2.3.0
 ```
 
 Then from the repo root:
