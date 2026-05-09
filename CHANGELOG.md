@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.13] - 2026-05-08
+
+### Fixed
+
+- `Core.lua` - removed the duplicate `Log.info` chat line that fired alongside the orange out-of-date warning at line 107. Demoted to `Log.debug` so the diagnostic still records into the `/rcpl log` ring buffer but only mirrors to chat when `/rcpl debug on` is set. Behind-version players now see exactly one warning line on login or `/reload` instead of two adjacent lines repeating the same information. Every other diagnostic in `OnVersionReceived`, `BroadcastVersion`, and `OnVersionCheckMessage` already used `Log.debug`; this was the only `Log.info` call in the codebase and the level mismatch is what produced the duplicate.
+
+---
+
 ## [0.1.12] - 2026-05-08
 
 ### Changed

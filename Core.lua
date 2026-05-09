@@ -10,7 +10,7 @@ RCPLAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCPLAddon
 
-local RCPL_VERSION       = "0.1.12"
+local RCPL_VERSION       = "0.1.13"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -104,7 +104,7 @@ function RCPLAddon:OnVersionReceived(prefix, message, distribution, sender)
     if versionWarned then return end
     if IsNewer(RCPL_VERSION, message) then
         versionWarned = true
-        Log.info("Newer version detected from %s: %s (you have %s)",
+        Log.debug("Newer version detected from %s: %s (you have %s)",
             tostring(sender), tostring(message), RCPL_VERSION)
         print(string.format(
             "|cFFFF8000[RCLootCouncil_PriorityLoot]|r %s has version %s (you have %s)." ..
