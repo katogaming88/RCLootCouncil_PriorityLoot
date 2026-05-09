@@ -10,7 +10,7 @@ local frame
 -- ── Frame construction ────────────────────────────────────────────────────────
 
 local function Build()
-    frame = CreateFrame("Frame", "RCLPPrioPreviewFrame", UIParent, "BackdropTemplate")
+    frame = CreateFrame("Frame", "RCPLPrioPreviewFrame", UIParent, "BackdropTemplate")
     frame:SetSize(500, 540)
     frame:SetPoint("CENTER")
     frame:SetBackdrop({
@@ -40,7 +40,7 @@ local function Build()
     frame.subtitle = sub
 
     -- Scroll frame (provides scrollbar via template)
-    local scrollFrame = CreateFrame("ScrollFrame", "RCLPPrioScrollFrame", frame, "UIPanelScrollFrameTemplate")
+    local scrollFrame = CreateFrame("ScrollFrame", "RCPLPrioScrollFrame", frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT",     frame, "TOPLEFT",     12,  -52)
     scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30,  12)
     scrollFrame:EnableMouseWheel(true)
@@ -91,13 +91,13 @@ local function Populate()
         add("|cFF555555" .. string.rep("-", 56) .. "|r")
     end
 
-    if type(RCLPriorityDB) ~= "table" then
+    if type(RCPL_DB) ~= "table" then
         frame.subtitle:SetText("No data imported.")
         add("|cFFFF6666No priority data found.|r  Use /rcpl import to load data.")
     else
-        local importedAt  = RCLPriorityDB.importedAt or "unknown"
-        local priority    = type(RCLPriorityDB.priority) == "table" and RCLPriorityDB.priority or {}
-        local players     = type(RCLPriorityDB.players)  == "table" and RCLPriorityDB.players  or {}
+        local importedAt  = RCPL_DB.importedAt or "unknown"
+        local priority    = type(RCPL_DB.priority) == "table" and RCPL_DB.priority or {}
+        local players     = type(RCPL_DB.players)  == "table" and RCPL_DB.players  or {}
 
         local itemCount, playerCount = 0, 0
         for _ in pairs(priority) do itemCount   = itemCount   + 1 end

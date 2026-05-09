@@ -2,7 +2,7 @@
 -- Centralised logging for RCLootCouncil_PriorityLoot.
 --
 -- API:
---   RCPL_Log.debug(fmt, ...)  -- only emitted to chat when RCLPriorityDB.debug = true
+--   RCPL_Log.debug(fmt, ...)  -- only emitted to chat when RCPL_DB.debug = true
 --   RCPL_Log.info(fmt, ...)
 --   RCPL_Log.warn(fmt, ...)
 --   RCPL_Log.error(fmt, ...)
@@ -11,7 +11,7 @@
 -- so /rcpl log show can replay the recent history even when debug is off.
 -- Entries are volatile; the buffer resets on /reload.
 --
--- Persisted state lives in RCLPriorityDB.debug (boolean) and is toggled by
+-- Persisted state lives in RCPL_DB.debug (boolean) and is toggled by
 -- /rcpl debug. Defaults to false.
 
 local PREFIX        = "|cFF00FF00[RCPL]|r"
@@ -43,7 +43,7 @@ local function record(level, message)
 end
 
 local function debugEnabled()
-    return type(RCLPriorityDB) == "table" and RCLPriorityDB.debug == true
+    return type(RCPL_DB) == "table" and RCPL_DB.debug == true
 end
 
 local function emit(level, fmt, ...)
@@ -72,9 +72,9 @@ function Log.IsDebugOn()
 end
 
 function Log.SetDebug(enabled)
-    if type(RCLPriorityDB) ~= "table" then RCLPriorityDB = {} end
-    RCLPriorityDB.debug = (enabled and true) or false
-    return RCLPriorityDB.debug
+    if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
+    RCPL_DB.debug = (enabled and true) or false
+    return RCPL_DB.debug
 end
 
 function Log.ToggleDebug()

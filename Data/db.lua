@@ -52,14 +52,14 @@ function RCPL_Data_SaveImportedData(decoded)
         return 0, 0
     end
 
-    if type(RCLPriorityDB) ~= "table" then RCLPriorityDB = {} end
-    RCLPriorityDB.players  = {}
-    RCLPriorityDB.priority = {}
+    if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
+    RCPL_DB.players  = {}
+    RCPL_DB.priority = {}
 
     local playerCount = 0
     for playerKey, slots in pairs(decoded.players) do
         if type(playerKey) == "string" and type(slots) == "table" then
-            RCLPriorityDB.players[playerKey] = slots
+            RCPL_DB.players[playerKey] = slots
             playerCount = playerCount + 1
         end
     end
@@ -68,27 +68,27 @@ function RCPL_Data_SaveImportedData(decoded)
     if type(decoded.priority) == "table" then
         for itemIDStr, playerList in pairs(decoded.priority) do
             if type(playerList) == "table" then
-                RCLPriorityDB.priority[itemIDStr] = playerList
+                RCPL_DB.priority[itemIDStr] = playerList
                 priorityCount = priorityCount + 1
             end
         end
     end
 
-    RCLPriorityDB.importedAt = date("%Y-%m-%d %H:%M")
+    RCPL_DB.importedAt = date("%Y-%m-%d %H:%M")
     return playerCount, priorityCount
 end
 
 function RCPL_Data_ResetData()
-    if type(RCLPriorityDB) == "table" then
-        RCLPriorityDB.players    = {}
-        RCLPriorityDB.priority   = {}
-        RCLPriorityDB.importedAt = nil
+    if type(RCPL_DB) == "table" then
+        RCPL_DB.players    = {}
+        RCPL_DB.priority   = {}
+        RCPL_DB.importedAt = nil
     end
 end
 
 function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
-    if type(RCLPriorityDB) ~= "table"
-    or type(RCLPriorityDB.players) ~= "table"
+    if type(RCPL_DB) ~= "table"
+    or type(RCPL_DB.players) ~= "table"
     or type(playerName) ~= "string"
     then
         return "N/A", COLOR_GREY
@@ -103,8 +103,8 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
         return "N/A", COLOR_GREY
     end
 
-    if type(RCLPriorityDB.priority) == "table" then
-        local priorityList = RCLPriorityDB.priority[tostring(itemID)]
+    if type(RCPL_DB.priority) == "table" then
+        local priorityList = RCPL_DB.priority[tostring(itemID)]
         if type(priorityList) == "table" then
             for rank, name in ipairs(priorityList) do
                 if name == playerName then
@@ -115,7 +115,7 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
         end
     end
 
-    local playerData = RCLPriorityDB.players[playerName]
+    local playerData = RCPL_DB.players[playerName]
     if type(playerData) ~= "table" then
         return "N/A", COLOR_GREY
     end

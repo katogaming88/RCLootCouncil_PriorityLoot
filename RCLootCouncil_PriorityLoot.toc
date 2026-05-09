@@ -2,9 +2,9 @@
 ## Title: RCLootCouncil - Priority Loot
 ## Notes: Displays BiS loot priority data in the RCLootCouncil voting and loot frames.
 ## Author:
-## Version: 0.1.11
+## Version: 0.1.12
 ## Dependencies: RCLootCouncil
-## SavedVariables: RCLPriorityDB
+## SavedVariables: RCPL_DB
 
 Libs\LibJSON.lua
 Modules\log.lua

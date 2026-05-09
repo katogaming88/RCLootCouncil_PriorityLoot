@@ -26,7 +26,7 @@ labels: bug
 
 ## Saved data
 
-<!-- If the bug relates to imported data, paste the relevant slice of RCLPriorityDB
+<!-- If the bug relates to imported data, paste the relevant slice of RCPL_DB
 (found in WTF/Account/<acct>/SavedVariables/RCLootCouncil_PriorityLoot.lua).
 Redact realm/character names if you prefer. -->
 

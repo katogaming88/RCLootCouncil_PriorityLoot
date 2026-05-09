@@ -56,7 +56,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 | `/rcpl prio` | Open a scrollable preview of all imported priority data (toggle). |
 | `/rcpl reset` | Wipe all stored priority data from SavedVariables. |
 | `/rcpl version` | Check addon versions across your raid or party. Aliases: `ver`, `v`. |
-| `/rcpl debug` | Toggle debug logging on or off. Persisted across sessions in `RCLPriorityDB.debug`. Accepts `on`, `off`, `1`, `0`. |
+| `/rcpl debug` | Toggle debug logging on or off. Persisted across sessions in `RCPL_DB.debug`. Accepts `on`, `off`, `1`, `0`. |
 | `/rcpl log` | Open the in-memory log window. Subcommands: `dump` (prints to chat), `clear` (empties the buffer). |
 | `/rcpl` | Print command usage. |
 
@@ -160,7 +160,7 @@ The Google Apps Script that produces the import string lives inside the Priority
 
 ## SavedVariables
 
-Data is stored in `RCLPriorityDB` (declared in `.toc`). WoW persists this table automatically between sessions per account. Use `/rcpl reset` to wipe it, or delete the entry from your `WTF/` saved variables file manually.
+Data is stored in `RCPL_DB` (declared in `.toc`). WoW persists this table automatically between sessions per account. Use `/rcpl reset` to wipe it, or delete the entry from your `WTF/` saved variables file manually.
 
 ---
 

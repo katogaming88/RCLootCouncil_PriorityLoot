@@ -3,14 +3,14 @@
 -- following the same pattern as RCLootCouncil_wowaudit.
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
-local RCLPAddon = addon:NewModule("RCLootCouncil_PriorityLoot", "AceTimer-3.0", "AceComm-3.0")
+local RCPLAddon = addon:NewModule("RCLootCouncil_PriorityLoot", "AceTimer-3.0", "AceComm-3.0")
 -- RCLootCouncil sets defaultModuleState=false for sub-modules; opt back in so OnEnable fires.
-RCLPAddon:SetEnabledState(true)
+RCPLAddon:SetEnabledState(true)
 
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
-RCLootCouncil_PriorityLoot = RCLPAddon
+RCLootCouncil_PriorityLoot = RCPLAddon
 
-local RCPL_VERSION       = "0.1.11"
+local RCPL_VERSION       = "0.1.12"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -48,23 +48,23 @@ local function GetUnitFullName(unit)
     return name
 end
 
-function RCLPAddon:OnInitialize()
+function RCPLAddon:OnInitialize()
     Log.debug("OnInitialize fired (version=%s)", RCPL_VERSION)
-    if type(RCLPriorityDB) ~= "table" then RCLPriorityDB = {} end
-    if type(RCLPriorityDB.players) ~= "table" then RCLPriorityDB.players = {} end
-    if type(RCLPriorityDB.priority) ~= "table" then RCLPriorityDB.priority = {} end
+    if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
+    if type(RCPL_DB.players) ~= "table" then RCPL_DB.players = {} end
+    if type(RCPL_DB.priority) ~= "table" then RCPL_DB.priority = {} end
     self:RegisterComm(RCPL_COMM_PREFIX, "OnVersionReceived")
     self:RegisterComm(RCPL_CHECK_PREFIX, "OnVersionCheckMessage")
     Log.debug("Comm prefixes registered: %s, %s", RCPL_COMM_PREFIX, RCPL_CHECK_PREFIX)
 end
 
-function RCLPAddon:OnEnable()
+function RCPLAddon:OnEnable()
     Log.debug("OnEnable fired, scheduling BroadcastVersion in 5s")
     -- Delay 5s so the guild channel is ready before we broadcast.
     self:ScheduleTimer("BroadcastVersion", 5)
 end
 
-function RCLPAddon:BroadcastVersion()
+function RCPLAddon:BroadcastVersion()
     local inGuild = IsInGuild()
     Log.debug("BroadcastVersion fired (IsInGuild=%s, version=%s)", tostring(inGuild), RCPL_VERSION)
     if not inGuild then
@@ -75,7 +75,7 @@ function RCLPAddon:BroadcastVersion()
     Log.debug("Sent guild version broadcast (%s on %s)", RCPL_VERSION, RCPL_COMM_PREFIX)
 end
 
-function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
+function RCPLAddon:OnVersionReceived(prefix, message, distribution, sender)
     Log.debug("OnVersionReceived: prefix=%s message=%s dist=%s sender=%s self=%s",
         tostring(prefix), tostring(message), tostring(distribution),
         tostring(sender), tostring(UnitName("player")))
@@ -118,7 +118,7 @@ function RCLPAddon:OnVersionReceived(prefix, message, distribution, sender)
 end
 
 -- Handles both incoming REQUEST and version-response messages on RCPL_Chk.
-function RCLPAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
+function RCPLAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
     Log.debug("OnVersionCheckMessage: prefix=%s message=%s dist=%s sender=%s",
         tostring(prefix), tostring(message), tostring(distribution), tostring(sender))
     if sender == UnitName("player") then return end
@@ -136,7 +136,7 @@ function RCLPAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
     end
 end
 
-function RCLPAddon:StartVersionCheck()
+function RCPLAddon:StartVersionCheck()
     local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
     if not channel then
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r You must be in a group to check versions.")
@@ -153,7 +153,7 @@ function RCLPAddon:StartVersionCheck()
     versionCheckTimer = self:ScheduleTimer("PrintVersionCheckResults", CHECK_TIMEOUT)
 end
 
-function RCLPAddon:PrintVersionCheckResults()
+function RCPLAddon:PrintVersionCheckResults()
     versionCheckTimer = nil
     local myName = UnitName("player")
     local withAddon, withoutAddon = {}, {}
@@ -243,7 +243,7 @@ SlashCmdList["RCPL"] = function(input)
         RCPL_Data_ResetData()
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r All priority data cleared.")
     elseif cmd == "version" or cmd == "ver" or cmd == "v" then
-        RCLPAddon:StartVersionCheck()
+        RCPLAddon:StartVersionCheck()
     elseif cmd == "debug" then
         local state
         if rest == "on" or rest == "true" or rest == "1" then

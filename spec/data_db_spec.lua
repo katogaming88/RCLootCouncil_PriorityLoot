@@ -4,8 +4,8 @@
 -- resolver used by both votingFrame.lua and lootFrame.lua.
 --
 -- The resolver lives in Data/db.lua and walks two layers of saved data:
---   1. Item-centric  RCLPriorityDB.priority[itemID]   → ranked Name-Realm list
---   2. Player-centric RCLPriorityDB.players[name][slot].bis[]
+--   1. Item-centric  RCPL_DB.priority[itemID]   → ranked Name-Realm list
+--   2. Player-centric RCPL_DB.players[name][slot].bis[]
 --
 -- Layer 1 wins when present, even if the matching player is absent
 -- (returns N/A with no fallback to layer 2).
@@ -22,13 +22,13 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
     before_each(function()
         mocks.resetSavedVars()
-        _G.RCLPriorityDB = { players = {}, priority = {} }
+        _G.RCPL_DB = { players = {}, priority = {} }
     end)
 
     -- ── Edge cases: no data ──────────────────────────────────────────────────
 
     it("returns N/A grey when SavedVariable is absent entirely", function()
-        _G.RCLPriorityDB = nil
+        _G.RCPL_DB = nil
         local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD")
         assert.equals("N/A", text)
         assert.equals(0.6, color.r)  -- grey
@@ -64,7 +64,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
     describe("item-centric priority", function()
         before_each(function()
-            _G.RCLPriorityDB.priority = {
+            _G.RCPL_DB.priority = {
                 ["12345"] = { "Alice-Realm", "Bob-Realm", "Carol-Realm" },
             }
         end)
@@ -94,7 +94,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
             -- Dave is not in the priority list for 12345 above (only Alice/Bob/Carol).
             -- Even if Dave has it BiS rank 1 in his player data, the item-centric
             -- list takes precedence and Dave is NOT on it → N/A.
-            _G.RCLPriorityDB.players["Dave-Realm"] = {
+            _G.RCPL_DB.players["Dave-Realm"] = {
                 helm = { bis = { 12345 } },
             }
             local text = RCPL_Data_GetPlayerPriority("Dave-Realm", 12345, "INVTYPE_HEAD")
@@ -102,7 +102,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("uses ordinal labels for rank > 3", function()
-            _G.RCLPriorityDB.priority["7"] = {
+            _G.RCPL_DB.priority["7"] = {
                 "P1", "P2", "P3", "P4", "P5",
             }
             local text = RCPL_Data_GetPlayerPriority("P5", 7, "INVTYPE_HEAD")
@@ -114,7 +114,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
     describe("per-player BiS fallback", function()
         it("matches rank-1 BiS item", function()
-            _G.RCLPriorityDB.players = {
+            _G.RCPL_DB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
             local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_HEAD")
@@ -123,7 +123,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("matches rank-2 BiS item", function()
-            _G.RCLPriorityDB.players = {
+            _G.RCPL_DB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_HEAD")
@@ -131,7 +131,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("matches rank-3 BiS item with orange color", function()
-            _G.RCLPriorityDB.players = {
+            _G.RCPL_DB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200, 300 } } },
             }
             local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_HEAD")
@@ -140,7 +140,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("returns N/A for items not in player's BiS", function()
-            _G.RCLPriorityDB.players = {
+            _G.RCPL_DB.players = {
                 ["Alice-Realm"] = { helm = { bis = { 100, 200 } } },
             }
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_HEAD")
@@ -148,7 +148,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("returns N/A when slot has no BiS entry", function()
-            _G.RCLPriorityDB.players = {
+            _G.RCPL_DB.players = {
                 ["Alice-Realm"] = { helm = nil },
             }
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_HEAD")
@@ -160,7 +160,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
     describe("multi-key slots", function()
         it("checks both ring1 and ring2 for INVTYPE_FINGER", function()
-            _G.RCLPriorityDB.players = {
+            _G.RCPL_DB.players = {
                 ["Alice-Realm"] = {
                     ring1 = { bis = { 100, 200 } },
                     ring2 = { bis = { 300, 400 } },
@@ -174,7 +174,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("checks both trinket1 and trinket2 for INVTYPE_TRINKET", function()
-            _G.RCLPriorityDB.players = {
+            _G.RCPL_DB.players = {
                 ["Alice-Realm"] = {
                     trinket1 = { bis = { 50 } },
                     trinket2 = { bis = { 60 } },
@@ -188,7 +188,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
     -- ── Weapon equipLoc family ───────────────────────────────────────────────
 
     it("maps INVTYPE_2HWEAPON, INVTYPE_WEAPON, INVTYPE_WEAPONMAINHAND to mh2h", function()
-        _G.RCLPriorityDB.players = {
+        _G.RCPL_DB.players = {
             ["Alice-Realm"] = { mh2h = { bis = { 77 } } },
         }
         assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 77, "INVTYPE_2HWEAPON"))
@@ -197,14 +197,14 @@ describe("RCPL_Data_GetPlayerPriority", function()
     end)
 
     it("maps INVTYPE_WEAPONOFFHAND to oh", function()
-        _G.RCLPriorityDB.players = {
+        _G.RCPL_DB.players = {
             ["Alice-Realm"] = { oh = { bis = { 88 } } },
         }
         assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 88, "INVTYPE_WEAPONOFFHAND"))
     end)
 
     it("maps INVTYPE_ROBE and INVTYPE_CHEST both to chest", function()
-        _G.RCLPriorityDB.players = {
+        _G.RCPL_DB.players = {
             ["Alice-Realm"] = { chest = { bis = { 42 } } },
         }
         assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_CHEST"))

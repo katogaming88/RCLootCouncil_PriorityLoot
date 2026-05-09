@@ -37,7 +37,7 @@ end
 
 -- Wipe the SavedVariable between specs so tests are independent.
 function M.resetSavedVars()
-    _G.RCLPriorityDB = nil
+    _G.RCPL_DB = nil
 end
 
 -- Stub `print` so success/error chat output doesn't clutter spec output.

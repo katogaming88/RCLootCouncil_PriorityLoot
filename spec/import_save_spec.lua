@@ -39,8 +39,8 @@ describe("RCPL_Data_SaveImportedData", function()
         })
         assert.equals(2, p)
         assert.equals(0, pri)
-        assert.is_table(_G.RCLPriorityDB.players["Alice-Realm"])
-        assert.is_table(_G.RCLPriorityDB.players["Bob-Realm"])
+        assert.is_table(_G.RCPL_DB.players["Alice-Realm"])
+        assert.is_table(_G.RCPL_DB.players["Bob-Realm"])
     end)
 
     it("stores priority lists alongside players", function()
@@ -55,7 +55,7 @@ describe("RCPL_Data_SaveImportedData", function()
         })
         assert.equals(1, p)
         assert.equals(2, pri)
-        assert.same({ "Alice-Realm", "Bob-Realm" }, _G.RCLPriorityDB.priority["100"])
+        assert.same({ "Alice-Realm", "Bob-Realm" }, _G.RCPL_DB.priority["100"])
     end)
 
     it("skips entries with non-string player keys or non-table slots", function()
@@ -67,29 +67,29 @@ describe("RCPL_Data_SaveImportedData", function()
             },
         })
         assert.equals(1, p)
-        assert.is_nil(_G.RCLPriorityDB.players[42])
-        assert.is_nil(_G.RCLPriorityDB.players["Bad-Realm"])
+        assert.is_nil(_G.RCPL_DB.players[42])
+        assert.is_nil(_G.RCPL_DB.players["Bad-Realm"])
     end)
 
     it("wipes prior state on each import (current behaviour)", function()
-        _G.RCLPriorityDB = {
+        _G.RCPL_DB = {
             players  = { ["StalePlayer-Realm"] = { helm = { bis = { 999 } } } },
             priority = { ["99"] = { "StalePlayer-Realm" } },
         }
         RCPL_Data_SaveImportedData({
             players = { ["NewPlayer-Realm"] = { helm = { bis = { 1 } } } },
         })
-        assert.is_nil(_G.RCLPriorityDB.players["StalePlayer-Realm"])
-        assert.is_nil(_G.RCLPriorityDB.priority["99"])
-        assert.is_table(_G.RCLPriorityDB.players["NewPlayer-Realm"])
+        assert.is_nil(_G.RCPL_DB.players["StalePlayer-Realm"])
+        assert.is_nil(_G.RCPL_DB.priority["99"])
+        assert.is_table(_G.RCPL_DB.players["NewPlayer-Realm"])
     end)
 
     it("stamps importedAt with current date", function()
         RCPL_Data_SaveImportedData({
             players = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },
         })
-        assert.is_string(_G.RCLPriorityDB.importedAt)
-        assert.matches("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d$", _G.RCLPriorityDB.importedAt)
+        assert.is_string(_G.RCPL_DB.importedAt)
+        assert.matches("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d$", _G.RCPL_DB.importedAt)
     end)
 end)
 
@@ -99,19 +99,19 @@ describe("RCPL_Data_ResetData", function()
     end)
 
     it("wipes players, priority, and importedAt", function()
-        _G.RCLPriorityDB = {
+        _G.RCPL_DB = {
             players    = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },
             priority   = { ["1"] = { "Alice-Realm" } },
             importedAt = "2026-04-30 12:00",
         }
         RCPL_Data_ResetData()
-        assert.same({}, _G.RCLPriorityDB.players)
-        assert.same({}, _G.RCLPriorityDB.priority)
-        assert.is_nil(_G.RCLPriorityDB.importedAt)
+        assert.same({}, _G.RCPL_DB.players)
+        assert.same({}, _G.RCPL_DB.priority)
+        assert.is_nil(_G.RCPL_DB.importedAt)
     end)
 
     it("is a no-op when SavedVariable is missing", function()
-        _G.RCLPriorityDB = nil
+        _G.RCPL_DB = nil
         assert.has_no.errors(function()
             RCPL_Data_ResetData()
         end)

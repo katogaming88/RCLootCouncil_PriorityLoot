@@ -2,8 +2,8 @@
 -- Hooks the RCLootCouncil loot frame to show priority text for the local player.
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
-local RCLPAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
-local RCPLootFrame = RCLPAddon:NewModule("RCPLootFrame", "AceHook-3.0", "AceTimer-3.0")
+local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
+local RCPLootFrame = RCPLAddon:NewModule("RCPLootFrame", "AceHook-3.0", "AceTimer-3.0")
 
 local overlayPool = {}
 
