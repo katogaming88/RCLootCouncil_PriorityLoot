@@ -61,7 +61,7 @@ globals = {
     "SLASH_RCPL1", "SlashCmdList",
 
     -- SavedVariable
-    "RCLPriorityDB",
+    "RCPL_DB",
 
     -- Module handle (Core.lua sets this so Modules/*.lua can reach it)
     "RCLootCouncil_PriorityLoot",

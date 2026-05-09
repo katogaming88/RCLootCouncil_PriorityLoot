@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.12] - 2026-05-08
+
+### Changed
+
+- **Breaking**: SavedVariable renamed from `RCLPriorityDB` to `RCPL_DB` (declared in `.toc`). Existing saved data will not carry over — re-import priority data after updating.
+- Internal identifier renames across all files (no behaviour change): `RCLPAddon` → `RCPLAddon` (`Core.lua`, `Modules/lootFrame.lua`, `Modules/votingFrame.lua`); `RCLPVotingFrame` → `RCPLVotingFrame` (`Modules/votingFrame.lua`); `RCLPPrioPreviewFrame` / `RCLPPrioScrollFrame` → `RCPLPrioPreviewFrame` / `RCPLPrioScrollFrame` (`Modules/prioPreviewFrame.lua`).
+
+---
+
 ## [0.1.11] - 2026-05-08
 
 ### Fixed

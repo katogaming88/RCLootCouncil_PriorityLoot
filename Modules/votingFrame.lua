@@ -4,12 +4,12 @@
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
 local RCVotingFrame = addon:GetModule("RCVotingFrame")
-local RCLPAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
-local RCLPVotingFrame = RCLPAddon:NewModule("RCLPVotingFrame", "AceHook-3.0", "AceTimer-3.0", "AceEvent-3.0")
+local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
+local RCPLVotingFrame = RCPLAddon:NewModule("RCPLVotingFrame", "AceHook-3.0", "AceTimer-3.0", "AceEvent-3.0")
 
 local currentSession = 1
 
-function RCLPVotingFrame:OnInitialize()
+function RCPLVotingFrame:OnInitialize()
     if not RCVotingFrame.scrollCols then
         return self:ScheduleTimer("OnInitialize", 0.5)
     end
@@ -19,7 +19,7 @@ function RCLPVotingFrame:OnInitialize()
     self:RegisterMessage("RCSessionChangedPre", "OnSessionChanged")
 end
 
-function RCLPVotingFrame:InjectColumn()
+function RCPLVotingFrame:InjectColumn()
     -- Guard against double injection if OnEnable is ever called more than once.
     for _, col in ipairs(RCVotingFrame.scrollCols) do
         if col.colName == "RCPL_priority" then return end
@@ -39,7 +39,7 @@ function RCLPVotingFrame:InjectColumn()
         name         = "Priority",
         width        = 60,
         align        = "CENTER",
-        DoCellUpdate = RCLPVotingFrame.SetCellPriority,
+        DoCellUpdate = RCPLVotingFrame.SetCellPriority,
         colName      = "RCPL_priority",
     })
 
@@ -49,12 +49,12 @@ function RCLPVotingFrame:InjectColumn()
     end
 end
 
-function RCLPVotingFrame:OnSessionChanged(msg, s)
+function RCPLVotingFrame:OnSessionChanged(msg, s)
     currentSession = s or 1
 end
 
 -- DoCellUpdate callback — called by LibScrollingTable as a plain function.
-function RCLPVotingFrame.SetCellPriority(rowFrame, frame, data, cols, row, realrow, column, fShow, ...)
+function RCPLVotingFrame.SetCellPriority(rowFrame, frame, data, cols, row, realrow, column, fShow, ...)
     if not fShow then
         frame.text:SetText("")
         return

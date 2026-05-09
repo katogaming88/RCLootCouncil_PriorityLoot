@@ -4,7 +4,7 @@
 --   * level dispatch (debug / info / warn / error)
 --   * format-string handling (and graceful failure when args do not match)
 --   * ring buffer cap (MAX_ENTRIES = 500)
---   * RCLPriorityDB.debug gating: debug() always records, only mirrors to
+--   * RCPL_DB.debug gating: debug() always records, only mirrors to
 --     chat when the flag is true
 --   * persistent toggle round trip (SetDebug / ToggleDebug / IsDebugOn)
 --   * Clear() empties the buffer
@@ -26,7 +26,7 @@ describe("Modules/log.lua", function()
 
     before_each(function()
         mocks.resetSavedVars()
-        _G.RCLPriorityDB = {}
+        _G.RCPL_DB = {}
         printCalls = mocks.capturePrint()
         Log = reloadLogger()
     end)
@@ -40,20 +40,20 @@ describe("Modules/log.lua", function()
         assert.equals(3, #printCalls)
     end)
 
-    it("debug suppresses chat output when RCLPriorityDB.debug is false", function()
-        _G.RCLPriorityDB.debug = false
+    it("debug suppresses chat output when RCPL_DB.debug is false", function()
+        _G.RCPL_DB.debug = false
         Log.debug("should not print")
         assert.equals(0, #printCalls)
     end)
 
-    it("debug mirrors to chat when RCLPriorityDB.debug is true", function()
-        _G.RCLPriorityDB.debug = true
+    it("debug mirrors to chat when RCPL_DB.debug is true", function()
+        _G.RCPL_DB.debug = true
         Log.debug("should print")
         assert.equals(1, #printCalls)
     end)
 
     it("debug records the entry even when chat output is suppressed", function()
-        _G.RCLPriorityDB.debug = false
+        _G.RCPL_DB.debug = false
         Log.debug("captured silently")
         local entries = Log.GetEntries()
         assert.equals(1, #entries)
@@ -102,33 +102,33 @@ describe("Modules/log.lua", function()
 
     -- ── Debug toggle ────────────────────────────────────────────────────────
 
-    it("SetDebug writes to RCLPriorityDB.debug and returns the new state", function()
+    it("SetDebug writes to RCPL_DB.debug and returns the new state", function()
         assert.is_true(Log.SetDebug(true))
-        assert.is_true(_G.RCLPriorityDB.debug)
+        assert.is_true(_G.RCPL_DB.debug)
         assert.is_false(Log.SetDebug(false))
-        assert.is_false(_G.RCLPriorityDB.debug)
+        assert.is_false(_G.RCPL_DB.debug)
     end)
 
-    it("ToggleDebug flips RCLPriorityDB.debug each call", function()
-        _G.RCLPriorityDB.debug = false
+    it("ToggleDebug flips RCPL_DB.debug each call", function()
+        _G.RCPL_DB.debug = false
         assert.is_true(Log.ToggleDebug())
-        assert.is_true(_G.RCLPriorityDB.debug)
+        assert.is_true(_G.RCPL_DB.debug)
         assert.is_false(Log.ToggleDebug())
-        assert.is_false(_G.RCLPriorityDB.debug)
+        assert.is_false(_G.RCPL_DB.debug)
     end)
 
     it("IsDebugOn reflects the current persisted flag", function()
-        _G.RCLPriorityDB.debug = true
+        _G.RCPL_DB.debug = true
         assert.is_true(Log.IsDebugOn())
-        _G.RCLPriorityDB.debug = nil
+        _G.RCPL_DB.debug = nil
         assert.is_false(Log.IsDebugOn())
     end)
 
-    it("SetDebug initialises RCLPriorityDB if it was nil", function()
-        _G.RCLPriorityDB = nil
+    it("SetDebug initialises RCPL_DB if it was nil", function()
+        _G.RCPL_DB = nil
         Log.SetDebug(true)
-        assert.equals("table", type(_G.RCLPriorityDB))
-        assert.is_true(_G.RCLPriorityDB.debug)
+        assert.equals("table", type(_G.RCPL_DB))
+        assert.is_true(_G.RCPL_DB.debug)
     end)
 
     -- ── Show fallback ───────────────────────────────────────────────────────

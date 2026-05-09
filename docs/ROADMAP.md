@@ -58,7 +58,7 @@ Currently `RCPL_Data_SaveImportedData` only checks types at the outer level. Off
 
 ### 1.2 Centralised logging — shipped in v0.1.7
 
-`Modules/log.lua` ships with `debug`, `info`, `warn`, `error` levels behind a chat prefix of `|cFF00FF00[RCPL]|r`. Every call records into a 500-entry in-memory ring buffer regardless of debug state; `debug` calls only mirror to chat when `RCLPriorityDB.debug` is true. New slash surface: `/rcpl debug` toggles the persisted flag, `/rcpl log` opens an AceGUI viewer over the recorded history (with `dump` and `clear` subcommands).
+`Modules/log.lua` ships with `debug`, `info`, `warn`, `error` levels behind a chat prefix of `|cFF00FF00[RCPL]|r`. Every call records into a 500-entry in-memory ring buffer regardless of debug state; `debug` calls only mirror to chat when `RCPL_DB.debug` is true. New slash surface: `/rcpl debug` toggles the persisted flag, `/rcpl log` opens an AceGUI viewer over the recorded history (with `dump` and `clear` subcommands).
 
 The diagnostic instrumentation in `Core.lua` covers the lifecycle (`OnInitialize`, `OnEnable`) and the comm flow (`BroadcastVersion`, `OnVersionReceived`, `OnVersionCheckMessage`). Together this is enough to see whether the version-check broadcast fires, what `IsInGuild()` reported, what comm prefixes registered, and what arrived from each sender.
 
@@ -70,7 +70,7 @@ Two follow-ups deferred:
 ### 1.3 Idempotent import + import diff
 Branch: `feat/idempotent-import` · Version: patch
 
-Current `SaveImportedData` wipes `RCLPriorityDB.players` and `.priority` before writing. If the second loop errors mid-way, you have corrupted state.
+Current `SaveImportedData` wipes `RCPL_DB.players` and `.priority` before writing. If the second loop errors mid-way, you have corrupted state.
 
 - Build the new tables locally, then atomically swap.
 - Compute and print a diff: "X players added, Y changed, Z removed; A items added, B items removed."
@@ -103,7 +103,7 @@ Expose settings via the standard WoW interface panel (ESC → Options → Addons
 
 - Register an options table with AceConfig and open it via `InterfaceOptionsFrame_OpenToCategory` (or the modern `Settings.OpenToCategory` on 12.x+).
 - Initial settings to expose: debug mode toggle (currently only via `/rcpl debug`), import frame scale, prio preview frame scale.
-- Settings persist in `RCLPriorityDB` so they survive reloads.
+- Settings persist in `RCPL_DB` so they survive reloads.
 - `/rcpl config` (or `/rcpl options`) opens the same panel as a convenience alias.
 
 **Acceptance:** opening ESC → Options → Addons shows an RCPL entry. All exposed settings save and reload correctly. `/rcpl config` opens the panel.
@@ -111,11 +111,11 @@ Expose settings via the standard WoW interface panel (ESC → Options → Addons
 ### 2.3 Changelog popup on new version
 Branch: `feat/changelog-popup` · Version: minor
 
-When the addon version has changed since the last login (detected by comparing `RCPL_VERSION` to `RCLPriorityDB.lastSeenVersion`), display a brief changelog popup so officers know what changed without checking GitHub.
+When the addon version has changed since the last login (detected by comparing `RCPL_VERSION` to `RCPL_DB.lastSeenVersion`), display a brief changelog popup so officers know what changed without checking GitHub.
 
 - Pop a small AceGUI frame on `PLAYER_ENTERING_WORLD` (once per session, not per zone) showing the new version number and the top-level bullet points for the current version from an embedded `CHANGELOG_SUMMARY` table in `Core.lua`.
-- Provide a "Don't show again for this version" checkbox and a global "Disable changelog popup" toggle stored in `RCLPriorityDB.showChangelog` (default `true`). The global toggle is also exposed in the Interface Options panel (2.2).
-- Update `RCLPriorityDB.lastSeenVersion` on first display so the popup does not re-fire on subsequent logins at the same version.
+- Provide a "Don't show again for this version" checkbox and a global "Disable changelog popup" toggle stored in `RCPL_DB.showChangelog` (default `true`). The global toggle is also exposed in the Interface Options panel (2.2).
+- Update `RCPL_DB.lastSeenVersion` on first display so the popup does not re-fire on subsequent logins at the same version.
 - Tests: popup fires when version differs; does not fire when version matches; does not fire when `showChangelog` is false.
 
 **Acceptance:** logging in after an addon update shows the popup once. Checking "Disable changelog popup" in options suppresses it permanently. The popup does not appear on logins where the version has not changed.
@@ -124,7 +124,7 @@ When the addon version has changed since the last login (detected by comparing `
 Branch: `feat/slash-ux` · Version: minor (new subcommands)
 
 - `/rcpl status` - prints counts (players, priority items), `importedAt`, days-old, debug state.
-- `/rcpl export` - re-encodes current `RCLPriorityDB` to base64 for backup or cross-account share. Uses the same JSON shape as the import format, so an export round-trips through `/rcpl import`.
+- `/rcpl export` - re-encodes current `RCPL_DB` to base64 for backup or cross-account share. Uses the same JSON shape as the import format, so an export round-trips through `/rcpl import`.
 - Keep existing `/rcpl`, `/rcpl import`, `/rcpl prio`, `/rcpl reset`.
 
 **Acceptance:** both new subcommands have specs covering output shape and round-trip.
@@ -165,7 +165,7 @@ Branch: `feat/rcl-award-integration` · Version: minor
 Closes the loop: when an officer awards an item via RCLootCouncil, the priority entry is consumed so the same item does not re-surface as "1st" for that player on a subsequent drop.
 
 - Hook RCLootCouncil's awarding flow (probably `RCLootCouncilML:GiveLoot` or the `RCMLAwardSuccess` AceComm message; investigate at implementation time).
-- Persist in `RCLPriorityDB.awarded[itemID][playerName] = timestamp`.
+- Persist in `RCPL_DB.awarded[itemID][playerName] = timestamp`.
 - `/rcpl prio` filters out awarded items by default; `/rcpl prio all` shows them.
 - Voting frame `Priority` column shows "(received)" suffix in grey for already-awarded items so officers know not to assign again.
 - For tier tokens specifically (Phase 3.2): an award also bumps the awardee's `tierPieces` count, so the "(N/4)" suffix updates without a re-import.
@@ -208,10 +208,10 @@ A "your import is N days old" nag at PLAYER_LOGIN. Risk: goes from useful to mut
 Visual tab in `/rcpl prio` showing colour-coded added/changed/removed rows from the most recent import. Phase 1.3's chat-output diff covers the data; visual viewer is polish on polish. Promote when an officer asks.
 
 ### 3.1 Multi-team profiles
-N named profiles in `RCLPriorityDB.profiles[name]` with active-profile pointer. Real value if you run this addon for more than one raid team; zero value otherwise. Promote when juggling teams becomes real, or when another guild adopts the addon and asks. If promoted, schema change cascades through Phases 1 and 2 - so decide before Phase 1.1 ships if possible.
+N named profiles in `RCPL_DB.profiles[name]` with active-profile pointer. Real value if you run this addon for more than one raid team; zero value otherwise. Promote when juggling teams becomes real, or when another guild adopts the addon and asks. If promoted, schema change cascades through Phases 1 and 2 - so decide before Phase 1.1 ships if possible.
 
 ### 3.3 Item-level threshold
-Optional `RCLPriorityDB.minILvl`. Distinguishes "below threshold" from "not in BiS" with a different label. Reviewer-only ergonomics; promote on request.
+Optional `RCPL_DB.minILvl`. Distinguishes "below threshold" from "not in BiS" with a different label. Reviewer-only ergonomics; promote on request.
 
 ---
 
