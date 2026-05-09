@@ -80,6 +80,19 @@ Current `SaveImportedData` wipes `RCPL_DB.players` and `.priority` before writin
 
 **Acceptance:** `spec/import_save_spec.lua` gains "mid-import error preserves prior state" plus diff-calculation specs. Subtitle in `/rcpl prio` shows the diff and the stale-data note when applicable.
 
+### 1.5 Core.lua comm-hook spec coverage
+Branch: `chore/core-spec-coverage` · Version: patch
+
+`spec/` covers `Data/db.lua`, `Modules/importFrame.lua` save path, and `Modules/log.lua`, but `Core.lua` has zero busted coverage. The version-check broadcast (`BroadcastVersion`), receive handler (`OnVersionReceived`), and request flow (`OnVersionCheckMessage`) all carry non-trivial state (`versionWarned`, `versionCheckResults`, the WHISPER reply gate) that a regression test should pin down. The v0.1.10 reload-safety pivot and the v0.1.13 duplicate-warning fix would both have been protected by this coverage.
+
+- Add `spec/core_spec.lua` plus shared mock helpers for `AceAddon-3.0` (`NewModule`, `SetEnabledState`), `AceComm-3.0` (`RegisterComm`, `SendCommMessage` capture), `AceTimer-3.0` (`ScheduleTimer` synchronous-fire), and the WoW globals already mocked elsewhere (`UnitName`, `IsInGuild`, `IsInRaid`, `IsInGroup`).
+- Cover the warning gate: a single newer-version WHISPER fires the orange print exactly once per session; subsequent newer-version messages are silent.
+- Cover the reply gate: a GUILD broadcast triggers exactly one WHISPER reply to the sender; a WHISPER reply does not bounce another WHISPER back.
+- Cover `IsNewer` semver comparison directly (already a pure function, easy to spec).
+- Cover the `/rcpl version` REQUEST/response cycle and the `PrintVersionCheckResults` colour buckets.
+
+**Acceptance:** `spec/core_spec.lua` exists with at least the five scenarios above. `bash scripts/run_tests.sh` passes locally and in CI.
+
 ---
 
 ## Phase 2 - UX
