@@ -71,8 +71,11 @@ globals = {
     "RCPL_Data_SaveImportedData",
     "RCPL_Data_GetPlayerPriority",
     "RCPL_Data_ResetData",
+    "RCPL_Data_MarkAwarded",
+    "RCPL_Data_UnmarkAwarded",
     "RCPL_ShowImportFrame",
     "RCPL_ShowPrioPreview",
+    "RCPL_ShowAwardsFrame",
 
     -- Centralised logger (Modules/log.lua); used across Core.lua and modules
     "RCPL_Log",
