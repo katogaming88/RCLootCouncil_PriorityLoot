@@ -55,6 +55,7 @@ function RCPL_Data_SaveImportedData(decoded)
     if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
     RCPL_DB.players  = {}
     RCPL_DB.priority = {}
+    RCPL_DB.awarded  = {}
 
     local playerCount = 0
     for playerKey, slots in pairs(decoded.players) do
@@ -82,7 +83,24 @@ function RCPL_Data_ResetData()
     if type(RCPL_DB) == "table" then
         RCPL_DB.players    = {}
         RCPL_DB.priority   = {}
+        RCPL_DB.awarded    = {}
         RCPL_DB.importedAt = nil
+    end
+end
+
+function RCPL_Data_MarkAwarded(playerName, itemID, link)
+    if type(RCPL_DB) ~= "table" then return end
+    if type(RCPL_DB.awarded) ~= "table" then RCPL_DB.awarded = {} end
+    if not RCPL_DB.awarded[itemID] then RCPL_DB.awarded[itemID] = {} end
+    RCPL_DB.awarded[itemID][playerName] = link or true
+end
+
+function RCPL_Data_UnmarkAwarded(playerName, itemID)
+    if type(RCPL_DB) ~= "table" or type(RCPL_DB.awarded) ~= "table" then return end
+    if type(RCPL_DB.awarded[itemID]) ~= "table" then return end
+    RCPL_DB.awarded[itemID][playerName] = nil
+    if not next(RCPL_DB.awarded[itemID]) then
+        RCPL_DB.awarded[itemID] = nil
     end
 end
 
@@ -92,6 +110,13 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
     or type(playerName) ~= "string"
     then
         return "N/A", COLOR_GREY
+    end
+
+    if type(RCPL_DB.awarded) == "table" then
+        local awardsForItem = RCPL_DB.awarded[tostring(itemID)]
+        if type(awardsForItem) == "table" and awardsForItem[playerName] then
+            return "Awarded", COLOR_GREY
+        end
     end
 
     if SECONDARY_EQUIPLOC[equipLoc] then

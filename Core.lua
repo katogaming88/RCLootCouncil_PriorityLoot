@@ -3,14 +3,14 @@
 -- following the same pattern as RCLootCouncil_wowaudit.
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
-local RCPLAddon = addon:NewModule("RCLootCouncil_PriorityLoot", "AceTimer-3.0", "AceComm-3.0")
+local RCPLAddon = addon:NewModule("RCLootCouncil_PriorityLoot", "AceTimer-3.0", "AceComm-3.0", "AceEvent-3.0")
 -- RCLootCouncil sets defaultModuleState=false for sub-modules; opt back in so OnEnable fires.
 RCPLAddon:SetEnabledState(true)
 
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCPLAddon
 
-local RCPL_VERSION       = "0.1.13"
+local RCPL_VERSION       = "0.1.14"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -51,8 +51,9 @@ end
 function RCPLAddon:OnInitialize()
     Log.debug("OnInitialize fired (version=%s)", RCPL_VERSION)
     if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
-    if type(RCPL_DB.players) ~= "table" then RCPL_DB.players = {} end
+    if type(RCPL_DB.players)  ~= "table" then RCPL_DB.players  = {} end
     if type(RCPL_DB.priority) ~= "table" then RCPL_DB.priority = {} end
+    if type(RCPL_DB.awarded)  ~= "table" then RCPL_DB.awarded  = {} end
     self:RegisterComm(RCPL_COMM_PREFIX, "OnVersionReceived")
     self:RegisterComm(RCPL_CHECK_PREFIX, "OnVersionCheckMessage")
     Log.debug("Comm prefixes registered: %s, %s", RCPL_COMM_PREFIX, RCPL_CHECK_PREFIX)
@@ -60,8 +61,17 @@ end
 
 function RCPLAddon:OnEnable()
     Log.debug("OnEnable fired, scheduling BroadcastVersion in 5s")
-    -- Delay 5s so the guild channel is ready before we broadcast.
     self:ScheduleTimer("BroadcastVersion", 5)
+    self:RegisterMessage("RCMLAwardSuccess", "OnAwardSuccess")
+    Log.debug("Registered RCMLAwardSuccess hook for award tracking")
+end
+
+function RCPLAddon:OnAwardSuccess(_, session, winner, status, link)
+    if status == "test_mode" then return end
+    local itemID = link and link:match("|Hitem:(%d+)")
+    if not itemID or not winner then return end
+    RCPL_Data_MarkAwarded(winner, itemID, link)
+    Log.debug("Award tracked: %s received %s (session=%s)", winner, itemID, tostring(session))
 end
 
 function RCPLAddon:BroadcastVersion()
@@ -203,6 +213,25 @@ function RCPLAddon:PrintVersionCheckResults()
     versionCheckResults = nil
 end
 
+local function HandleAwardSubcommand(args, undo)
+    local link   = args:match("|H.+|h%[.+%]|h")
+    local player = args:match("^(%S+)")
+    local itemID = link and link:match("|Hitem:(%d+)")
+    if not player or not itemID then
+        local verb = undo and "unaward" or "award"
+        print("|cFF00FF00[RCPL]|r Usage: /rcpl " .. verb .. " PlayerName-Realm [shift-click item]")
+        return
+    end
+    if undo then
+        RCPL_Data_UnmarkAwarded(player, itemID)
+        print(string.format("|cFF00FF00[RCPL]|r Award removed: %s — %s", player, link))
+    else
+        RCPL_Data_MarkAwarded(player, itemID, link)
+        print(string.format("|cFF00FF00[RCPL]|r Award recorded: %s — %s", player, link))
+    end
+end
+
+
 local function HandleLogSubcommand(rest)
     rest = rest or ""
     if rest == "" or rest == "show" then
@@ -229,12 +258,15 @@ SlashCmdList["RCPL"] = function(input)
 
     if cmd == "" then
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
-        print("  /rcpl import      open the priority data import window")
-        print("  /rcpl prio        preview imported priority data")
-        print("  /rcpl reset       clear all stored priority data")
-        print("  /rcpl version     check addon versions across your raid/party")
-        print("  /rcpl debug       toggle debug logging on or off")
-        print("  /rcpl log         open the log window (also: dump, clear)")
+        print("  /rcpl import                   open the priority data import window")
+        print("  /rcpl prio                     preview imported priority data")
+        print("  /rcpl reset                    clear all stored priority data")
+        print("  /rcpl awards                   open the season awards window")
+        print("  /rcpl award <player> <item>    manually record an award")
+        print("  /rcpl unaward <player> <item>  undo a recorded award")
+        print("  /rcpl version                  check addon versions across your raid/party")
+        print("  /rcpl debug                    toggle debug logging on or off")
+        print("  /rcpl log                      open the log window (also: dump, clear)")
     elseif cmd == "import" then
         RCPL_ShowImportFrame()
     elseif cmd == "prio" then
@@ -242,6 +274,12 @@ SlashCmdList["RCPL"] = function(input)
     elseif cmd == "reset" then
         RCPL_Data_ResetData()
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r All priority data cleared.")
+    elseif cmd == "awards" then
+        RCPL_ShowAwardsFrame()
+    elseif cmd == "award" then
+        HandleAwardSubcommand(rest, false)
+    elseif cmd == "unaward" then
+        HandleAwardSubcommand(rest, true)
     elseif cmd == "version" or cmd == "ver" or cmd == "v" then
         RCPLAddon:StartVersionCheck()
     elseif cmd == "debug" then

@@ -11,6 +11,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.14] - 2026-05-10
+
+### Added
+
+- **Award tracking** — when the ML awards an item via RCLootCouncil, that player's priority column and loot frame overlay for that specific item switches from their ranked position to `Awarded` (grey). Rankings for other items are unaffected. This lets you see at a glance who still needs loot without touching the spreadsheet between raids.
+- Award history persists across sessions and is cleared automatically on a fresh import, so it tracks the full season without manual housekeeping.
+- `/rcpl awards` — open a scrollable window listing every award recorded this season, grouped by item. Each recipient has a checkbox; selecting one or more and clicking **Remove Award** unmarks them immediately without closing the window.
+- `/rcpl award <PlayerName-Realm> <shift-click item>` — manually record an award (for non-ML clients or corrections).
+- `/rcpl unaward <PlayerName-Realm> <shift-click item>` — remove a recorded award.
+
+---
+
 ## [0.1.13] - 2026-05-08
 
 ### Fixed
