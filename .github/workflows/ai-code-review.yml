@@ -58,49 +58,90 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number || github.event.issue.number }}
           REPO: ${{ github.repository }}
         run: |
-          RESPONSE=$(jq -n --rawfile diff pr_diff.txt --arg date "$(date +%Y-%m-%d)" '{
-            "model": "claude-sonnet-4-20250514",
-            "max_tokens": 4096,
-            "messages": [{
-              "role": "user",
-              "content": ("Today'\''s date is " + $date + ". You are a code reviewer. Review the following git diff and respond ONLY with a JSON object in this exact format, no other text:\n{\n  \"summary\": \"Overall review summary here\",\n  \"comments\": [\n    {\n      \"path\": \"path/to/file.js\",\n      \"line\": 42,\n      \"body\": \"Your inline comment here\"\n    }\n  ]\n}\n\nOnly include comments for real issues (bugs, security problems, bad practices). Use the exact file paths and line numbers from the diff. Do not comment on correct dates or minor style nits.\n\nDiff:\n" + $diff)
-            }]
-          }' | curl -s https://api.anthropic.com/v1/messages \
-            -H "x-api-key: $ANTHROPIC_API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
-            -d @-)
+          python3 << 'EOF'
+          import json, subprocess, os, urllib.request
 
-          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text')
+          # Read the diff file
+          with open('pr_diff.txt', 'r', errors='replace') as f:
+              diff = f.read()
 
-          SUMMARY=$(echo "$REVIEW" | jq -r '.summary')
-          COMMENTS=$(echo "$REVIEW" | jq -r '.comments')
+          from datetime import date
+          today = date.today().isoformat()
 
-          # Get the latest commit SHA for the PR
-          COMMIT_SHA=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid -q '.headRefOid')
+          prompt = f"""Today's date is {today}. You are a code reviewer. Review the following git diff and respond ONLY with a JSON object in this exact format, no other text:
+          {{
+            "summary": "Overall review summary here",
+            "comments": [
+              {{
+                "path": "path/to/file.js",
+                "line": 42,
+                "body": "Your inline comment here"
+              }}
+            ]
+          }}
 
-          # Build the review payload with inline comments
-          PAYLOAD=$(jq -n \
-            --arg sha "$COMMIT_SHA" \
-            --arg body "$SUMMARY" \
-            --argjson comments "$COMMENTS" '{
-              "commit_id": $sha,
-              "body": ("## 🤖 Claude Code Review\n\n" + $body),
+          Only include comments for real issues (bugs, security problems, bad practices). Use the exact file paths and line numbers from the diff. Do not comment on correct dates or minor style nits.
+
+          Diff:
+          {diff}"""
+
+          payload = json.dumps({
+              "model": "claude-sonnet-4-20250514",
+              "max_tokens": 4096,
+              "messages": [{"role": "user", "content": prompt}]
+          }).encode()
+
+          req = urllib.request.Request(
+              "https://api.anthropic.com/v1/messages",
+              data=payload,
+              headers={
+                  "x-api-key": os.environ["ANTHROPIC_API_KEY"],
+                  "anthropic-version": "2023-06-01",
+                  "content-type": "application/json"
+              }
+          )
+          with urllib.request.urlopen(req) as resp:
+              response = json.loads(resp.read())
+
+          review_text = response["content"][0]["text"]
+          # Strip markdown code fences if Claude wraps it
+          review_text = review_text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+          review = json.loads(review_text)
+
+          summary = review.get("summary", "")
+          comments = review.get("comments", [])
+
+          # Get commit SHA
+          pr_number = os.environ["PR_NUMBER"]
+          repo = os.environ["REPO"]
+          gh = subprocess.check_output(
+              ["gh", "pr", "view", pr_number, "--repo", repo, "--json", "headRefOid", "-q", ".headRefOid"],
+              text=True
+          ).strip()
+
+          # Post review
+          review_payload = json.dumps({
+              "commit_id": gh,
+              "body": f"## 🤖 Claude Code Review\n\n{summary}",
               "event": "COMMENT",
               "comments": [
-                $comments[] | {
-                  "path": .path,
-                  "line": .line,
-                  "body": .body,
-                  "side": "RIGHT"
-                }
+                  {"path": c["path"], "line": c["line"], "body": c["body"], "side": "RIGHT"}
+                  for c in comments
               ]
-            }')
+          }).encode()
 
-          # Post the review with inline comments
-          curl -s -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/reviews" \
-            -d "$PAYLOAD"
+          req2 = urllib.request.Request(
+              f"https://api.github.com/repos/{repo}/pulls/{pr_number}/reviews",
+              data=review_payload,
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json"
+              },
+              method="POST"
+          )
+          with urllib.request.urlopen(req2) as resp:
+              result = json.loads(resp.read())
+              print(f"Review posted: {result.get('html_url', 'no URL')}")
+          EOF
