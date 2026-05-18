@@ -58,9 +58,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number || github.event.issue.number }}
           REPO: ${{ github.repository }}
         run: |
-          DIFF=$(cat pr_diff.txt)
-
-          RESPONSE=$(jq -n --arg diff "$DIFF" --arg date "$(date +%Y-%m-%d)" '{
+          RESPONSE=$(jq -n --rawfile diff pr_diff.txt --arg date "$(date +%Y-%m-%d)" '{
             "model": "claude-sonnet-4-20250514",
             "max_tokens": 4096,
             "messages": [{
