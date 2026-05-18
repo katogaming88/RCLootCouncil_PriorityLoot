@@ -123,7 +123,7 @@ local function Populate()
                     return (tonumber(a) or 0) < (tonumber(b) or 0)
                 end)
 
-                for _, idStr in ipairs(sortedIDs) do
+                for i, idStr in ipairs(sortedIDs) do
                     local list   = priority[idStr]
                     local itemID = tonumber(idStr)
                     local name   = itemID and GetItemInfo(itemID)
@@ -131,11 +131,15 @@ local function Populate()
                         and ("|cFFffd200" .. name .. "|r")
                         or  ("|cFF888888Item #" .. idStr .. "|r")
 
+                    add("  " .. label)
+
                     local parts = {}
                     for rank, playerName in ipairs(list) do
                         parts[#parts + 1] = rank .. ". " .. ShortName(playerName)
                     end
-                    add("  " .. label .. "  |cFFCCCCCC" .. table.concat(parts, "   ") .. "|r")
+                    add("    |cFFCCCCCC" .. table.concat(parts, "   ") .. "|r")
+
+                    if i < #sortedIDs then add("") end
                 end
                 add("")
             end
