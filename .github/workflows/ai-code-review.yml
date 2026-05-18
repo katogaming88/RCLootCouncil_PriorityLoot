@@ -26,6 +26,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || '' }}
+
+      - name: Checkout PR branch for manual runs
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR_HEAD=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefName -q '.headRefName')
+          git fetch origin "$PR_HEAD"
+          git checkout "$PR_HEAD"
 
       - name: Get PR diff
         id: diff
