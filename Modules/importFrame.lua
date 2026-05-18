@@ -47,6 +47,7 @@ local function CreateImportFrame()
     f:SetScript("OnDragStop",  f.StopMovingOrSizing)
     f:SetClampedToScreen(true)
     f:SetFrameStrata("DIALOG")
+    tinsert(UISpecialFrames, "RCPL_ImportFrame")
 
     f.TitleText:SetText("RCLootCouncil – Import Priority Data")
 
