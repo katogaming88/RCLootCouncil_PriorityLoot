@@ -66,8 +66,16 @@ function RCPLAddon:OnEnable()
     Log.debug("Registered RCMLAwardSuccess hook for award tracking")
 end
 
-function RCPLAddon:OnAwardSuccess(_, session, winner, status, link)
+function RCPLAddon:OnAwardSuccess(_, session, winner, status, link, responseText)
     if status == "test_mode" then return end
+    -- Skip special award reasons (Disenchant, Banking, Free, and any user-defined ones).
+    -- responseText matches reason.text for these; normal loot responses never appear in awardReasons.
+    local rcdb = addon:Getdb()
+    if rcdb and rcdb.awardReasons then
+        for _, reason in pairs(rcdb.awardReasons) do
+            if reason.text == responseText then return end
+        end
+    end
     local itemID = link and link:match("|Hitem:(%d+)")
     if not itemID or not winner then return end
     RCPL_Data_MarkAwarded(winner, itemID, link)
