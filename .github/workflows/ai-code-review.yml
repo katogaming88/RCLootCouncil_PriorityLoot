@@ -29,8 +29,14 @@ jobs:
 
       - name: Get PR diff
         id: diff
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number || github.event.issue.number }}
+          REPO: ${{ github.repository }}
         run: |
-          git diff origin/${{ github.base_ref }}...HEAD > pr_diff.txt
+          BASE_REF=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName -q '.baseRefName')
+          git fetch origin "$BASE_REF"
+          git diff origin/$BASE_REF...HEAD > pr_diff.txt
           echo "diff_size=$(wc -c < pr_diff.txt)" >> $GITHUB_OUTPUT
 
       - name: Review with Claude
