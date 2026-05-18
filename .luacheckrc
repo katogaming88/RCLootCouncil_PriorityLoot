@@ -27,7 +27,7 @@ read_globals = {
     "strlower", "strupper", "format", "date", "time",
 
     -- Frame creation + display API
-    "CreateFrame", "UIParent", "GameTooltip",
+    "CreateFrame", "UIParent", "UISpecialFrames", "GameTooltip",
 
     -- Item / unit info
     "GetItemInfo", "GetItemInfoInstant", "Item",

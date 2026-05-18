@@ -28,6 +28,7 @@ local function Build()
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     frame:SetFrameStrata("DIALOG")
     frame:Hide()
+    tinsert(UISpecialFrames, "RCPLAwardsFrame")
 
     local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     titleText:SetPoint("TOP", 0, -14)

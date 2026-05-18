@@ -26,6 +26,7 @@ local function Build()
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     frame:SetFrameStrata("DIALOG")
     frame:Hide()
+    tinsert(UISpecialFrames, "RCPLPrioPreviewFrame")
 
     local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     titleText:SetPoint("TOP", 0, -14)
@@ -45,8 +46,9 @@ local function Build()
     scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30,  12)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-        local cur = self:GetVerticalScroll()
-        self:SetVerticalScroll(math.max(0, cur - delta * LINE_H * 3))
+        local cur      = self:GetVerticalScroll()
+        local maxScroll = math.max(0, frame.content:GetHeight() - self:GetHeight())
+        self:SetVerticalScroll(math.max(0, math.min(maxScroll, cur - delta * LINE_H * 3)))
     end)
     frame.scrollFrame = scrollFrame
 
@@ -122,7 +124,7 @@ local function Populate()
                     return (tonumber(a) or 0) < (tonumber(b) or 0)
                 end)
 
-                for _, idStr in ipairs(sortedIDs) do
+                for i, idStr in ipairs(sortedIDs) do
                     local list   = priority[idStr]
                     local itemID = tonumber(idStr)
                     local name   = itemID and GetItemInfo(itemID)
@@ -130,11 +132,15 @@ local function Populate()
                         and ("|cFFffd200" .. name .. "|r")
                         or  ("|cFF888888Item #" .. idStr .. "|r")
 
+                    add("  " .. label)
+
                     local parts = {}
                     for rank, playerName in ipairs(list) do
                         parts[#parts + 1] = rank .. ". " .. ShortName(playerName)
                     end
-                    add("  " .. label .. "  |cFFCCCCCC" .. table.concat(parts, "   ") .. "|r")
+                    add("    |cFFCCCCCC" .. table.concat(parts, "   ") .. "|r")
+
+                    if i < #sortedIDs then add("") end
                 end
                 add("")
             end
@@ -154,7 +160,8 @@ local function Populate()
         end
     end
 
-    -- Layout each line top-to-bottom
+    -- Layout each line top-to-bottom, advancing by actual rendered height
+    -- so wrapped priority lines don't overlap the next row.
     local y = -PAD
     for i, lineData in ipairs(lines) do
         local fs = GetLine(i)
@@ -167,7 +174,7 @@ local function Populate()
             fs:SetTextColor(1, 1, 1)
         end
         fs:Show()
-        y = y - LINE_H
+        y = y - math.max(LINE_H, fs:GetStringHeight())
     end
 
     frame.content:SetHeight(math.max(1, -y + PAD))

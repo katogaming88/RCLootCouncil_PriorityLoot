@@ -11,6 +11,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.15] - 2026-05-18
+
+### Fixed
+
+- **Prio frame row overlap** — priority lines that wrapped across multiple visual rows no longer overlap the next item's name; layout now advances by the actual rendered string height instead of a fixed constant.
+- **Prio frame scroll overrun** — scrolling past the bottom of the prio window no longer pushes content off-screen; the scroll is now clamped to the content height.
+
+### Changed
+
+- **Prio frame layout** — each priority entry now shows the item name on its own line with the ranked player list indented below it, making long lists easier to read.
+- **ESC closes RCPL windows** — all three RCPL windows (prio preview, awards, import) now close when ESC is pressed, consistent with other WoW UI panels.
+
+---
+
 ## [0.1.14] - 2026-05-10
 
 ### Added
