@@ -154,7 +154,8 @@ local function Populate()
         end
     end
 
-    -- Layout each line top-to-bottom
+    -- Layout each line top-to-bottom, advancing by actual rendered height
+    -- so wrapped priority lines don't overlap the next row.
     local y = -PAD
     for i, lineData in ipairs(lines) do
         local fs = GetLine(i)
@@ -167,7 +168,7 @@ local function Populate()
             fs:SetTextColor(1, 1, 1)
         end
         fs:Show()
-        y = y - LINE_H
+        y = y - math.max(LINE_H, fs:GetStringHeight())
     end
 
     frame.content:SetHeight(math.max(1, -y + PAD))
