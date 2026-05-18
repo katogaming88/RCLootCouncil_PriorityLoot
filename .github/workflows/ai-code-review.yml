@@ -60,12 +60,12 @@ jobs:
         run: |
           DIFF=$(cat pr_diff.txt)
 
-          RESPONSE=$(jq -n --arg diff "$DIFF" '{
+          RESPONSE=$(jq -n --arg diff "$DIFF" --arg date "$(date +%Y-%m-%d)" '{
             "model": "claude-sonnet-4-20250514",
             "max_tokens": 1024,
             "messages": [{
               "role": "user",
-              "content": ("You are a code reviewer. Review the following git diff and give concise, constructive feedback. Flag bugs, security issues, and style problems. Be specific about line numbers where possible.\n\n" + $diff)
+              "content": ("Today'\''s date is " + $date + ". You are a code reviewer. Review the following git diff and give concise, constructive feedback. Flag bugs, security issues, and style problems. Be specific about line numbers where possible.\n\n" + $diff)
             }]
           }' | curl -s https://api.anthropic.com/v1/messages \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
