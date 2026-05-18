@@ -64,7 +64,7 @@ local function Build()
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
         local cur = self:GetVerticalScroll()
-        self:SetVerticalScroll(math.max(0, cur - delta * LINE_H * 3))
+        self:SetVerticalScroll(math.max(0, math.min(self:GetVerticalScrollRange(), cur - delta * LINE_H * 3)))
     end)
     frame.scrollFrame = scrollFrame
 
