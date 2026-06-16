@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.16] - 2026-06-16
+
+### Changed
+
+- **WoW 12.0.7 compatibility** -- updated Interface version to 120007.
+
+---
+
 ## [0.1.15] - 2026-05-18
 
 ### Fixed

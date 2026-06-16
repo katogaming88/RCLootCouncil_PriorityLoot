@@ -3,7 +3,7 @@
 [![CI](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/actions/workflows/ci.yml/badge.svg)](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) to surface BiS priority data directly inside the voting frame and raider loot popup.
+A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) to surface BiS priority data directly inside the voting frame and raider loot popup.
 
 ---
 
@@ -23,7 +23,7 @@ A World of Warcraft addon (patch **12.0.5 – Midnight**) that integrates with [
 | Dependency | Notes |
 |---|---|
 | [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) | Required. Loaded before this addon via `.toc` dependency. |
-| WoW patch 12.0.5+ | Interface version `120005`. |
+| WoW patch 12.0.7+ | Interface version `120007`. |
 | Priority Google Sheet | **Required for officers.** The accompanying Google Sheet (running `SpreadsheetExport.gs`) is what generates the Base64 import string. A public template is not yet available — contact the addon author for access. Raiders who never run `/rcpl import` do not need it. |
 
 ---
