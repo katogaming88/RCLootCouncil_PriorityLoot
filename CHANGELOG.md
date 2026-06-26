@@ -11,6 +11,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.17] - 2026-06-26
+
+### Fixed
+
+- Priority column showing "N/A" for all players: import data stores names without
+  realm suffix (e.g. "Katorri") but RCLootCouncil passes cross-realm names like
+  "Katorri-Stormrage". All lookups in `RCPL_Data_GetPlayerPriority` now strip the
+  realm suffix before comparing against imported priority lists and player BIS data.
+
+---
+
 ## [0.1.16] - 2026-06-16
 
 ### Changed

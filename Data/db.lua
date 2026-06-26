@@ -104,6 +104,11 @@ function RCPL_Data_UnmarkAwarded(playerName, itemID)
     end
 end
 
+-- Returns the name portion before the first "-Realm" suffix, if any.
+local function BaseName(name)
+    return (name:match("^([^%-]+)")) or name
+end
+
 function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
     if type(RCPL_DB) ~= "table"
     or type(RCPL_DB.players) ~= "table"
@@ -112,9 +117,14 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
         return "N/A", COLOR_GREY
     end
 
+    -- Import data stores names without realm; RCLootCouncil provides them with
+    -- realm for cross-realm players. Strip realm for lookups that use imported names.
+    local baseName = BaseName(playerName)
+
     if type(RCPL_DB.awarded) == "table" then
         local awardsForItem = RCPL_DB.awarded[tostring(itemID)]
-        if type(awardsForItem) == "table" and awardsForItem[playerName] then
+        if type(awardsForItem) == "table"
+        and (awardsForItem[playerName] or awardsForItem[baseName]) then
             return "Awarded", COLOR_GREY
         end
     end
@@ -132,7 +142,7 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
         local priorityList = RCPL_DB.priority[tostring(itemID)]
         if type(priorityList) == "table" then
             for rank, name in ipairs(priorityList) do
-                if name == playerName then
+                if name == playerName or name == baseName then
                     return OrdinalLabel(rank), RankColor(rank)
                 end
             end
@@ -140,7 +150,7 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
         end
     end
 
-    local playerData = RCPL_DB.players[playerName]
+    local playerData = RCPL_DB.players[playerName] or RCPL_DB.players[baseName]
     if type(playerData) ~= "table" then
         return "N/A", COLOR_GREY
     end
