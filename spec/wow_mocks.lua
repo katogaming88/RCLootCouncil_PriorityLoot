@@ -33,11 +33,25 @@ _G.strtrim = function(s)
     return (s and s:gsub("^%s+", ""):gsub("%s+$", "")) or ""
 end
 
+-- GetInstanceInfo() is how Data/db.lua determines the live raid track
+-- (Heroic/Mythic) at lookup time -- no bonus-ID table to maintain, just the
+-- standard Blizzard API. Defaults to "not in an instance" (nil, nil);
+-- M.setInstanceInfo lets a spec put the mock player into a raid at a given
+-- difficultyID (15 = Heroic, 16 = Mythic).
+local _instanceType, _difficultyID = nil, nil
+_G.GetInstanceInfo = function()
+    return nil, _instanceType, _difficultyID
+end
+function M.setInstanceInfo(instanceType, difficultyID)
+    _instanceType, _difficultyID = instanceType, difficultyID
+end
+
 -- ── Reset helpers ────────────────────────────────────────────────────────────
 
 -- Wipe the SavedVariable between specs so tests are independent.
 function M.resetSavedVars()
     _G.RCPL_DB = nil
+    _instanceType, _difficultyID = nil, nil
 end
 
 -- Stub `print` so success/error chat output doesn't clutter spec output.

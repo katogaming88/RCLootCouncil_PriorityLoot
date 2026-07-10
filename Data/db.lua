@@ -109,6 +109,21 @@ local function BaseName(name)
     return (name:match("^([^%-]+)")) or name
 end
 
+-- Item IDs are shared between the Heroic and Mythic version of a given piece
+-- (this game's item tracks scale ilvl, not the base item ID -- confirmed
+-- from the WGA Raid Hub Supabase schema, which stores one wow_item_id per
+-- conceptual item), so RCPL_DB.priority[itemID] holds one ranked list per
+-- track ("H"/"M") rather than a single flat list. GetInstanceInfo() gives
+-- the live raid difficulty at vote/award time -- no bonus-ID table to
+-- maintain, unlike RCLootCouncil_wowaudit's approach, which this addon no
+-- longer depends on.
+local RAID_DIFFICULTY_TRACK = { [15] = "H", [16] = "M" }
+local function CurrentTrack()
+    local _, instanceType, difficultyID = GetInstanceInfo()
+    if instanceType ~= "raid" then return nil end
+    return RAID_DIFFICULTY_TRACK[difficultyID]
+end
+
 function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
     if type(RCPL_DB) ~= "table"
     or type(RCPL_DB.players) ~= "table"
@@ -139,11 +154,18 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
     end
 
     if type(RCPL_DB.priority) == "table" then
-        local priorityList = RCPL_DB.priority[tostring(itemID)]
-        if type(priorityList) == "table" then
-            for rank, name in ipairs(priorityList) do
-                if name == playerName or name == baseName then
-                    return OrdinalLabel(rank), RankColor(rank)
+        local itemPriority = RCPL_DB.priority[tostring(itemID)]
+        if type(itemPriority) == "table" then
+            local track = CurrentTrack()
+            if not track then
+                return "N/A (unknown raid difficulty)", COLOR_GREY
+            end
+            local priorityList = itemPriority[track]
+            if type(priorityList) == "table" then
+                for rank, name in ipairs(priorityList) do
+                    if name == playerName or name == baseName then
+                        return OrdinalLabel(rank), RankColor(rank)
+                    end
                 end
             end
             return "N/A", COLOR_GREY

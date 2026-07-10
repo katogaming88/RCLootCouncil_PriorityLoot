@@ -4,11 +4,15 @@
 -- resolver used by both votingFrame.lua and lootFrame.lua.
 --
 -- The resolver lives in Data/db.lua and walks two layers of saved data:
---   1. Item-centric  RCPL_DB.priority[itemID]   → ranked Name-Realm list
+--   1. Item-centric  RCPL_DB.priority[itemID][track] → ranked Name-Realm list
 --   2. Player-centric RCPL_DB.players[name][slot].bis[]
 --
 -- Layer 1 wins when present, even if the matching player is absent
--- (returns N/A with no fallback to layer 2).
+-- (returns N/A with no fallback to layer 2). Layer 1 is track-split (#335):
+-- Heroic and Mythic share the same itemID in this game but can have
+-- genuinely different priority rankings, so which sub-list applies is read
+-- live via GetInstanceInfo() (mocked per-test via mocks.setInstanceInfo),
+-- not from the item itself.
 --
 -- Secondary slots (cloak / wrist / waist / feet) intentionally short-circuit
 -- to a "see wowaudit wishlist" message regardless of saved data.
@@ -64,8 +68,10 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
     describe("item-centric priority", function()
         before_each(function()
+            -- Heroic raid (difficultyID 15) unless a test overrides it.
+            mocks.setInstanceInfo("raid", 15)
             _G.RCPL_DB.priority = {
-                ["12345"] = { "Alice-Realm", "Bob-Realm", "Carol-Realm" },
+                ["12345"] = { H = { "Alice-Realm", "Bob-Realm", "Carol-Realm" } },
             }
         end)
 
@@ -103,10 +109,56 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
         it("uses ordinal labels for rank > 3", function()
             _G.RCPL_DB.priority["7"] = {
-                "P1", "P2", "P3", "P4", "P5",
+                H = { "P1", "P2", "P3", "P4", "P5" },
             }
             local text = RCPL_Data_GetPlayerPriority("P5", 7, "INVTYPE_HEAD")
             assert.equals("5th", text)
+        end)
+    end)
+
+    -- ── Track-aware lookup (#335) ─────────────────────────────────────────────
+
+    describe("track-aware priority (Heroic vs Mythic)", function()
+        before_each(function()
+            _G.RCPL_DB.priority = {
+                ["500"] = {
+                    H = { "Alice-Realm", "Bob-Realm" },
+                    M = { "Bob-Realm", "Alice-Realm" },
+                },
+            }
+        end)
+
+        it("uses the Heroic list while in a Heroic raid", function()
+            mocks.setInstanceInfo("raid", 15)
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD"))
+            assert.equals("2nd", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD"))
+        end)
+
+        it("uses the Mythic list while in a Mythic raid, even for the same itemID", function()
+            mocks.setInstanceInfo("raid", 16)
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD"))
+            assert.equals("2nd", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD"))
+        end)
+
+        it("returns N/A grey for a track the item has no ranking for", function()
+            _G.RCPL_DB.priority["501"] = { H = { "Alice-Realm" } }  -- no Mythic list
+            mocks.setInstanceInfo("raid", 16)
+            local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 501, "INVTYPE_HEAD")
+            assert.equals("N/A", text)
+            assert.equals(0.6, color.r)
+        end)
+
+        it("returns an unknown-difficulty message when not in a raid at all", function()
+            mocks.setInstanceInfo(nil, nil)
+            local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
+            assert.matches("unknown raid difficulty", text)
+            assert.equals(0.6, color.r)
+        end)
+
+        it("returns the unknown-difficulty message for an unmapped difficultyID (e.g. LFR)", function()
+            mocks.setInstanceInfo("raid", 17)
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
+            assert.matches("unknown raid difficulty", text)
         end)
     end)
 
