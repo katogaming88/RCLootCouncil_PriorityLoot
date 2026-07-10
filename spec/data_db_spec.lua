@@ -10,9 +10,10 @@
 -- Layer 1 wins when present, even if the matching player is absent
 -- (returns N/A with no fallback to layer 2). Layer 1 is track-split (#335):
 -- Heroic and Mythic share the same itemID in this game but can have
--- genuinely different priority rankings, so which sub-list applies is read
--- live via GetInstanceInfo() (mocked per-test via mocks.setInstanceInfo),
--- not from the item itself.
+-- genuinely different priority rankings, so which sub-list applies is
+-- resolved per-lookup: primarily from the item's own live item level
+-- (mocks.setItemLevel), falling back to GetInstanceInfo()'s live raid
+-- difficulty (mocks.setInstanceInfo) when the item level isn't known yet.
 --
 -- Secondary slots (cloak / wrist / waist / feet) intentionally short-circuit
 -- to a "see wowaudit wishlist" message regardless of saved data.
@@ -128,7 +129,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
             }
         end)
 
-        it("uses the Heroic list while in a Heroic raid", function()
+        it("uses the Heroic list while in a Heroic raid (instance-info fallback)", function()
             mocks.setInstanceInfo("raid", 15)
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD"))
             assert.equals("2nd", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD"))
@@ -148,7 +149,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
             assert.equals(0.6, color.r)
         end)
 
-        it("returns an unknown-difficulty message when not in a raid at all", function()
+        it("returns an unknown-difficulty message when not in a raid and the item level is unknown", function()
             mocks.setInstanceInfo(nil, nil)
             local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
             assert.matches("unknown raid difficulty", text)
@@ -159,6 +160,35 @@ describe("RCPL_Data_GetPlayerPriority", function()
             mocks.setInstanceInfo("raid", 17)
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
             assert.matches("unknown raid difficulty", text)
+        end)
+
+        -- ── Item-level detection (primary signal) ─────────────────────────────
+
+        it("uses the item's own item level to pick the track, with no raid instance at all", function()
+            -- Mirrors /rc test: never actually in a raid, but the fake test
+            -- item still carries a real item level.
+            mocks.setInstanceInfo(nil, nil)
+            mocks.setItemLevel("item:500", 279)  -- this tier's Mythic ilvl (TIER_MYTHIC_ILVL in Data/db.lua)
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", "item:500"))
+        end)
+
+        it("prefers the item's own item level over a conflicting live raid difficulty", function()
+            mocks.setInstanceInfo("raid", 15)  -- Heroic raid
+            mocks.setItemLevel("item:500", 279)  -- but this drop is Mythic-track (TIER_MYTHIC_ILVL)
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", "item:500"))
+        end)
+
+        it("falls back to instance info when the item level isn't known yet", function()
+            mocks.setInstanceInfo("raid", 15)
+            -- No mocks.setItemLevel call -- GetDetailedItemLevelInfo returns nil,
+            -- as it can on the first frame an item is seen.
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", "item:500"))
+        end)
+
+        it("ignores an item level that doesn't match either known tier track", function()
+            mocks.setInstanceInfo("raid", 15)
+            mocks.setItemLevel("item:500", 200)  -- some unrelated ilvl
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", "item:500"))
         end)
     end)
 

@@ -35,7 +35,7 @@ local function UpdateEntry(entry, item, playerName)
     local equipLoc = item.equipLoc
     if not equipLoc or equipLoc == "" then overlay:SetText("") return end
 
-    local text, color = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
+    local text, color = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, item.link)
     if text == "N/A" or text:find("wowaudit") then overlay:SetText("") return end
 
     overlay:SetTextColor(color.r, color.g, color.b)

@@ -91,7 +91,7 @@ function RCPLVotingFrame.SetCellPriority(rowFrame, frame, data, cols, row, realr
         return
     end
 
-    local text, color = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
+    local text, color = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, entry.link)
 
     local sortValue = 0
     local rankNum = tonumber(text:match("^(%d+)"))

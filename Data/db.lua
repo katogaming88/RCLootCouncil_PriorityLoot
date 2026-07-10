@@ -113,18 +113,42 @@ end
 -- (this game's item tracks scale ilvl, not the base item ID -- confirmed
 -- from the WGA Raid Hub Supabase schema, which stores one wow_item_id per
 -- conceptual item), so RCPL_DB.priority[itemID] holds one ranked list per
--- track ("H"/"M") rather than a single flat list. GetInstanceInfo() gives
--- the live raid difficulty at vote/award time -- no bonus-ID table to
--- maintain, unlike RCLootCouncil_wowaudit's approach, which this addon no
--- longer depends on.
+-- track ("H"/"M") rather than a single flat list.
+--
+-- Track detection, in priority order:
+--   1. The item's own live item level (TrackFromItemLevel) -- works no
+--      matter where the officer/candidate is standing, including /rc test,
+--      which never actually places you in a raid instance. Update the two
+--      ilvl constants below once per raid tier.
+--   2. GetInstanceInfo()'s live raid difficulty (TrackFromInstance) -- a
+--      fallback for the rare case an item's detailed level info isn't
+--      cached client-side yet (GetDetailedItemLevelInfo can return nil on
+--      the first frame an item is seen).
+-- Neither depends on RCLootCouncil_wowaudit's bonus-ID table, which this
+-- addon no longer needs and which the user plans to eventually uninstall.
+local TIER_HEROIC_ILVL = 266
+local TIER_MYTHIC_ILVL = 279
+
+local function TrackFromItemLevel(itemLink)
+    if not itemLink then return nil end
+    local actualItemLevel = C_Item.GetDetailedItemLevelInfo(itemLink)
+    if actualItemLevel == TIER_MYTHIC_ILVL then return "M" end
+    if actualItemLevel == TIER_HEROIC_ILVL then return "H" end
+    return nil
+end
+
 local RAID_DIFFICULTY_TRACK = { [15] = "H", [16] = "M" }
-local function CurrentTrack()
+local function TrackFromInstance()
     local _, instanceType, difficultyID = GetInstanceInfo()
     if instanceType ~= "raid" then return nil end
     return RAID_DIFFICULTY_TRACK[difficultyID]
 end
 
-function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
+local function CurrentTrack(itemLink)
+    return TrackFromItemLevel(itemLink) or TrackFromInstance()
+end
+
+function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
     if type(RCPL_DB) ~= "table"
     or type(RCPL_DB.players) ~= "table"
     or type(playerName) ~= "string"
@@ -156,7 +180,7 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc)
     if type(RCPL_DB.priority) == "table" then
         local itemPriority = RCPL_DB.priority[tostring(itemID)]
         if type(itemPriority) == "table" then
-            local track = CurrentTrack()
+            local track = CurrentTrack(itemLink)
             if not track then
                 return "N/A (unknown raid difficulty)", COLOR_GREY
             end
