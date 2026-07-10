@@ -44,18 +44,20 @@ describe("RCPL_Data_SaveImportedData", function()
     end)
 
     it("stores priority lists alongside players", function()
+        -- priority[itemID] is a per-track object (#335), stored as-is --
+        -- SaveImportedData doesn't need to know about "H"/"M" itself.
         local p, pri = RCPL_Data_SaveImportedData({
             players = {
                 ["Alice-Realm"] = { helm = { bis = { 1 } } },
             },
             priority = {
-                ["100"] = { "Alice-Realm", "Bob-Realm" },
-                ["200"] = { "Carol-Realm" },
+                ["100"] = { H = { "Alice-Realm", "Bob-Realm" } },
+                ["200"] = { H = { "Carol-Realm" }, M = { "Carol-Realm" } },
             },
         })
         assert.equals(1, p)
         assert.equals(2, pri)
-        assert.same({ "Alice-Realm", "Bob-Realm" }, _G.RCPL_DB.priority["100"])
+        assert.same({ H = { "Alice-Realm", "Bob-Realm" } }, _G.RCPL_DB.priority["100"])
     end)
 
     it("skips entries with non-string player keys or non-table slots", function()

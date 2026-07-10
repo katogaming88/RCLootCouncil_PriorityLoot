@@ -124,8 +124,12 @@ local function Populate()
                     return (tonumber(a) or 0) < (tonumber(b) or 0)
                 end)
 
+                -- priority[idStr] is { H = {...}, M = {...} } (track-split,
+                -- #335) rather than a single flat list, since Heroic and
+                -- Mythic priority for an item can genuinely differ.
+                local TRACK_LABEL = { H = "Heroic", M = "Mythic" }
                 for i, idStr in ipairs(sortedIDs) do
-                    local list   = priority[idStr]
+                    local tracks = priority[idStr]
                     local itemID = tonumber(idStr)
                     local name   = itemID and GetItemInfo(itemID)
                     local label  = name
@@ -134,11 +138,17 @@ local function Populate()
 
                     add("  " .. label)
 
-                    local parts = {}
-                    for rank, playerName in ipairs(list) do
-                        parts[#parts + 1] = rank .. ". " .. ShortName(playerName)
+                    for _, trackKey in ipairs({ "H", "M" }) do
+                        local list = tracks[trackKey]
+                        if type(list) == "table" and #list > 0 then
+                            local parts = {}
+                            for rank, playerName in ipairs(list) do
+                                parts[#parts + 1] = rank .. ". " .. ShortName(playerName)
+                            end
+                            add("    |cFF888888" .. TRACK_LABEL[trackKey] .. ":|r  |cFFCCCCCC"
+                                .. table.concat(parts, "   ") .. "|r")
+                        end
                     end
-                    add("    |cFFCCCCCC" .. table.concat(parts, "   ") .. "|r")
 
                     if i < #sortedIDs then add("") end
                 end

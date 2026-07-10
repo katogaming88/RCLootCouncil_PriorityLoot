@@ -30,7 +30,7 @@ read_globals = {
     "CreateFrame", "UIParent", "UISpecialFrames", "GameTooltip",
 
     -- Item / unit info
-    "GetItemInfo", "GetItemInfoInstant", "Item",
+    "GetItemInfo", "GetItemInfoInstant", "Item", "C_Item",
     "UnitName", "UnitGUID", "UnitClass", "UnitRace", "UnitFactionGroup",
     "UnitIsPlayer", "UnitIsConnected", "UnitExists",
 
@@ -50,7 +50,7 @@ read_globals = {
     -- WoW-side helpers occasionally reached for
     "GetTime", "GetServerTime", "GetRealmName", "GetLocale",
     "IsInGuild", "IsInRaid", "IsInGroup",
-    "GetNumGroupMembers",
+    "GetNumGroupMembers", "GetInstanceInfo",
     "C_Timer", "TooltipDataProcessor", "Settings", "Enum",
     "Mixin", "CreateFromMixins",
 }

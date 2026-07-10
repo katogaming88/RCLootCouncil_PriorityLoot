@@ -11,6 +11,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.0] - 2026-07-11
+
+### Changed
+
+- **Breaking SavedVariable schema change: track-aware priority (Heroic vs. Mythic).** `RCPL_DB.priority[itemID]` is now a per-track object (`{ H = {...}, M = {...} }`) instead of a single flat ranked list, matching the new export shape from WGA Raid Hub's `build_rclc_export()` (Supabase-side companion change). Heroic and Mythic share the same item ID in this game (the track only changes item level), so a single flat list couldn't tell a Mythic-only-ranked player apart from a Heroic one -- merging them risked surfacing the wrong player's priority during an award at the wrong difficulty. `RCPL_Data_GetPlayerPriority` resolves the track per lookup: primarily from the dropped item's own live item level (`C_Item.GetDetailedItemLevelInfo`, against two per-tier ilvl constants -- no bonus-ID table to maintain, unlike the wowaudit-table-based approach considered and rejected during design), falling back to the raid's live difficulty via `GetInstanceInfo()` if the item level isn't cached yet. Item-level detection works everywhere, including `/rc test`, which never actually places you in a raid instance -- `GetInstanceInfo()` alone was tried first and failed exactly this case during real verification. Shows an "unknown raid difficulty" message when neither signal resolves a track (e.g. LFR, or an item level outside both known tier values) instead of guessing.
+- `/rcpl prio` preview now lists Heroic and Mythic priority separately per item instead of one combined list.
+- Priority data imported before this version (flat per-item lists) will show N/A instead of a rank until the next `/rcpl import`. `players`-keyed BiS data is unaffected.
+
+### Docs
+
+- `README.md` -- replaced Google Sheet/Apps Script references (Requirements table, Weekly Officer Workflow, Data Format, File Structure) with the WGA Raid Hub officer dashboard/`build_rclc_export()` Supabase path, which now generates the import string live with no manual spreadsheet step.
+
+---
+
 ## [0.1.17] - 2026-06-26
 
 ### Fixed
