@@ -116,18 +116,51 @@ end
 -- track ("H"/"M") rather than a single flat list.
 --
 -- Track detection, in priority order:
---   1. The item's own live item level (TrackFromItemLevel) -- works no
---      matter where the officer/candidate is standing, including /rc test,
---      which never actually places you in a raid instance. Update the two
---      ilvl constants below once per raid tier.
---   2. GetInstanceInfo()'s live raid difficulty (TrackFromInstance) -- a
+--   1. instanceDifficultyID off the item link itself (TrackFromItemLink) --
+--      a dedicated field in every item string (position 13 of the
+--      colon-separated "item:" string, distinct from bonusIDs), set by the
+--      server the moment a real loot drop is generated. Correct for every
+--      real award path (Start Session voting/loot frames) with zero
+--      per-tier maintenance -- unlike ilvl, this field never changes
+--      meaning across tiers. It is *not* set on synthetic links (e.g. /rc
+--      test's Encounter Journal preview links were never itemized against a
+--      real instance run), so it's only reliable for genuine drops.
+--   2. The item's own live item level (TrackFromItemLevel) -- covers /rc
+--      test, since ilvl scaling rides on bonus IDs, which Encounter
+--      Journal's per-difficulty-tab preview links do carry correctly (unlike
+--      instanceDifficultyID). Doesn't matter that this needs the two ilvl
+--      constants below bumped once per raid tier -- nothing is actually
+--      awarded from a test session, so a stale value here is harmless.
+--   3. GetInstanceInfo()'s live raid difficulty (TrackFromInstance) -- a
 --      fallback for the rare case an item's detailed level info isn't
 --      cached client-side yet (GetDetailedItemLevelInfo can return nil on
 --      the first frame an item is seen).
--- Neither depends on RCLootCouncil_wowaudit's bonus-ID table, which this
--- addon no longer needs and which the user plans to eventually uninstall.
+-- None of the three depend on RCLootCouncil_wowaudit's bonus-ID table, which
+-- this addon no longer needs and which the user plans to eventually
+-- uninstall.
 local TIER_HEROIC_ILVL = 266
 local TIER_MYTHIC_ILVL = 279
+
+local RAID_DIFFICULTY_TRACK = { [15] = "H", [16] = "M" }
+
+-- item:itemID:enchantID:gem1:gem2:gem3:gem4:suffixID:uniqueID:linkLevel:
+-- specializationID:upgradeTypeID:instanceDifficultyID:... -- 11 numeric
+-- fields (itemID through upgradeTypeID) after the "item:" literal, then the
+-- 13th field (instanceDifficultyID) captured on its own.
+local ITEM_STRING_DIFFICULTY_PATTERN = "^item:" .. ("%-?%d*:"):rep(11) .. "(%-?%d*):"
+
+-- Pure Lua string parsing, no WoW-specific API and no RCLootCouncil
+-- dependency -- mirrors the one-liner RCLootCouncil's own
+-- Utils.Item:GetItemStringFromLink uses internally (core.lua's
+-- DecodeItemLink), reimplemented locally rather than reaching into
+-- RCLootCouncil's non-public API.
+local function TrackFromItemLink(itemLink)
+    if not itemLink then return nil end
+    local itemString = itemLink:match("item:[%-%d:]+")
+    if not itemString then return nil end
+    local instanceDifficultyID = itemString:match(ITEM_STRING_DIFFICULTY_PATTERN)
+    return RAID_DIFFICULTY_TRACK[tonumber(instanceDifficultyID)]
+end
 
 local function TrackFromItemLevel(itemLink)
     if not itemLink then return nil end
@@ -137,7 +170,6 @@ local function TrackFromItemLevel(itemLink)
     return nil
 end
 
-local RAID_DIFFICULTY_TRACK = { [15] = "H", [16] = "M" }
 local function TrackFromInstance()
     local _, instanceType, difficultyID = GetInstanceInfo()
     if instanceType ~= "raid" then return nil end
@@ -145,7 +177,7 @@ local function TrackFromInstance()
 end
 
 local function CurrentTrack(itemLink)
-    return TrackFromItemLevel(itemLink) or TrackFromInstance()
+    return TrackFromItemLink(itemLink) or TrackFromItemLevel(itemLink) or TrackFromInstance()
 end
 
 function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)

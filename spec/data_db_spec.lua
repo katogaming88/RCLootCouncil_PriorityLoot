@@ -11,9 +11,13 @@
 -- (returns N/A with no fallback to layer 2). Layer 1 is track-split (#335):
 -- Heroic and Mythic share the same itemID in this game but can have
 -- genuinely different priority rankings, so which sub-list applies is
--- resolved per-lookup: primarily from the item's own live item level
--- (mocks.setItemLevel), falling back to GetInstanceInfo()'s live raid
--- difficulty (mocks.setInstanceInfo) when the item level isn't known yet.
+-- resolved per-lookup, in order: (1) instanceDifficultyID parsed directly
+-- off a real item link -- correct for every genuine drop with zero
+-- maintenance, but unset on synthetic links like /rc test's Encounter
+-- Journal previews; (2) the item's own live item level (mocks.setItemLevel),
+-- which does survive /rc test since ilvl scaling rides on bonus IDs rather
+-- than instanceDifficultyID; (3) GetInstanceInfo()'s live raid difficulty
+-- (mocks.setInstanceInfo), for the rare case the item level isn't cached yet.
 --
 -- Secondary slots (cloak / wrist / waist / feet) intentionally short-circuit
 -- to a "see wowaudit wishlist" message regardless of saved data.
@@ -162,7 +166,45 @@ describe("RCPL_Data_GetPlayerPriority", function()
             assert.matches("unknown raid difficulty", text)
         end)
 
-        -- ── Item-level detection (primary signal) ─────────────────────────────
+        -- ── instanceDifficultyID from the item link (primary signal) ──────────
+        -- Real loot drops (Start Session) carry this in the item string itself
+        -- (field 13 of "item:itemID:...:instanceDifficultyID:numBonuses:...").
+        -- Synthetic links (e.g. /rc test) don't have it, which the item-level
+        -- fallback tests below cover.
+
+        it("uses instanceDifficultyID from a real Heroic drop's item link", function()
+            mocks.setInstanceInfo(nil, nil)  -- no live raid, no item level cached
+            local heroicLink = "item:500:0:0:0:0:0:0:0:0:0:0:15:0"
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", heroicLink))
+        end)
+
+        it("uses instanceDifficultyID from a real Mythic drop's item link", function()
+            mocks.setInstanceInfo(nil, nil)
+            local mythicLink = "item:500:0:0:0:0:0:0:0:0:0:0:16:0"
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", mythicLink))
+        end)
+
+        it("prefers instanceDifficultyID over a conflicting live raid difficulty or item level", function()
+            mocks.setInstanceInfo("raid", 15)  -- Heroic raid
+            local mythicLink = "item:500:0:0:0:0:0:0:0:0:0:0:16:0"  -- but this drop is Mythic
+            mocks.setItemLevel(mythicLink, 266)  -- and a (contradictory) Heroic item level
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", mythicLink))
+        end)
+
+        it("falls back to item level for a synthetic link with no instanceDifficultyID field", function()
+            mocks.setInstanceInfo(nil, nil)
+            mocks.setItemLevel("item:500", 279)  -- /rc test-style bare link
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", "item:500"))
+        end)
+
+        it("falls back to item level for an unmapped instanceDifficultyID (e.g. LFR)", function()
+            mocks.setInstanceInfo(nil, nil)
+            local lfrLink = "item:500:0:0:0:0:0:0:0:0:0:0:17:0"
+            mocks.setItemLevel(lfrLink, 279)  -- Mythic ilvl, even though this specific drop is LFR
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", lfrLink))
+        end)
+
+        -- ── Item-level detection (fallback for synthetic/test links) ──────────
 
         it("uses the item's own item level to pick the track, with no raid instance at all", function()
             -- Mirrors /rc test: never actually in a raid, but the fake test
