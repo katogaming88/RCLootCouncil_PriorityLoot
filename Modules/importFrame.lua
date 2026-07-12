@@ -36,6 +36,29 @@ end
 
 local importFrame
 
+-- SavedVariables only get flushed to disk on UI reload/logout -- until then,
+-- a successful import lives in memory only, and a crash or /console-forced
+-- close (or another /rcpl import that never gets confirmed) can lose it.
+-- Prompt for a reload right after a successful import so the data is safely
+-- on disk before the raid actually needs it. preferredIndex avoids fighting
+-- other addons' popups for the same StaticPopup slot.
+StaticPopupDialogs["RCPL_RELOAD_AFTER_IMPORT"] = {
+    text = "Priority data imported.\nReload your UI now so it's saved to disk?",
+    button1 = "Reload Now",
+    button2 = "Later",
+    OnAccept = function()
+        if C_UI and C_UI.Reload then
+            C_UI.Reload()
+        else
+            ReloadUI()
+        end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 local function CreateImportFrame()
     local f = CreateFrame("Frame", "RCPL_ImportFrame", UIParent, "BasicFrameTemplateWithInset")
     f:SetSize(500, 340)
@@ -108,6 +131,7 @@ local function CreateImportFrame()
             local msg = string.format("Imported %d player(s) and %d priority item(s).", playerCount, priorityCount or 0)
             statusText:SetText("|cFF00FF00" .. msg .. "|r")
             print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r " .. msg)
+            StaticPopup_Show("RCPL_RELOAD_AFTER_IMPORT")
         end
 
         editBox:SetText("")

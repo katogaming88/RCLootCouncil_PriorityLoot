@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.2] - 2026-07-12
+
+### Added
+
+- **Reload prompt after a successful `/rcpl import`.** SavedVariables only get flushed to disk on UI reload or logout -- until then, an import lives in memory only, and a crash (or an unconfirmed second import) can lose it. A confirmation popup ("Reload Now" / "Later") now appears right after a successful import so the data gets safely on disk before it's actually needed, without forcing an unannounced reload if you're mid-raid or mid-typing.
+
+---
+
 ## [0.2.1] - 2026-07-12
 
 ### Changed

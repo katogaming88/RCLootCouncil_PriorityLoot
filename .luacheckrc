@@ -53,6 +53,7 @@ read_globals = {
     "GetNumGroupMembers", "GetInstanceInfo",
     "C_Timer", "TooltipDataProcessor", "Settings", "Enum",
     "Mixin", "CreateFromMixins",
+    "StaticPopup_Show", "C_UI", "ReloadUI",
 }
 
 -- ── Globals defined by this addon --------------------------------------------
@@ -79,6 +80,11 @@ globals = {
 
     -- Centralised logger (Modules/log.lua); used across Core.lua and modules
     "RCPL_Log",
+
+    -- Blizzard's own global table -- addons register new entries into it
+    -- rather than owning it (StaticPopup_Show reads dialog definitions from
+    -- here by key)
+    "StaticPopupDialogs",
 }
 
 -- ── Per-file overrides --------------------------------------------------------
