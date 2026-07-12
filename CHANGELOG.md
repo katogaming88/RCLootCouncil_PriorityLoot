@@ -11,6 +11,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.1] - 2026-07-12
+
+### Changed
+
+- **Track detection now reads `instanceDifficultyID` off the item link first.** Every real loot drop's item string carries a dedicated `instanceDifficultyID` field (distinct from bonus IDs) set by the server the moment the drop is generated -- it's the same enum `GetInstanceInfo()` returns (15 = Heroic, 16 = Mythic), but travels with the item itself, so it's always correct for genuine awards (Start Session voting/loot frames) with zero per-tier maintenance, unlike the ilvl constants it now sits ahead of. Falls back to `TrackFromItemLevel` when the field isn't set -- true for synthetic links like `/rc test`'s Encounter Journal previews, which were never itemized against a real instance run and so don't carry a meaningful `instanceDifficultyID`, but do still scale ilvl correctly via bonus IDs. `GetInstanceInfo()` remains the final fallback for the rare uncached-ilvl case. Pure Lua string parsing, no new dependency -- reimplements the same one-line pattern RCLootCouncil's own (non-public) `Utils.Item:GetItemStringFromLink` uses internally rather than reaching into RCLootCouncil's internals.
+- `TIER_HEROIC_ILVL`/`TIER_MYTHIC_ILVL` still need a manual bump each new raid tier, but only matter for `/rc test` accuracy now -- real awards no longer depend on them being current.
+- **WoW 12.1.0 compatibility** -- updated Interface version to 120100.
+
+---
+
 ## [0.2.0] - 2026-07-11
 
 ### Changed
