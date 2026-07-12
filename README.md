@@ -44,7 +44,7 @@ A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [
 1. Open the WGA Raid Hub officer dashboard's Priority tab and click **Generate** (or **Regenerate**) — this produces a **Base64-encoded JSON string** matching the format below, computed live, no manual spreadsheet step required.
 2. In-game, type `/rcpl import`.
 3. Paste the export string into the text box and click **Confirm**.
-4. The addon prints a confirmation with the number of players and priority items imported. Data persists via SavedVariables until the next import or a manual reset.
+4. The addon prints a confirmation with the number of players and priority items imported, then prompts to reload your UI. Reload when it asks -- SavedVariables only get written to disk on reload/logout, so the import isn't safely saved until then. Data persists via SavedVariables until the next import or a manual reset.
 
 ---
 
