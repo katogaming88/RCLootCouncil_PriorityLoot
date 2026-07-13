@@ -82,6 +82,11 @@ globals = {
     "RCPL_ShowImportFrame",
     "RCPL_ShowPrioPreview",
     "RCPL_ShowAwardsFrame",
+    "RCPL_ShowVersionCheckFrame",
+    "RCPL_VersionCheck_Reset",
+    "RCPL_VersionCheck_SeedWaiting",
+    "RCPL_VersionCheck_UpdateRow",
+    "RCPL_VersionCheck_MarkMissing",
 
     -- Centralised logger (Modules/log.lua); used across Core.lua and modules
     "RCPL_Log",
