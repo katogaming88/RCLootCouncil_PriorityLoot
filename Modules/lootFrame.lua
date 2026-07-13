@@ -67,16 +67,22 @@ local function UpdateEntry(entry, item, playerName)
     local text, color, track, rank = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, item.link)
     if text == "N/A" or text:find("wowaudit") then clearOverlay() return end
 
+    -- track is only set when the rank came from the item-centric priority
+    -- list (Layer 1) -- the per-player BiS fallback (Layer 2) isn't
+    -- track-split, so there's nothing to show there.
+    local trackLabel = RCPL_Data_TrackLabel(track)
+    local trackSuffix = trackLabel and (" (" .. trackLabel .. ")") or ""
+
     local displayText, displayColor
     if rank and rank > RAIDER_RANK_REVEAL_THRESHOLD then
-        displayText = "On your BiS list"
+        -- Rank number is hidden past the threshold, but the difficulty is
+        -- still useful context on its own -- a raider deciding whether to
+        -- click Upgrade/OS/M+ cares whether this is the Heroic or Mythic
+        -- drop even when they don't need their exact rank.
+        displayText = "On your BiS list" .. trackSuffix
         displayColor = { r = 1, g = 1, b = 1 }
     else
-        -- track is only set when the rank came from the item-centric
-        -- priority list (Layer 1) -- the per-player BiS fallback (Layer 2)
-        -- isn't track-split, so there's nothing to show there.
-        local trackLabel = RCPL_Data_TrackLabel(track)
-        displayText = "Prio: " .. text .. (trackLabel and (" (" .. trackLabel .. ")") or "")
+        displayText = "Prio: " .. text .. trackSuffix
         displayColor = color
     end
 

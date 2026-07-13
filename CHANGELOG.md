@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.8] - 2026-07-12
+
+### Changed
+
+- **`TrackFromItemLevel` now checks a range per track instead of one exact ilvl, take two.** The overlap band from 0.2.7's range fix (272-276) is left genuinely ambiguous rather than guessed, and the resolution is now logged in full (`isPreview`, `baseItemLevel` included) at every step of the track-detection chain to make future `/rc test` discrepancies easier to diagnose.
+- **The raider-facing "On your BiS list" loot frame overlay now still shows the difficulty tag.** Past `RAIDER_RANK_REVEAL_THRESHOLD`, the exact rank is hidden and replaced with "On your BiS list" -- previously this also silently dropped the Heroic/Mythic label that a shown rank gets, so a raider past the threshold had no way to tell which difficulty's drop they were looking at. Now shows e.g. "On your BiS list (Heroic)".
+
+---
+
 ## [0.2.7] - 2026-07-13
 
 ### Added

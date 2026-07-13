@@ -1,6 +1,15 @@
 -- Data\db.lua
 -- All SavedVariable read/write logic for RCLootCouncil_PriorityLoot.
 
+-- Modules/log.lua loads before this file (see .toc), so RCPL_Log is always
+-- available by the time any function below executes. Capture as a local for
+-- speed; fall back to no-ops if the global is ever missing, matching
+-- Core.lua's own fallback pattern.
+local Log = RCPL_Log or {
+    debug = function() end, info = function() end,
+    warn = function() end, error = function() end,
+}
+
 local SECONDARY_EQUIPLOC = {
     INVTYPE_CLOAK = "cloak",
     INVTYPE_WRIST = "bracers",
@@ -182,35 +191,70 @@ local ITEM_STRING_DIFFICULTY_PATTERN = "^item:" .. ("%-?%d*:"):rep(11) .. "(%-?%
 local function TrackFromItemLink(itemLink)
     if not itemLink then return nil end
     local itemString = itemLink:match("item:[%-%d:]+")
-    if not itemString then return nil end
+    if not itemString then
+        Log.debug("TrackFromItemLink: no item: substring in link=%s", tostring(itemLink))
+        return nil
+    end
     local instanceDifficultyID = itemString:match(ITEM_STRING_DIFFICULTY_PATTERN)
-    return RAID_DIFFICULTY_TRACK[tonumber(instanceDifficultyID)]
+    local track = RAID_DIFFICULTY_TRACK[tonumber(instanceDifficultyID)]
+    Log.debug("TrackFromItemLink: link=%s instanceDifficultyID=%s -> %s",
+        tostring(itemLink), tostring(instanceDifficultyID), tostring(track))
+    return track
 end
 
 local function TrackFromItemLevel(itemLink)
     if not itemLink then return nil end
-    local actualItemLevel = C_Item.GetDetailedItemLevelInfo(itemLink)
-    if not actualItemLevel then return nil end
+    -- GetDetailedItemLevelInfo returns 3 values: the effective (possibly
+    -- upgraded/preview) item level, whether it's a preview, and the base
+    -- item level with no upgrade applied. Logging all three -- baseItemLevel
+    -- turned out to be a flat per-item floor (identical regardless of
+    -- track, confirmed empirically), not a usable signal, but kept in the
+    -- log for visibility. A same-item "remember one track, infer the other"
+    -- heuristic was also tried here and reverted -- real /rc test data
+    -- showed a single item can report more than two distinct ilvls across
+    -- repeated queries (observed: 266, 276, and 279 for the same item),
+    -- which breaks the "only two real ilvls per item" assumption the
+    -- heuristic depended on. A wrong-but-confident answer, cached for the
+    -- rest of the session, is worse than an honest "unknown" here.
+    local actualItemLevel, isPreview, baseItemLevel = C_Item.GetDetailedItemLevelInfo(itemLink)
+    if not actualItemLevel then
+        Log.debug("TrackFromItemLevel: link=%s ilvl=nil (not cached yet)", tostring(itemLink))
+        return nil
+    end
 
     local inHeroicRange = actualItemLevel >= TIER_HEROIC_ILVL_MIN and actualItemLevel <= TIER_HEROIC_ILVL_MAX
     local inMythicRange = actualItemLevel >= TIER_MYTHIC_ILVL_MIN and actualItemLevel <= TIER_MYTHIC_ILVL_MAX
 
     -- Both ranges match inside the overlap band -- item level alone can't
     -- tell them apart there, so don't guess.
-    if inHeroicRange and inMythicRange then return nil end
-    if inHeroicRange then return "H" end
-    if inMythicRange then return "M" end
-    return nil
+    local track
+    if inHeroicRange and inMythicRange then
+        track = nil
+    elseif inHeroicRange then
+        track = "H"
+    elseif inMythicRange then
+        track = "M"
+    end
+
+    Log.debug(
+        "TrackFromItemLevel: link=%s ilvl=%s isPreview=%s baseItemLevel=%s inHeroicRange=%s inMythicRange=%s -> %s",
+        tostring(itemLink), tostring(actualItemLevel), tostring(isPreview), tostring(baseItemLevel),
+        tostring(inHeroicRange), tostring(inMythicRange), tostring(track))
+    return track
 end
 
 local function TrackFromInstance()
     local _, instanceType, difficultyID = GetInstanceInfo()
-    if instanceType ~= "raid" then return nil end
-    return RAID_DIFFICULTY_TRACK[difficultyID]
+    local track = (instanceType == "raid") and RAID_DIFFICULTY_TRACK[difficultyID] or nil
+    Log.debug("TrackFromInstance: instanceType=%s difficultyID=%s -> %s",
+        tostring(instanceType), tostring(difficultyID), tostring(track))
+    return track
 end
 
 local function CurrentTrack(itemLink)
-    return TrackFromItemLink(itemLink) or TrackFromItemLevel(itemLink) or TrackFromInstance()
+    local track = TrackFromItemLink(itemLink) or TrackFromItemLevel(itemLink) or TrackFromInstance()
+    Log.debug("CurrentTrack: link=%s -> %s", tostring(itemLink), tostring(track))
+    return track
 end
 
 -- Public wrapper so a caller that doesn't have a specific player in mind yet

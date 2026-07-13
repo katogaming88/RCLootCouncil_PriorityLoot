@@ -29,6 +29,10 @@ end
 -- WoW global helpers
 _G.tinsert = table.insert
 _G.tremove = table.remove
+_G.wipe = function(t)
+    for k in pairs(t) do t[k] = nil end
+    return t
+end
 _G.strtrim = function(s)
     return (s and s:gsub("^%s+", ""):gsub("%s+$", "")) or ""
 end

@@ -301,6 +301,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
                 assert.matches("unknown raid difficulty", text)
             end
         end)
+
     end)
 
     -- ── Layer 2: per-player BiS fallback ─────────────────────────────────────
