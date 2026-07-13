@@ -10,7 +10,14 @@ RCPLAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCPLAddon
 
-local RCPL_VERSION       = "0.2.0"
+-- Read from the .toc's own ## Version rather than a hardcoded duplicate --
+-- that constant sat at "0.2.0" through several real releases (0.2.1-0.2.3)
+-- because nothing forced it to be bumped alongside the .toc, silently
+-- breaking the whole point of this feature (every version check compared
+-- against a stale local value). Single source of truth now.
+local RCPL_VERSION = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("RCLootCouncil_PriorityLoot", "Version"))
+    or (GetAddOnMetadata and GetAddOnMetadata("RCLootCouncil_PriorityLoot", "Version"))
+    or "0.0.0"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -26,6 +33,7 @@ local Log = RCPL_Log or {
 
 local versionWarned       = false
 local versionCheckResults = nil  -- nil = no check in progress, table = collecting
+local versionCheckChannel = nil  -- which channel the in-progress check went out on
 local versionCheckTimer   = nil
 
 -- Returns true when other is a strictly higher semver than current.
@@ -141,12 +149,16 @@ function RCPLAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
         tostring(prefix), tostring(message), tostring(distribution), tostring(sender))
     if sender == UnitName("player") then return end
     if message == "REQUEST" then
-        local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
-        if channel then
-            self:SendCommMessage(RCPL_CHECK_PREFIX, RCPL_VERSION, channel)
-            Log.debug("Replied to version REQUEST from %s on %s", tostring(sender), channel)
+        -- Reply on whatever channel the REQUEST actually arrived on, rather
+        -- than recomputing our own current group state -- a GUILD-wide
+        -- check needs replies from guildies who aren't in the requester's
+        -- raid/party (or aren't grouped at all), and recomputing IsInRaid()/
+        -- IsInGroup() here would silently drop exactly those replies.
+        if distribution == "RAID" or distribution == "PARTY" or distribution == "GUILD" then
+            self:SendCommMessage(RCPL_CHECK_PREFIX, RCPL_VERSION, distribution)
+            Log.debug("Replied to version REQUEST from %s on %s", tostring(sender), distribution)
         else
-            Log.debug("Ignoring REQUEST from %s; not in raid or party", tostring(sender))
+            Log.debug("Ignoring REQUEST from %s on unexpected distribution %s", tostring(sender), tostring(distribution))
         end
     elseif versionCheckResults then
         versionCheckResults[sender] = message
@@ -155,12 +167,16 @@ function RCPLAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
 end
 
 function RCPLAddon:StartVersionCheck()
-    local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
+    -- Falls back to GUILD when not currently in a raid or party -- checking
+    -- versions is just as useful before forming up as during a raid, and
+    -- there's no reason to require a group just to ask who needs to update.
+    local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or (IsInGuild() and "GUILD" or nil))
     if not channel then
-        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r You must be in a group to check versions.")
+        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r You must be in a group or guild to check versions.")
         return
     end
     versionCheckResults = {}
+    versionCheckChannel = channel
     versionCheckResults[UnitName("player")] = RCPL_VERSION
     self:SendCommMessage(RCPL_CHECK_PREFIX, "REQUEST", channel)
     print(string.format(
@@ -176,10 +192,7 @@ function RCPLAddon:PrintVersionCheckResults()
     local myName = UnitName("player")
     local withAddon, withoutAddon = {}, {}
 
-    local function processUnit(unit)
-        local name = GetUnitFullName(unit)
-        if not name then return end
-        local ver = versionCheckResults[name]
+    local function recordResult(name, ver)
         if ver then
             withAddon[#withAddon + 1] = { name = name, version = ver }
         else
@@ -187,11 +200,33 @@ function RCPLAddon:PrintVersionCheckResults()
         end
     end
 
-    if IsInRaid() then
+    local function processUnit(unit)
+        local name = GetUnitFullName(unit)
+        if not name then return end
+        recordResult(name, versionCheckResults[name])
+    end
+
+    -- Branches on which channel the check actually went out on
+    -- (versionCheckChannel), not current live group state -- that can
+    -- legitimately differ from 10 seconds ago when the check started, and
+    -- GUILD has no raid/party unit tokens to enumerate at all.
+    if versionCheckChannel == "RAID" then
         for i = 1, GetNumGroupMembers() do processUnit("raid" .. i) end
-    else
+    elseif versionCheckChannel == "PARTY" then
         processUnit("player")
         for i = 1, GetNumGroupMembers() do processUnit("party" .. i) end
+    else -- GUILD
+        for i = 1, GetNumGuildMembers() do
+            local name, _, _, _, _, _, _, _, online = GetGuildRosterInfo(i)
+            if name and online then
+                -- GetGuildRosterInfo names carry a "-Realm" suffix only for
+                -- cross-realm guild members; AceComm's sender name for a
+                -- GUILD broadcast may or may not match that exactly, so try
+                -- both forms rather than missing a reply over formatting.
+                local bareName = name:match("^([^%-]+)") or name
+                recordResult(name, versionCheckResults[name] or versionCheckResults[bareName])
+            end
+        end
     end
 
     table.sort(withAddon, function(a, b) return a.name < b.name end)
@@ -219,6 +254,7 @@ function RCPLAddon:PrintVersionCheckResults()
     end
 
     versionCheckResults = nil
+    versionCheckChannel = nil
 end
 
 local function HandleAwardSubcommand(args, undo)
