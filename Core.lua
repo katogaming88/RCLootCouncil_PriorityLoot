@@ -273,17 +273,21 @@ SlashCmdList["RCPL"] = function(input)
     rest = strtrim(rest or "")
 
     if cmd == "" then
-        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
-        print("  /rcpl import                   open the priority data import window")
-        print("  /rcpl prio                     preview imported priority data")
-        print("  /rcpl reset                    clear all stored priority data")
-        print("  /rcpl awards                   open the season awards window")
-        print("  /rcpl award <player> <item>    manually record an award")
-        print("  /rcpl unaward <player> <item>  undo a recorded award")
-        print("  /rcpl version                  open the version checker (Guild/Group buttons)")
-        print("  /rcpl version guild            open it and immediately check your guild")
-        print("  /rcpl debug                    toggle debug logging on or off")
-        print("  /rcpl log                      open the log window (also: dump, clear)")
+        if RCPL_ShowOptionsFrame then
+            RCPL_ShowOptionsFrame()
+        else
+            print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
+            print("  /rcpl import                   open the priority data import window")
+            print("  /rcpl prio                     preview imported priority data")
+            print("  /rcpl reset                    clear all stored priority data")
+            print("  /rcpl awards                   open the season awards window")
+            print("  /rcpl award <player> <item>    manually record an award")
+            print("  /rcpl unaward <player> <item>  undo a recorded award")
+            print("  /rcpl version                  open the version checker (Guild/Group buttons)")
+            print("  /rcpl version guild            open it and immediately check your guild")
+            print("  /rcpl debug                    toggle debug logging on or off")
+            print("  /rcpl log                      open the log window (also: dump, clear)")
+        end
     elseif cmd == "import" then
         RCPL_ShowImportFrame()
     elseif cmd == "prio" then

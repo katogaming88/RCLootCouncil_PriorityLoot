@@ -1,0 +1,130 @@
+-- Modules\optionsFrame.lua
+-- Options / quick-actions panel. Opened via bare /rcpl (no arguments),
+-- replacing the old chat-printed command list. A real button per action that
+-- opens a window with no required arguments; commands that need typed
+-- arguments (award, unaward) or are destructive (reset) are listed as
+-- reference text only, not buttons.
+
+local BTN_W   = 200
+local BTN_H   = 22
+local ROW_GAP = 6
+
+local frame
+
+local ACTIONS = {
+    { label = "Import", desc = "open the priority data import window",
+        action = function() RCPL_ShowImportFrame() end },
+    { label = "Priority Preview", desc = "preview imported priority data",
+        action = function() RCPL_ShowPrioPreview() end },
+    { label = "Season Awards", desc = "open the season awards window",
+        action = function() RCPL_ShowAwardsFrame() end },
+    { label = "Version Checker", desc = "open it (Guild/Group buttons trigger the poll)",
+        action = function() RCPL_ShowVersionCheckFrame() end },
+    { label = "Check Guild Now", desc = "open the version checker and immediately poll your guild",
+        action = function()
+            RCPL_ShowVersionCheckFrame()
+            local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+            local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
+            RCPLAddon:StartVersionCheck("guild")
+        end },
+    { label = "Toggle Debug Logging", desc = "turn debug logging on or off",
+        action = function()
+            local state = RCPL_Log and RCPL_Log.ToggleDebug()
+            print(string.format("|cFF00FF00[RCPL]|r debug logging %s",
+                state and "|cFF00FF00ON|r" or "|cFFFF4444OFF|r"))
+        end },
+    { label = "Open Log", desc = "open the in-memory log window",
+        action = function() if RCPL_Log then RCPL_Log.Show() end end },
+}
+
+-- Reference-only rows: no button, since these are destructive or need typed
+-- arguments a click can't provide.
+local REFERENCE_ROWS = {
+    { label = "/rcpl reset", desc = "clear all stored priority data -- type this one out, no button" },
+    { label = "/rcpl award <player> <item>", desc = "manually record an award" },
+    { label = "/rcpl unaward <player> <item>", desc = "undo a recorded award" },
+}
+
+local function Build()
+    frame = CreateFrame("Frame", "RCPLOptionsFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(440, 100)  -- height finalized at the bottom of Build()
+    frame:SetPoint("CENTER")
+    frame:SetBackdrop({
+        bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
+        edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
+        tile = true, tileSize = 32, edgeSize = 32,
+        insets = { left = 8, right = 8, top = 8, bottom = 8 },
+    })
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetFrameStrata("DIALOG")
+    frame:Hide()
+    tinsert(UISpecialFrames, "RCPLOptionsFrame")
+
+    local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    titleText:SetPoint("TOP", 0, -14)
+    titleText:SetText("RCLootCouncil Priority Loot - Options")
+
+    local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    closeBtn:SetPoint("TOPRIGHT", -2, -2)
+    closeBtn:SetScript("OnClick", function() frame:Hide() end)
+
+    local y = -50
+    for _, entry in ipairs(ACTIONS) do
+        local btn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        btn:SetSize(BTN_W, BTN_H)
+        btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
+        btn:SetText(entry.label)
+        btn:SetScript("OnClick", function()
+            frame:Hide()
+            entry.action()
+        end)
+
+        local desc = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        desc:SetPoint("LEFT", btn, "RIGHT", 10, 0)
+        desc:SetPoint("RIGHT", frame, "RIGHT", -16, 0)
+        desc:SetJustifyH("LEFT")
+        desc:SetTextColor(0.75, 0.75, 0.75)
+        desc:SetText(entry.desc)
+
+        y = y - (BTN_H + ROW_GAP)
+    end
+
+    y = y - 8
+    local refHeader = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    refHeader:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
+    refHeader:SetTextColor(0.6, 0.6, 0.6)
+    refHeader:SetText("Reference only -- type these out:")
+    y = y - (BTN_H + ROW_GAP)
+
+    for _, entry in ipairs(REFERENCE_ROWS) do
+        local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        label:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
+        label:SetJustifyH("LEFT")
+        label:SetWidth(BTN_W)
+        label:SetText(entry.label)
+
+        local desc = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        desc:SetPoint("TOPLEFT", frame, "TOPLEFT", 16 + BTN_W + 10, y - 2)
+        desc:SetPoint("RIGHT", frame, "RIGHT", -16, 0)
+        desc:SetJustifyH("LEFT")
+        desc:SetTextColor(0.75, 0.75, 0.75)
+        desc:SetText(entry.desc)
+
+        y = y - (BTN_H + ROW_GAP)
+    end
+
+    frame:SetHeight(-y + 20)
+end
+
+function RCPL_ShowOptionsFrame()
+    if not frame then Build() end
+    if frame:IsShown() then
+        frame:Hide()
+    else
+        frame:Show()
+    end
+end

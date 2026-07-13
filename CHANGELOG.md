@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.6] - 2026-07-13
+
+### Added
+
+- **Bare `/rcpl` opens an Options panel instead of printing a command list to chat.** A real button per action that opens a window with no required arguments (Import, Priority Preview, Season Awards, Version Checker, Check Guild Now, Toggle Debug Logging, Open Log) -- click one and it runs immediately, no need to type the full command. `reset`/`award`/`unaward` stay as reference-only text rows since they're either destructive or need typed arguments a click can't supply.
+
+---
+
 ## [0.2.5] - 2026-07-12
 
 ### Changed
