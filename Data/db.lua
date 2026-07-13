@@ -46,6 +46,22 @@ local function RankColor(rank)
     end
 end
 
+-- Public wrapper so other modules (Modules/prioPreviewFrame.lua) can reuse
+-- the exact same rank -> color scheme the voting/loot frame overlay uses,
+-- instead of maintaining a second copy that can drift out of sync (#27).
+function RCPL_Data_RankColor(rank)
+    return RankColor(rank)
+end
+
+local TRACK_LABEL = { H = "Heroic", M = "Mythic" }
+
+-- Public so callers (Modules/lootFrame.lua, Modules/prioPreviewFrame.lua) can
+-- turn the "H"/"M" RCPL_Data_GetPlayerPriority now returns as its third
+-- value into the same human-readable label everywhere, one source of truth.
+function RCPL_Data_TrackLabel(track)
+    return TRACK_LABEL[track]
+end
+
 function RCPL_Data_SaveImportedData(decoded)
     if type(decoded) ~= "table" or type(decoded.players) ~= "table" then
         print("|cFFFF4444[RCLootCouncil_PriorityLoot]|r Import failed: invalid data structure.")
@@ -220,7 +236,7 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             if type(priorityList) == "table" then
                 for rank, name in ipairs(priorityList) do
                     if name == playerName or name == baseName then
-                        return OrdinalLabel(rank), RankColor(rank)
+                        return OrdinalLabel(rank), RankColor(rank), track
                     end
                 end
             end

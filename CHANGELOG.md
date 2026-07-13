@@ -11,6 +11,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.3] - 2026-07-12
+
+### Changed
+
+- **`/rcpl prio` window: color-coded ranks, bigger text, and grid layout (#27).** Each ranked player entry now shows in the same green/yellow/orange scheme (rank 1/2/3+) the voting/loot frame overlay already uses, via a new `RCPL_Data_RankColor` public wrapper around `Data/db.lua`'s existing color logic -- instead of every rank blending into one flat grey line. Ranked lists and the player roster now lay out as a fixed-width grid (3 per row) rather than one long word-wrapped string, so a long list wraps predictably instead of however the FontString happens to break. Items within the Priority Lists section are now separated by a lighter dotted divider instead of just a blank line. Body text bumped from `GameFontNormalSmall` to `GameFontNormal` (frame widened to match), and each track's Heroic/Mythic heading is bumped further still (`GameFontNormalLarge`, white instead of grey) so it doesn't recede behind the ranked players it's labeling.
+- **Loot roll frame priority text is bigger, shows the difficulty, and reuses RCLootCouncil_wowaudit's empty space when it's not installed.** The "Prio: 2nd" text `lootFrame.lua` shows for each loot roll entry is now `GameFontNormal` instead of `GameFontNormalSmall`, and includes which track the rank is for (e.g. "Prio: 2nd (Heroic)") since Heroic and Mythic priority for the same item can genuinely differ -- `RCPL_Data_GetPlayerPriority` now returns the resolved track as a third value, and a new `RCPL_Data_TrackLabel` wrapper turns it into the same "Heroic"/"Mythic" label `/rcpl prio` already used (that window's own local copy of the label table is gone, now sharing this one). When `RCLootCouncil_wowaudit` is loaded, the text still renders as its own line below the entry, same as before (that addon owns the inline itemLvl line with its own wishlist annotation). When it's *not* loaded, the priority text is appended directly onto that itemLvl line instead -- the same technique wowaudit itself uses -- rather than adding a second line no one else needed the space for.
+
+### Fixed
+
+- **Loot roll frame priority text duplicating (e.g. "Prio: 2nd (Mythic) Prio: 2nd (Mythic)"), worse with every button click.** The RCLootCouncil_wowaudit-style inline append (added earlier in this same release) called `UpdateEntry` from two places for the same refresh: directly in the `GetEntry` hook body, and via a hook on the entry's own `Update` method. `EntryManager:GetEntry`'s "restored" branch (reusing a pooled entry) calls `entry:Update(item)` *inside* the original `GetEntry` -- for an already-hooked entry that triggered the `Update` hook during the very same `GetEntry` call the direct call then ran again, appending the priority text a second time onto a text field that already had it, once per click of Upgrade/Catalyst/Pass/etc. as the frame kept re-rendering. Now only calls `UpdateEntry` directly the one time the `Update` hook is first attached (covering a brand-new entry, whose own internal `Update` call already ran *before* it could be hooked).
+- **`/rcpl prio` window can show a stale "Item #12345" instead of the item's name.** `GetItemInfo(itemID)` returns `nil` immediately for an item the client hasn't cached yet (never seen in a tooltip, the auction house, etc. this session) and fetches it asynchronously in the background -- the window only ever looked it up once, at populate time, so an uncached item was stuck on the ID fallback until the window happened to be manually reopened. Now requests the data (`C_Item.RequestLoadItemDataByID`) and listens for `GET_ITEM_INFO_RECEIVED` to redraw automatically once it resolves.
+- **`## Interface` declares both 120007 and 120100 instead of only 120100.** A single-value bump to 120100 (WoW 12.1.0) was premature -- that patch isn't live yet, and a client running the actual current interface (120007) refuses to load an addon whose declared `## Interface` is higher than its own, showing it as out-of-date/disabled rather than just a compatibility warning. The TOC format supports a comma-separated list, so declaring both keeps the addon working right now on 12.0.7 and ready with no further change once 12.1.0 ships.
+
+---
+
 ## [0.2.2] - 2026-07-12
 
 ### Added

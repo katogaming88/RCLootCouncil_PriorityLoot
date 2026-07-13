@@ -39,7 +39,8 @@ read_globals = {
     "UIPanelScrollFrameTemplate", "UIPanelButtonTemplate", "UIPanelCloseButton",
 
     -- Font objects
-    "ChatFontNormal", "GameFontNormal", "GameFontNormalSmall", "GameFontHighlight",
+    "ChatFontNormal", "GameFontNormal", "GameFontNormalSmall", "GameFontNormalLarge",
+    "GameFontHighlight",
 
     -- LibStub + saved-variable wiring
     "LibStub",
@@ -54,6 +55,7 @@ read_globals = {
     "C_Timer", "TooltipDataProcessor", "Settings", "Enum",
     "Mixin", "CreateFromMixins",
     "StaticPopup_Show", "C_UI", "ReloadUI",
+    "C_AddOns", "IsAddOnLoaded",
 }
 
 -- ── Globals defined by this addon --------------------------------------------
@@ -74,6 +76,8 @@ globals = {
     "RCPL_Data_ResetData",
     "RCPL_Data_MarkAwarded",
     "RCPL_Data_UnmarkAwarded",
+    "RCPL_Data_RankColor",
+    "RCPL_Data_TrackLabel",
     "RCPL_ShowImportFrame",
     "RCPL_ShowPrioPreview",
     "RCPL_ShowAwardsFrame",
