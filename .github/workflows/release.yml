@@ -39,6 +39,7 @@ jobs:
             --exclude='.gitignore' \
             --exclude='.luacheckrc' \
             --exclude='.busted' \
+            --exclude='.pkgmeta' \
             --exclude='dist/' \
             --exclude='docs/' \
             --exclude='spec/' \
