@@ -10,7 +10,14 @@ RCPLAddon:SetEnabledState(true)
 -- Expose globally so Modules/ files can reach it via addon:GetModule().
 RCLootCouncil_PriorityLoot = RCPLAddon
 
-local RCPL_VERSION       = "0.2.0"
+-- Read from the .toc's own ## Version rather than a hardcoded duplicate --
+-- that constant sat at "0.2.0" through several real releases (0.2.1-0.2.3)
+-- because nothing forced it to be bumped alongside the .toc, silently
+-- breaking the whole point of this feature (every version check compared
+-- against a stale local value). Single source of truth now.
+local RCPL_VERSION = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("RCLootCouncil_PriorityLoot", "Version"))
+    or (GetAddOnMetadata and GetAddOnMetadata("RCLootCouncil_PriorityLoot", "Version"))
+    or "0.0.0"
 local RCPL_COMM_PREFIX   = "RCPL_Ver"
 local RCPL_CHECK_PREFIX  = "RCPL_Chk"
 local CHECK_TIMEOUT      = 10
@@ -27,6 +34,12 @@ local Log = RCPL_Log or {
 local versionWarned       = false
 local versionCheckResults = nil  -- nil = no check in progress, table = collecting
 local versionCheckTimer   = nil
+
+-- Public so Modules/versionCheckFrame.lua doesn't need its own separate way
+-- to read the local version.
+function RCPLAddon:GetVersion()
+    return RCPL_VERSION
+end
 
 -- Returns true when other is a strictly higher semver than current.
 local function IsNewer(current, other)
@@ -141,83 +154,78 @@ function RCPLAddon:OnVersionCheckMessage(prefix, message, distribution, sender)
         tostring(prefix), tostring(message), tostring(distribution), tostring(sender))
     if sender == UnitName("player") then return end
     if message == "REQUEST" then
-        local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
-        if channel then
-            self:SendCommMessage(RCPL_CHECK_PREFIX, RCPL_VERSION, channel)
-            Log.debug("Replied to version REQUEST from %s on %s", tostring(sender), channel)
+        -- Reply on whatever channel the REQUEST actually arrived on, rather
+        -- than recomputing our own current group state -- a GUILD-wide
+        -- check needs replies from guildies who aren't in the requester's
+        -- raid/party (or aren't grouped at all), and recomputing IsInRaid()/
+        -- IsInGroup() here would silently drop exactly those replies.
+        if distribution == "RAID" or distribution == "PARTY" or distribution == "GUILD" then
+            self:SendCommMessage(RCPL_CHECK_PREFIX, RCPL_VERSION, distribution)
+            Log.debug("Replied to version REQUEST from %s on %s", tostring(sender), distribution)
         else
-            Log.debug("Ignoring REQUEST from %s; not in raid or party", tostring(sender))
+            Log.debug("Ignoring REQUEST from %s on unexpected distribution %s", tostring(sender), tostring(distribution))
         end
     elseif versionCheckResults then
         versionCheckResults[sender] = message
         Log.debug("Recorded version response: %s = %s", tostring(sender), tostring(message))
+        if RCPL_VersionCheck_UpdateRow then RCPL_VersionCheck_UpdateRow(sender, message) end
     end
 end
 
-function RCPLAddon:StartVersionCheck()
-    local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
-    if not channel then
-        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r You must be in a group to check versions.")
-        return
-    end
-    versionCheckResults = {}
-    versionCheckResults[UnitName("player")] = RCPL_VERSION
-    self:SendCommMessage(RCPL_CHECK_PREFIX, "REQUEST", channel)
-    print(string.format(
-        "|cFF00FF00[RCLootCouncil_PriorityLoot]|r Checking addon versions... (results in %ds)",
-        CHECK_TIMEOUT
-    ))
-    if versionCheckTimer then self:CancelTimer(versionCheckTimer) end
-    versionCheckTimer = self:ScheduleTimer("PrintVersionCheckResults", CHECK_TIMEOUT)
-end
-
-function RCPLAddon:PrintVersionCheckResults()
-    versionCheckTimer = nil
-    local myName = UnitName("player")
-    local withAddon, withoutAddon = {}, {}
-
-    local function processUnit(unit)
-        local name = GetUnitFullName(unit)
-        if not name then return end
-        local ver = versionCheckResults[name]
-        if ver then
-            withAddon[#withAddon + 1] = { name = name, version = ver }
-        else
-            withoutAddon[#withoutAddon + 1] = name
+-- scope: "guild" explicitly polls the guild roster; anything else (nil, "")
+-- polls the current raid/party. Drives Modules/versionCheckFrame.lua's
+-- window live as replies arrive -- see that file for the UI half. Seeds a
+-- "Waiting..." row for every expected recipient up front (mirrors base
+-- RCLootCouncil's own Query()), so the window shows who hasn't replied yet
+-- rather than staying blank until the timeout.
+function RCPLAddon:StartVersionCheck(scope)
+    local channel
+    if scope == "guild" then
+        channel = IsInGuild() and "GUILD" or nil
+        if not channel then
+            print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r You must be in a guild to check versions.")
+            return
         end
-    end
-
-    if IsInRaid() then
-        for i = 1, GetNumGroupMembers() do processUnit("raid" .. i) end
     else
-        processUnit("player")
-        for i = 1, GetNumGroupMembers() do processUnit("party" .. i) end
-    end
-
-    table.sort(withAddon, function(a, b) return a.name < b.name end)
-    table.sort(withoutAddon)
-
-    local total = #withAddon + #withoutAddon
-    print(string.format(
-        "|cFF00FF00[RCLootCouncil_PriorityLoot]|r Version check (%d/%d have addon):",
-        #withAddon, total
-    ))
-    for _, entry in ipairs(withAddon) do
-        local color
-        if entry.version == RCPL_VERSION then
-            color = "|cFF00FF00"
-        elseif IsNewer(RCPL_VERSION, entry.version) then
-            color = "|cFFFF8000"
-        else
-            color = "|cFFFFFF00"
+        channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or nil)
+        if not channel then
+            print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r You must be in a group to check versions."
+                .. " Use the Guild button (or /rcpl version guild) to check your guild instead.")
+            return
         end
-        local tag = entry.name == myName and " (you)" or ""
-        print(string.format("  %s%s|r — %s%s", color, entry.name, entry.version, tag))
-    end
-    for _, name in ipairs(withoutAddon) do
-        print(string.format("  |cFFAAAAAA%s|r — not installed", name))
     end
 
+    local myName = UnitName("player")
+    versionCheckResults = { [myName] = RCPL_VERSION }
+
+    if RCPL_VersionCheck_Reset then RCPL_VersionCheck_Reset(myName, RCPL_VERSION) end
+
+    if channel == "GUILD" then
+        for i = 1, GetNumGuildMembers() do
+            local name, _, _, _, _, _, _, _, online = GetGuildRosterInfo(i)
+            local bareName = name and (name:match("^([^%-]+)") or name)
+            if name and online and name ~= myName and bareName ~= myName and RCPL_VersionCheck_SeedWaiting then
+                RCPL_VersionCheck_SeedWaiting(name)
+            end
+        end
+    else
+        local unitPrefix = channel == "RAID" and "raid" or "party"
+        for i = 1, GetNumGroupMembers() do
+            local name = GetUnitFullName(unitPrefix .. i)
+            if name and name ~= myName and RCPL_VersionCheck_SeedWaiting then
+                RCPL_VersionCheck_SeedWaiting(name)
+            end
+        end
+    end
+
+    self:SendCommMessage(RCPL_CHECK_PREFIX, "REQUEST", channel)
+    if versionCheckTimer then self:CancelTimer(versionCheckTimer) end
+    versionCheckTimer = self:ScheduleTimer("FinalizeVersionCheck", CHECK_TIMEOUT)
+end
+
+function RCPLAddon:FinalizeVersionCheck()
+    versionCheckTimer = nil
+    if RCPL_VersionCheck_MarkMissing then RCPL_VersionCheck_MarkMissing() end
     versionCheckResults = nil
 end
 
@@ -272,7 +280,8 @@ SlashCmdList["RCPL"] = function(input)
         print("  /rcpl awards                   open the season awards window")
         print("  /rcpl award <player> <item>    manually record an award")
         print("  /rcpl unaward <player> <item>  undo a recorded award")
-        print("  /rcpl version                  check addon versions across your raid/party")
+        print("  /rcpl version                  open the version checker (Guild/Group buttons)")
+        print("  /rcpl version guild            open it and immediately check your guild")
         print("  /rcpl debug                    toggle debug logging on or off")
         print("  /rcpl log                      open the log window (also: dump, clear)")
     elseif cmd == "import" then
@@ -289,7 +298,14 @@ SlashCmdList["RCPL"] = function(input)
     elseif cmd == "unaward" then
         HandleAwardSubcommand(rest, true)
     elseif cmd == "version" or cmd == "ver" or cmd == "v" then
-        RCPLAddon:StartVersionCheck()
+        -- Opens showing just your own version, matching base RCLootCouncil's
+        -- own version checker -- Guild/Group buttons trigger the actual poll,
+        -- never an automatic one. `/rcpl version guild` is a shortcut that
+        -- also fires the guild poll immediately, for chat-only workflows.
+        if RCPL_ShowVersionCheckFrame then RCPL_ShowVersionCheckFrame() end
+        if rest == "guild" then
+            RCPLAddon:StartVersionCheck("guild")
+        end
     elseif cmd == "debug" then
         local state
         if rest == "on" or rest == "true" or rest == "1" then

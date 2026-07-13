@@ -55,7 +55,8 @@ A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [
 | `/rcpl import` | Open the import window. |
 | `/rcpl prio` | Open a scrollable preview of all imported priority data (toggle). |
 | `/rcpl reset` | Wipe all stored priority data from SavedVariables. |
-| `/rcpl version` | Check addon versions across your raid or party. Aliases: `ver`, `v`. |
+| `/rcpl version` | Open the version checker -- shows your own version immediately; Guild/Group buttons trigger the actual poll (never an automatic one, matching base RCLootCouncil's own version checker). Aliases: `ver`, `v`. |
+| `/rcpl version guild` | Same window, but also fires the guild poll immediately -- a shortcut for chat-only workflows. |
 | `/rcpl debug` | Toggle debug logging on or off. Persisted across sessions in `RCPL_DB.debug`. Accepts `on`, `off`, `1`, `0`. |
 | `/rcpl log` | Open the in-memory log window. Subcommands: `dump` (prints to chat), `clear` (empties the buffer). |
 | `/rcpl` | Print command usage. |

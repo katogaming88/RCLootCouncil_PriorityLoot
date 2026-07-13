@@ -11,6 +11,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.4] - 2026-07-12
+
+### Added
+
+- **`/rcpl version` now opens a real window instead of printing to chat**, mirroring base RCLootCouncil's own version checker (`Modules/versionCheck.lua`): opens immediately showing just your own version, with separate **Guild** and **Group** buttons that trigger the actual poll -- never an automatic/implicit one. Seeds a "Waiting..." row for every expected recipient up front (every current raid/party member, or every online guild member) and updates rows live as replies arrive, rather than batching everything into one chat dump after a fixed timeout. Rows still color-code the same way the old chat output did (green = same version, orange = you're behind, yellow = they're behind). `/rcpl version guild` is a shortcut that opens the window and immediately fires the guild poll, for chat-only workflows.
+
+### Fixed
+
+- **`/rcpl version` compared against a version constant frozen at "0.2.0" since 0.2.1.** `RCPL_VERSION` was a hardcoded string that never got bumped alongside three real releases (0.2.1-0.2.3), silently defeating the whole point of the check -- now read live from the `.toc`'s own `## Version` via `GetAddOnMetadata`, one source of truth.
+- **The version-check REQUEST-reply handler recomputed the replier's own current group state instead of mirroring the channel the request arrived on.** A guild-wide check needs replies from guildies who aren't in the requester's raid/party (or aren't grouped at all) -- recomputing `IsInRaid()`/`IsInGroup()` on the replying end would silently drop exactly those replies. Now replies on whatever channel (`RAID`/`PARTY`/`GUILD`) the request actually came in on.
+
+---
+
 ## [0.2.3] - 2026-07-12
 
 ### Changed
