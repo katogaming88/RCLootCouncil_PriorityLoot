@@ -7,6 +7,18 @@ local RCPLootFrame = RCPLAddon:NewModule("RCPLootFrame", "AceHook-3.0", "AceTime
 
 local overlayPool = {}
 
+-- Past this rank, the raider-facing overlay shows "On your BiS list" instead
+-- of the exact number. A raider who sees "Prio: 8th" tends to just not
+-- bother clicking Upgrade/OS/M+ at all -- and since a non-click reads to the
+-- loot council as "doesn't want it right now", that can quietly hide them
+-- from a deliberate override the council would otherwise have made (e.g.
+-- giving it to a bigger upgrade for someone further down the list). Keeping
+-- them informed without discouraging the click matters more than exact
+-- transparency here. The officer voting frame (Modules/votingFrame.lua)
+-- always shows the real rank regardless -- this only affects what raiders
+-- see on their own loot roll.
+local RAIDER_RANK_REVEAL_THRESHOLD = 5
+
 local function GetItemIDFromLink(link)
     return tonumber((link or ""):match("item:(%d+):"))
 end
@@ -52,29 +64,36 @@ local function UpdateEntry(entry, item, playerName)
     local equipLoc = item.equipLoc
     if not equipLoc or equipLoc == "" then clearOverlay() return end
 
-    local text, color, track = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, item.link)
+    local text, color, track, rank = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, item.link)
     if text == "N/A" or text:find("wowaudit") then clearOverlay() return end
 
-    -- track is only set when the rank came from the item-centric priority
-    -- list (Layer 1) -- the per-player BiS fallback (Layer 2) isn't
-    -- track-split, so there's nothing to show there.
-    local trackLabel = RCPL_Data_TrackLabel(track)
-    local displayText = "Prio: " .. text .. (trackLabel and (" (" .. trackLabel .. ")") or "")
+    local displayText, displayColor
+    if rank and rank > RAIDER_RANK_REVEAL_THRESHOLD then
+        displayText = "On your BiS list"
+        displayColor = { r = 1, g = 1, b = 1 }
+    else
+        -- track is only set when the rank came from the item-centric
+        -- priority list (Layer 1) -- the per-player BiS fallback (Layer 2)
+        -- isn't track-split, so there's nothing to show there.
+        local trackLabel = RCPL_Data_TrackLabel(track)
+        displayText = "Prio: " .. text .. (trackLabel and (" (" .. trackLabel .. ")") or "")
+        displayColor = color
+    end
 
     if WowauditActive() then
         -- wowaudit already owns the inline itemLvl line -- fall back to our
         -- own separate line below the entry, same as always.
         local overlay = GetOrCreateOverlay(entry)
-        overlay:SetTextColor(color.r, color.g, color.b)
+        overlay:SetTextColor(displayColor.r, displayColor.g, displayColor.b)
         overlay:SetText(displayText)
     else
         clearOverlay()
         if entry.itemLvl then
             local hex = string.format(
                 "%02x%02x%02x",
-                math.floor(color.r * 255 + 0.5),
-                math.floor(color.g * 255 + 0.5),
-                math.floor(color.b * 255 + 0.5)
+                math.floor(displayColor.r * 255 + 0.5),
+                math.floor(displayColor.g * 255 + 0.5),
+                math.floor(displayColor.b * 255 + 0.5)
             )
             -- entry.itemLvl's text is reset by RCLootCouncil's own native
             -- Update (which runs before this, since we hook the same method

@@ -236,7 +236,7 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             if type(priorityList) == "table" then
                 for rank, name in ipairs(priorityList) do
                     if name == playerName or name == baseName then
-                        return OrdinalLabel(rank), RankColor(rank), track
+                        return OrdinalLabel(rank), RankColor(rank), track, rank
                     end
                 end
             end
@@ -254,7 +254,7 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
         if type(slotData) == "table" and type(slotData.bis) == "table" then
             for rank, bisItemID in ipairs(slotData.bis) do
                 if bisItemID == itemID then
-                    return OrdinalLabel(rank), RankColor(rank)
+                    return OrdinalLabel(rank), RankColor(rank), nil, rank
                 end
             end
         end

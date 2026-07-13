@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.5] - 2026-07-12
+
+### Changed
+
+- **Raider loot roll overlay no longer shows the exact priority rank past 5th.** A raider who sees "Prio: 8th" tends to just not bother clicking Upgrade/OS/M+ -- and since a non-click reads to the loot council as "doesn't want it right now," that can quietly hide someone from a deliberate override the council would otherwise make (e.g. a bigger upgrade for someone further down the priority list). Ranks 1st-5th still show the exact position; beyond that the overlay just says "On your BiS list" instead. `RCPL_Data_GetPlayerPriority` now returns the raw numeric rank as a fourth value so `Modules/lootFrame.lua` can apply this threshold -- the officer voting frame (`Modules/votingFrame.lua`) ignores it and keeps showing the exact rank to officers regardless.
+
+---
+
 ## [0.2.4] - 2026-07-12
 
 ### Added
