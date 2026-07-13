@@ -5,6 +5,10 @@
 ## Version: 0.3.0
 ## Dependencies: RCLootCouncil
 ## SavedVariables: RCPL_DB
+## IconTexture: Interface\Icons\INV_Misc_ScrollUnrolled03D
+## AddonCompartmentFunc: RCPL_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: RCPL_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: RCPL_OnAddonCompartmentLeave
 
 Libs\LibJSON.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua

@@ -1,7 +1,16 @@
 -- Modules\minimapButton.lua
--- LibDataBroker/LibDBIcon minimap launcher -- left-click opens the Options
--- panel (Modules/optionsFrame.lua), same entry point as bare /rcpl. Exists so
--- officers can reach the addon without remembering a slash command.
+-- Two independent ways to reach the Options panel (Modules/optionsFrame.lua)
+-- without typing /rcpl:
+--   1. A LibDataBroker/LibDBIcon minimap launcher -- also what third-party
+--      minimap button collectors (MBB, ButtonForge, etc.) auto-detect, since
+--      LibDBIcon is the de facto standard they scan for. No extra work needed
+--      for that case beyond registering normally below.
+--   2. Blizzard's native Addon Compartment (the dropdown next to the
+--      minimap, retail since Dragonflight) -- a separate, declarative
+--      opt-in via .toc fields (AddonCompartmentFunc/OnEnter/OnLeave,
+--      IconTexture) plus the three global functions below. Independent of
+--      the minimap icon's shown/hidden state -- registering here doesn't
+--      require or affect the LibDBIcon button at all.
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
 local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
@@ -17,6 +26,25 @@ end
 local function OnTooltipShow(tooltip)
     tooltip:AddLine("RCLootCouncil - Priority Loot")
     tooltip:AddLine("|cFFCCCCCCLeft-click:|r open options", 1, 1, 1)
+end
+
+-- Addon Compartment entry points -- names must match the .toc's
+-- AddonCompartmentFunc/OnEnter/OnLeave values exactly. Signatures are fixed
+-- by Blizzard's AddonCompartmentFrame API, not ours to choose.
+function RCPL_OnAddonCompartmentClick(_, buttonName)
+    if buttonName == "LeftButton" and RCPL_ShowOptionsFrame then
+        RCPL_ShowOptionsFrame()
+    end
+end
+
+function RCPL_OnAddonCompartmentEnter(_, menuButtonFrame)
+    GameTooltip:SetOwner(menuButtonFrame, "ANCHOR_LEFT")
+    OnTooltipShow(GameTooltip)
+    GameTooltip:Show()
+end
+
+function RCPL_OnAddonCompartmentLeave()
+    GameTooltip:Hide()
 end
 
 -- Public so Modules/optionsFrame.lua's checkbox can flip visibility without

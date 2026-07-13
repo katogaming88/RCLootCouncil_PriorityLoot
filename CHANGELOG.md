@@ -15,7 +15,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **Minimap button.** A LibDataBroker/LibDBIcon launcher icon so officers can open the Options panel without remembering `/rcpl`. Left-click opens Options; position and shown/hidden state persist via SavedVariables (`RCPL_DB.minimap`). A "Show minimap button" checkbox in the Options panel toggles it on or off, defaulting to shown.
+- **Minimap button.** A LibDataBroker/LibDBIcon launcher icon so officers can open the Options panel without remembering `/rcpl`. Left-click opens Options; position and shown/hidden state persist via SavedVariables (`RCPL_DB.minimap`). A "Show minimap button" checkbox in the Options panel toggles it on or off, defaulting to shown. Also registers with Blizzard's native Addon Compartment (the dropdown next to the minimap) as a second, independent way to reach the same Options panel -- and being a standard `LibDBIcon` button means third-party minimap button collectors (MBB, ButtonForge, etc.) already recognize it with no extra work.
 
 ---
 
