@@ -79,6 +79,7 @@ globals = {
     "RCPL_Data_UnmarkAwarded",
     "RCPL_Data_RankColor",
     "RCPL_Data_TrackLabel",
+    "RCPL_Data_CurrentTrack",
     "RCPL_ShowImportFrame",
     "RCPL_ShowPrioPreview",
     "RCPL_ShowAwardsFrame",

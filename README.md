@@ -9,7 +9,7 @@ A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [
 
 ## Features
 
-- **Officer voting frame** — adds a sortable *Priority* column showing each candidate's BiS rank (1st / 2nd / 3rd) for the dropped item.
+- **Officer voting frame** — adds a sortable *Priority* column showing each candidate's BiS rank (1st / 2nd / 3rd) for the dropped item, plus a side panel showing the *full* saved priority order (every ranked player, both Heroic and Mythic) for whichever item is currently selected — not just the candidates who happened to roll on it.
 - **Raider loot frame** — overlays the local player's own priority rank below each item button so raiders can immediately see where an item sits in their BiS list. Ranks 1st-5th show the exact position; beyond that it just says "On your BiS list" instead, so a low rank doesn't discourage someone from clicking Upgrade/OS/M+ at all (a raider who never clicks reads to the loot council as "doesn't want it right now," which can hide them from a deliberate priority override).
 - **Priority preview** — `/rcpl prio` opens a scrollable popup showing all imported priority lists and the full player roster, so officers can verify data before a raid.
 - **Offline-first** — data is imported once per week by an officer via a single in-game paste; no external server, desktop client, or API key required.

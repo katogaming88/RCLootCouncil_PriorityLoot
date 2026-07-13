@@ -11,7 +11,28 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.2.6] - 2026-07-13
+## [0.2.8] - 2026-07-12
+
+### Changed
+
+- **`TrackFromItemLevel` now checks a range per track instead of one exact ilvl, take two.** The overlap band from 0.2.7's range fix (272-276) is left genuinely ambiguous rather than guessed, and the resolution is now logged in full (`isPreview`, `baseItemLevel` included) at every step of the track-detection chain to make future `/rc test` discrepancies easier to diagnose.
+- **The raider-facing "On your BiS list" loot frame overlay now still shows the difficulty tag.** Past `RAIDER_RANK_REVEAL_THRESHOLD`, the exact rank is hidden and replaced with "On your BiS list" -- previously this also silently dropped the Heroic/Mythic label that a shown rank gets, so a raider past the threshold had no way to tell which difficulty's drop they were looking at. Now shows e.g. "On your BiS list (Heroic)".
+
+---
+
+## [0.2.7] - 2026-07-12
+
+### Added
+
+- **Full priority order side panel on the officer voting frame.** A new panel attached to the right edge of the voting frame shows the complete saved priority order (every ranked player, both Heroic and Mythic) for whichever item is currently selected in the session -- the existing "Priority" column only shows each *candidate's* own rank, not the full list. Shows/hides in sync with the voting frame itself, and updates automatically on `RCSessionChangedPre` as the officer switches between items. Falls back to "No saved priority order for this item" when the item has no saved `priority_order` entry. Leads with whichever track the selected drop actually is (labeled "this drop"), falling back to the fixed Heroic-then-Mythic order when the track can't be resolved.
+
+### Changed
+
+- **`TrackFromItemLevel` now checks a range per track instead of one exact ilvl.** Item level climbs per boss within a raid tier -- an early boss's Heroic drop is a lower ilvl than a later boss's Heroic drop on the same difficulty -- so a single hardcoded "the Heroic ilvl" could only ever match one specific boss's items, not the whole difficulty. Season 1 (per Kat): Heroic 259-276, Mythic 272-289 -- these overlap at 272-276, which is left genuinely ambiguous (returns unresolved rather than guessed) since item level alone can't tell the two apart in that band. Still only matters for `/rc test`'s synthetic links; `instanceDifficultyID` (the primary signal) resolves every real drop correctly regardless of which boss it came from.
+
+---
+
+## [0.2.6] - 2026-07-12
 
 ### Added
 
