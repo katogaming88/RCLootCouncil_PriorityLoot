@@ -55,6 +55,7 @@ read_globals = {
     "C_Timer", "TooltipDataProcessor", "Settings", "Enum",
     "Mixin", "CreateFromMixins",
     "StaticPopup_Show", "C_UI", "ReloadUI",
+    "C_AddOns", "IsAddOnLoaded",
 }
 
 -- ── Globals defined by this addon --------------------------------------------
