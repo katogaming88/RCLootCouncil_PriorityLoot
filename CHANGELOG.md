@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.7] - 2026-07-13
+
+### Added
+
+- **Full priority order side panel on the officer voting frame.** A new panel attached to the right edge of the voting frame shows the complete saved priority order (every ranked player, both Heroic and Mythic) for whichever item is currently selected in the session -- the existing "Priority" column only shows each *candidate's* own rank, not the full list. Shows/hides in sync with the voting frame itself, and updates automatically on `RCSessionChangedPre` as the officer switches between items. Falls back to "No saved priority order for this item" when the item has no saved `priority_order` entry.
+
+---
+
 ## [0.2.6] - 2026-07-13
 
 ### Added
