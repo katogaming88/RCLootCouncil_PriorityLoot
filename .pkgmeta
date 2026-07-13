@@ -1,0 +1,17 @@
+## Keeps CurseForge's auto-packager (BigWigsMods release.sh under the hood)
+## in sync with the dev-file excludes .github/workflows/release.yml already
+## applies to the GitHub release zip -- see that workflow's rsync --exclude
+## list, which this mirrors.
+ignore:
+  - .github
+  - .claude
+  - .vscode
+  - .idea
+  - .gitignore
+  - .luacheckrc
+  - .busted
+  - docs
+  - spec
+  - scripts
+  - "*.gs"
+  - "*.md"
