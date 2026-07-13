@@ -144,9 +144,16 @@ end
 --   2. The item's own live item level (TrackFromItemLevel) -- covers /rc
 --      test, since ilvl scaling rides on bonus IDs, which Encounter
 --      Journal's per-difficulty-tab preview links do carry correctly (unlike
---      instanceDifficultyID). Doesn't matter that this needs the two ilvl
---      constants below bumped once per raid tier -- nothing is actually
---      awarded from a test session, so a stale value here is harmless.
+--      instanceDifficultyID). Doesn't matter that this needs the ilvl ranges
+--      below updated once per raid tier -- nothing is actually awarded from
+--      a test session, so a stale value here is harmless. Ranges, not a
+--      single exact value per track: item level climbs per boss within a
+--      raid tier (an early boss's Heroic drop is a lower ilvl than a later
+--      boss's Heroic drop), so there is no single "the Heroic ilvl" to
+--      match against. Season 1 (per Kat, 2026-07-13): Heroic 259-276,
+--      Mythic 272-289 -- these overlap (272-276 exists on both difficulties
+--      depending on which boss), so that band is left genuinely ambiguous
+--      (returns nil) rather than guessed.
 --   3. GetInstanceInfo()'s live raid difficulty (TrackFromInstance) -- a
 --      fallback for the rare case an item's detailed level info isn't
 --      cached client-side yet (GetDetailedItemLevelInfo can return nil on
@@ -154,8 +161,10 @@ end
 -- None of the three depend on RCLootCouncil_wowaudit's bonus-ID table, which
 -- this addon no longer needs and which the user plans to eventually
 -- uninstall.
-local TIER_HEROIC_ILVL = 266
-local TIER_MYTHIC_ILVL = 279
+local TIER_HEROIC_ILVL_MIN = 259
+local TIER_HEROIC_ILVL_MAX = 276
+local TIER_MYTHIC_ILVL_MIN = 272
+local TIER_MYTHIC_ILVL_MAX = 289
 
 local RAID_DIFFICULTY_TRACK = { [15] = "H", [16] = "M" }
 
@@ -181,8 +190,16 @@ end
 local function TrackFromItemLevel(itemLink)
     if not itemLink then return nil end
     local actualItemLevel = C_Item.GetDetailedItemLevelInfo(itemLink)
-    if actualItemLevel == TIER_MYTHIC_ILVL then return "M" end
-    if actualItemLevel == TIER_HEROIC_ILVL then return "H" end
+    if not actualItemLevel then return nil end
+
+    local inHeroicRange = actualItemLevel >= TIER_HEROIC_ILVL_MIN and actualItemLevel <= TIER_HEROIC_ILVL_MAX
+    local inMythicRange = actualItemLevel >= TIER_MYTHIC_ILVL_MIN and actualItemLevel <= TIER_MYTHIC_ILVL_MAX
+
+    -- Both ranges match inside the overlap band -- item level alone can't
+    -- tell them apart there, so don't guess.
+    if inHeroicRange and inMythicRange then return nil end
+    if inHeroicRange then return "H" end
+    if inMythicRange then return "M" end
     return nil
 end
 
@@ -194,6 +211,13 @@ end
 
 local function CurrentTrack(itemLink)
     return TrackFromItemLink(itemLink) or TrackFromItemLevel(itemLink) or TrackFromInstance()
+end
+
+-- Public wrapper so a caller that doesn't have a specific player in mind yet
+-- (Modules/votingPriorityPanel.lua, to decide section order) can still
+-- resolve "what track is this item" without duplicating the detection chain.
+function RCPL_Data_CurrentTrack(itemLink)
+    return CurrentTrack(itemLink)
 end
 
 function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)

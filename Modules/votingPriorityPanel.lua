@@ -109,12 +109,25 @@ local function Refresh()
     if type(itemPriority) ~= "table" then
         add("|cFF999999No saved priority order for this item.|r")
     else
+        -- Lead with whichever track this specific drop actually is, when
+        -- it's resolvable -- an officer looking at a Mythic drop cares about
+        -- the Mythic list first, not whichever track happens to be listed
+        -- first. Falls back to the fixed Heroic-then-Mythic order when the
+        -- track can't be determined (e.g. /rc test's synthetic item links).
+        local dropTrack = RCPL_Data_CurrentTrack(entry.link)
+        local trackOrder = { "H", "M" }
+        if dropTrack == "M" then
+            trackOrder = { "M", "H" }
+        end
+
         local any = false
-        for _, trackKey in ipairs({ "H", "M" }) do
+        for _, trackKey in ipairs(trackOrder) do
             local list = itemPriority[trackKey]
             if type(list) == "table" and #list > 0 then
                 any = true
-                add("|cFFCCCCCC" .. (RCPL_Data_TrackLabel(trackKey) or trackKey) .. ":|r")
+                local label = RCPL_Data_TrackLabel(trackKey) or trackKey
+                if trackKey == dropTrack then label = label .. " (this drop)" end
+                add("|cFFCCCCCC" .. label .. ":|r")
                 for rank, playerName in ipairs(list) do
                     local hex = ColorHex(RCPL_Data_RankColor(rank))
                     add("  |cFF" .. hex .. rank .. ". " .. ShortName(playerName) .. "|r")
