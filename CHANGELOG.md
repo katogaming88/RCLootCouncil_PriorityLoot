@@ -20,7 +20,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.2.7] - 2026-07-13
+## [0.2.7] - 2026-07-12
 
 ### Added
 
@@ -32,7 +32,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.2.6] - 2026-07-13
+## [0.2.6] - 2026-07-12
 
 ### Added
 
