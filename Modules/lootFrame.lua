@@ -52,15 +52,21 @@ local function UpdateEntry(entry, item, playerName)
     local equipLoc = item.equipLoc
     if not equipLoc or equipLoc == "" then clearOverlay() return end
 
-    local text, color = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, item.link)
+    local text, color, track = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, item.link)
     if text == "N/A" or text:find("wowaudit") then clearOverlay() return end
+
+    -- track is only set when the rank came from the item-centric priority
+    -- list (Layer 1) -- the per-player BiS fallback (Layer 2) isn't
+    -- track-split, so there's nothing to show there.
+    local trackLabel = RCPL_Data_TrackLabel(track)
+    local displayText = "Prio: " .. text .. (trackLabel and (" (" .. trackLabel .. ")") or "")
 
     if WowauditActive() then
         -- wowaudit already owns the inline itemLvl line -- fall back to our
         -- own separate line below the entry, same as always.
         local overlay = GetOrCreateOverlay(entry)
         overlay:SetTextColor(color.r, color.g, color.b)
-        overlay:SetText("Prio: " .. text)
+        overlay:SetText(displayText)
     else
         clearOverlay()
         if entry.itemLvl then
@@ -77,7 +83,7 @@ local function UpdateEntry(entry, item, playerName)
             -- repeated calls the way it could if we read back our own
             -- previous appendage.
             local base = entry.itemLvl:GetText() or ""
-            entry.itemLvl:SetText(base .. "  |cFF" .. hex .. "Prio: " .. text .. "|r")
+            entry.itemLvl:SetText(base .. "  |cFF" .. hex .. displayText .. "|r")
         end
     end
 end

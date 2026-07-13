@@ -145,6 +145,26 @@ describe("RCPL_Data_GetPlayerPriority", function()
             assert.equals("2nd", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD"))
         end)
 
+        it("returns the resolved track as a third value (#27)", function()
+            mocks.setInstanceInfo("raid", 15)
+            local text, _, track = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
+            assert.equals("1st", text)
+            assert.equals("H", track)
+
+            mocks.setInstanceInfo("raid", 16)
+            local text2, _, track2 = RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD")
+            assert.equals("1st", text2)
+            assert.equals("M", track2)
+        end)
+
+        it("does not return a track for the per-player BiS fallback (not track-split)", function()
+            _G.RCPL_DB.priority = {}  -- no item-centric list -- forces layer 2
+            _G.RCPL_DB.players["Alice-Realm"] = { helm = { bis = { 500 } } }
+            local text, _, track = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
+            assert.equals("1st", text)
+            assert.is_nil(track)
+        end)
+
         it("returns N/A grey for a track the item has no ranking for", function()
             _G.RCPL_DB.priority["501"] = { H = { "Alice-Realm" } }  -- no Mythic list
             mocks.setInstanceInfo("raid", 16)
@@ -363,5 +383,25 @@ describe("RCPL_Data_RankColor", function()
             assert.equals(1.0, color.r)
             assert.equals(0.5, color.g)
         end
+    end)
+end)
+
+-- ── RCPL_Data_TrackLabel ─────────────────────────────────────────────────────
+-- Public wrapper (#27) so Modules/lootFrame.lua and Modules/prioPreviewFrame.lua
+-- share one "H"/"M" -> human-readable label instead of each maintaining its own.
+
+describe("RCPL_Data_TrackLabel", function()
+    setup(function()
+        mocks.loadAddonSources()
+    end)
+
+    it("labels H as Heroic and M as Mythic", function()
+        assert.equals("Heroic", RCPL_Data_TrackLabel("H"))
+        assert.equals("Mythic", RCPL_Data_TrackLabel("M"))
+    end)
+
+    it("returns nil for an unknown or absent track", function()
+        assert.is_nil(RCPL_Data_TrackLabel("LFR"))
+        assert.is_nil(RCPL_Data_TrackLabel(nil))
     end)
 end)

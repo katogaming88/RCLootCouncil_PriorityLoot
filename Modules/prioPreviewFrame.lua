@@ -172,7 +172,6 @@ function Populate()
                 -- priority[idStr] is { H = {...}, M = {...} } (track-split,
                 -- #335) rather than a single flat list, since Heroic and
                 -- Mythic priority for an item can genuinely differ.
-                local TRACK_LABEL = { H = "Heroic", M = "Mythic" }
                 for i, idStr in ipairs(sortedIDs) do
                     local tracks = priority[idStr]
                     local itemID = tonumber(idStr)
@@ -197,7 +196,7 @@ function Populate()
                             -- Larger + white rather than the body's grey so the
                             -- difficulty heading doesn't recede behind the
                             -- ranked players it's labeling.
-                            add("    " .. TRACK_LABEL[trackKey] .. ":", nil, nil, nil, true)
+                            add("    " .. RCPL_Data_TrackLabel(trackKey) .. ":", nil, nil, nil, true)
                             -- Each rank gets the same green/yellow/orange the
                             -- voting/loot frame overlay uses, so who's
                             -- actually top priority reads at a glance instead
