@@ -85,6 +85,7 @@ globals = {
     "RCPL_ShowAwardsFrame",
     "RCPL_ShowVersionCheckFrame",
     "RCPL_ShowOptionsFrame",
+    "RCPL_SetMinimapButtonShown",
     "RCPL_VersionCheck_Reset",
     "RCPL_VersionCheck_SeedWaiting",
     "RCPL_VersionCheck_UpdateRow",

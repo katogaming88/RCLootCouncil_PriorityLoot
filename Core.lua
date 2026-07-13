@@ -67,6 +67,8 @@ function RCPLAddon:OnInitialize()
     if type(RCPL_DB.players)  ~= "table" then RCPL_DB.players  = {} end
     if type(RCPL_DB.priority) ~= "table" then RCPL_DB.priority = {} end
     if type(RCPL_DB.awarded)  ~= "table" then RCPL_DB.awarded  = {} end
+    if type(RCPL_DB.minimap)  ~= "table" then RCPL_DB.minimap  = { hide = false } end
+    if self.InitMinimapButton then self:InitMinimapButton() end
     self:RegisterComm(RCPL_COMM_PREFIX, "OnVersionReceived")
     self:RegisterComm(RCPL_CHECK_PREFIX, "OnVersionCheckMessage")
     Log.debug("Comm prefixes registered: %s, %s", RCPL_COMM_PREFIX, RCPL_CHECK_PREFIX)

@@ -117,6 +117,23 @@ local function Build()
         y = y - (BTN_H + ROW_GAP)
     end
 
+    y = y - 8
+    local minimapCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+    minimapCheck:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, y)
+    minimapCheck:SetScript("OnClick", function(self)
+        local shown = self:GetChecked()
+        if type(RCPL_DB) == "table" and type(RCPL_DB.minimap) == "table" then
+            RCPL_DB.minimap.hide = not shown
+        end
+        if RCPL_SetMinimapButtonShown then RCPL_SetMinimapButtonShown(shown) end
+    end)
+    frame.minimapCheck = minimapCheck
+
+    local minimapLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    minimapLabel:SetPoint("LEFT", minimapCheck, "RIGHT", 4, 1)
+    minimapLabel:SetText("Show minimap button")
+    y = y - (BTN_H + ROW_GAP)
+
     frame:SetHeight(-y + 20)
 end
 
@@ -125,6 +142,8 @@ function RCPL_ShowOptionsFrame()
     if frame:IsShown() then
         frame:Hide()
     else
+        local hidden = type(RCPL_DB) == "table" and type(RCPL_DB.minimap) == "table" and RCPL_DB.minimap.hide
+        frame.minimapCheck:SetChecked(not hidden)
         frame:Show()
     end
 end
