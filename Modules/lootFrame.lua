@@ -14,8 +14,8 @@ end
 local function GetOrCreateOverlay(entry)
     local icon = entry.icon
     if overlayPool[icon] then return overlayPool[icon] end
-    local fs = entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    fs:SetPoint("TOP", entry.frame, "BOTTOM", 0, 12)
+    local fs = entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    fs:SetPoint("TOP", entry.frame, "BOTTOM", 0, 14)
     fs:SetJustifyH("CENTER")
     fs:SetText("")
     overlayPool[icon] = fs

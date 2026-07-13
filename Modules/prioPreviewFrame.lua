@@ -1,17 +1,29 @@
 -- Modules/prioPreviewFrame.lua
 -- Scrollable popup showing imported priority data.  Opened via /rcpl prio.
 
-local LINE_H     = 16   -- px per line for GameFontNormalSmall
-local CONTENT_W  = 440  -- inner text width (frame 500 - margins)
+local LINE_H     = 20   -- px per line for GameFontNormal
+local CONTENT_W  = 500  -- inner text width (frame 560 - margins)
 local PAD        = 4
 
 local frame
+
+-- Populate is forward-declared so the GET_ITEM_INFO_RECEIVED handler (wired
+-- up in Build(), which runs before Populate's own definition below) can call
+-- it once a pending item's name actually resolves.
+local Populate
+
+-- itemIDs currently shown as "Item #<id>" because GetItemInfo(itemID)
+-- returned nil the moment Populate() last ran -- the client caches item data
+-- lazily and fetches it asynchronously, so a not-yet-seen item resolves a
+-- moment later rather than never. Re-populate when one arrives instead of
+-- leaving the fallback stuck until the window happens to be reopened.
+local pendingItemIDs = {}
 
 -- ── Frame construction ────────────────────────────────────────────────────────
 
 local function Build()
     frame = CreateFrame("Frame", "RCPLPrioPreviewFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(500, 540)
+    frame:SetSize(560, 540)
     frame:SetPoint("CENTER")
     frame:SetBackdrop({
         bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
@@ -28,6 +40,13 @@ local function Build()
     frame:Hide()
     tinsert(UISpecialFrames, "RCPLPrioPreviewFrame")
 
+    frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+    frame:SetScript("OnEvent", function(_, event, itemID, success)
+        if event == "GET_ITEM_INFO_RECEIVED" and success and pendingItemIDs[itemID] and frame:IsShown() then
+            Populate()
+        end
+    end)
+
     local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     titleText:SetPoint("TOP", 0, -14)
     titleText:SetText("RCLootCouncil Priority Data")
@@ -36,7 +55,7 @@ local function Build()
     closeBtn:SetPoint("TOPRIGHT", -2, -2)
     closeBtn:SetScript("OnClick", function() frame:Hide() end)
 
-    local sub = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    local sub = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     sub:SetPoint("TOP", titleText, "BOTTOM", 0, -4)
     frame.subtitle = sub
 
@@ -65,7 +84,7 @@ end
 
 local function GetLine(i)
     if not frame.linePool[i] then
-        local fs = frame.content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        local fs = frame.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         fs:SetJustifyH("LEFT")
         fs:SetWidth(CONTENT_W - PAD * 2)
         frame.linePool[i] = fs
@@ -93,27 +112,30 @@ end
 -- Players per row in a ranked list / roster grid -- short enough that a
 -- Name-Realm entry plus its rank number never has to wrap mid-entry at the
 -- window's content width, long enough that a full raid roster doesn't turn
--- into a wall of one-name-per-line scrolling.
-local PLAYERS_PER_ROW = 4
+-- into a wall of one-name-per-line scrolling. Lower than it'd need to be at
+-- GameFontNormalSmall since GameFontNormal takes more horizontal space per
+-- entry.
+local PLAYERS_PER_ROW = 3
 
 -- ── Populate ──────────────────────────────────────────────────────────────────
 
-local function Populate()
+function Populate()
     -- Hide every pooled line first
     for _, fs in ipairs(frame.linePool) do fs:Hide() end
+    wipe(pendingItemIDs)
 
     local lines = {}
-    local function add(text, r, g, b)
-        lines[#lines + 1] = { text = text or "", r = r, g = g, b = b }
+    local function add(text, r, g, b, large)
+        lines[#lines + 1] = { text = text or "", r = r, g = g, b = b, large = large }
     end
     local function sep()
-        add("|cFF555555" .. string.rep("-", 56) .. "|r")
+        add("|cFF555555" .. string.rep("-", 48) .. "|r")
     end
     -- Lighter divider between items within the Priority Lists section --
     -- distinct from sep()'s heavier section-header rule so a long list of
     -- items still reads as one section, just visually chunked per item.
     local function itemDivider()
-        add("|cFF3A3A3A" .. string.rep(". ", 28) .. "|r")
+        add("|cFF3A3A3A" .. string.rep(". ", 24) .. "|r")
     end
 
     if type(RCPL_DB) ~= "table" then
@@ -155,6 +177,14 @@ local function Populate()
                     local tracks = priority[idStr]
                     local itemID = tonumber(idStr)
                     local name   = itemID and GetItemInfo(itemID)
+                    if itemID and not name then
+                        -- Not cached client-side yet -- kick off the async
+                        -- fetch and remember to redraw once it lands.
+                        pendingItemIDs[itemID] = true
+                        if C_Item and C_Item.RequestLoadItemDataByID then
+                            C_Item.RequestLoadItemDataByID(itemID)
+                        end
+                    end
                     local label  = name
                         and ("|cFFffd200" .. name .. "|r")
                         or  ("|cFF888888Item #" .. idStr .. "|r")
@@ -164,7 +194,10 @@ local function Populate()
                     for _, trackKey in ipairs({ "H", "M" }) do
                         local list = tracks[trackKey]
                         if type(list) == "table" and #list > 0 then
-                            add("    |cFF888888" .. TRACK_LABEL[trackKey] .. ":|r")
+                            -- Larger + white rather than the body's grey so the
+                            -- difficulty heading doesn't recede behind the
+                            -- ranked players it's labeling.
+                            add("    " .. TRACK_LABEL[trackKey] .. ":", nil, nil, nil, true)
                             -- Each rank gets the same green/yellow/orange the
                             -- voting/loot frame overlay uses, so who's
                             -- actually top priority reads at a glance instead
@@ -213,6 +246,7 @@ local function Populate()
     local y = -PAD
     for i, lineData in ipairs(lines) do
         local fs = GetLine(i)
+        fs:SetFontObject(lineData.large and "GameFontNormalLarge" or "GameFontNormal")
         fs:ClearAllPoints()
         fs:SetPoint("TOPLEFT", frame.content, "TOPLEFT", PAD, y)
         fs:SetText(lineData.text)

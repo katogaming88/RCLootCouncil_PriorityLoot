@@ -39,7 +39,8 @@ read_globals = {
     "UIPanelScrollFrameTemplate", "UIPanelButtonTemplate", "UIPanelCloseButton",
 
     -- Font objects
-    "ChatFontNormal", "GameFontNormal", "GameFontNormalSmall", "GameFontHighlight",
+    "ChatFontNormal", "GameFontNormal", "GameFontNormalSmall", "GameFontNormalLarge",
+    "GameFontHighlight",
 
     -- LibStub + saved-variable wiring
     "LibStub",
