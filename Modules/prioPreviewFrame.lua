@@ -79,6 +79,23 @@ local function ShortName(fullName)
     return (fullName:match("^([^%-]+)")) or fullName
 end
 
+-- WoW inline color codes are |cAARRGGBB -- alpha then RGB, all hex.
+-- RCPL_Data_RankColor (Data/db.lua) returns 0-1 floats; convert once per use.
+local function ColorHex(color)
+    return string.format(
+        "%02x%02x%02x",
+        math.floor(color.r * 255 + 0.5),
+        math.floor(color.g * 255 + 0.5),
+        math.floor(color.b * 255 + 0.5)
+    )
+end
+
+-- Players per row in a ranked list / roster grid -- short enough that a
+-- Name-Realm entry plus its rank number never has to wrap mid-entry at the
+-- window's content width, long enough that a full raid roster doesn't turn
+-- into a wall of one-name-per-line scrolling.
+local PLAYERS_PER_ROW = 4
+
 -- ── Populate ──────────────────────────────────────────────────────────────────
 
 local function Populate()
@@ -91,6 +108,12 @@ local function Populate()
     end
     local function sep()
         add("|cFF555555" .. string.rep("-", 56) .. "|r")
+    end
+    -- Lighter divider between items within the Priority Lists section --
+    -- distinct from sep()'s heavier section-header rule so a long list of
+    -- items still reads as one section, just visually chunked per item.
+    local function itemDivider()
+        add("|cFF3A3A3A" .. string.rep(". ", 28) .. "|r")
     end
 
     if type(RCPL_DB) ~= "table" then
@@ -141,16 +164,24 @@ local function Populate()
                     for _, trackKey in ipairs({ "H", "M" }) do
                         local list = tracks[trackKey]
                         if type(list) == "table" and #list > 0 then
-                            local parts = {}
-                            for rank, playerName in ipairs(list) do
-                                parts[#parts + 1] = rank .. ". " .. ShortName(playerName)
+                            add("    |cFF888888" .. TRACK_LABEL[trackKey] .. ":|r")
+                            -- Each rank gets the same green/yellow/orange the
+                            -- voting/loot frame overlay uses, so who's
+                            -- actually top priority reads at a glance instead
+                            -- of everyone blending into one flat grey line.
+                            for rowStart = 1, #list, PLAYERS_PER_ROW do
+                                local parts = {}
+                                for rank = rowStart, math.min(rowStart + PLAYERS_PER_ROW - 1, #list) do
+                                    local hex = ColorHex(RCPL_Data_RankColor(rank))
+                                    parts[#parts + 1] = "|cFF" .. hex .. rank .. ". "
+                                        .. ShortName(list[rank]) .. "|r"
+                                end
+                                add("      " .. table.concat(parts, "   "))
                             end
-                            add("    |cFF888888" .. TRACK_LABEL[trackKey] .. ":|r  |cFFCCCCCC"
-                                .. table.concat(parts, "   ") .. "|r")
                         end
                     end
 
-                    if i < #sortedIDs then add("") end
+                    if i < #sortedIDs then itemDivider() end
                 end
                 add("")
             end
@@ -163,8 +194,15 @@ local function Populate()
                 local names = {}
                 for name in pairs(players) do names[#names + 1] = name end
                 table.sort(names)
-                for _, name in ipairs(names) do
-                    add("  |cFFCCCCCC" .. name .. "|r")
+                -- Grid instead of one name per line -- a full raid roster
+                -- (20+) shouldn't need that much scrolling just to list names
+                -- with no other information attached.
+                for rowStart = 1, #names, PLAYERS_PER_ROW do
+                    local parts = {}
+                    for j = rowStart, math.min(rowStart + PLAYERS_PER_ROW - 1, #names) do
+                        parts[#parts + 1] = names[j]
+                    end
+                    add("  |cFFCCCCCC" .. table.concat(parts, "   ") .. "|r")
                 end
             end
         end

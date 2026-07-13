@@ -46,6 +46,13 @@ local function RankColor(rank)
     end
 end
 
+-- Public wrapper so other modules (Modules/prioPreviewFrame.lua) can reuse
+-- the exact same rank -> color scheme the voting/loot frame overlay uses,
+-- instead of maintaining a second copy that can drift out of sync (#27).
+function RCPL_Data_RankColor(rank)
+    return RankColor(rank)
+end
+
 function RCPL_Data_SaveImportedData(decoded)
     if type(decoded) ~= "table" or type(decoded.players) ~= "table" then
         print("|cFFFF4444[RCLootCouncil_PriorityLoot]|r Import failed: invalid data structure.")

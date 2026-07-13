@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.3] - 2026-07-12
+
+### Changed
+
+- **`/rcpl prio` window: color-coded ranks and grid layout (#27).** Each ranked player entry now shows in the same green/yellow/orange scheme (rank 1/2/3+) the voting/loot frame overlay already uses, via a new `RCPL_Data_RankColor` public wrapper around `Data/db.lua`'s existing color logic -- instead of every rank blending into one flat grey line. Ranked lists and the player roster now lay out as a fixed-width grid (4 per row) rather than one long word-wrapped string, so a long list wraps predictably instead of however the FontString happens to break. Items within the Priority Lists section are now separated by a lighter dotted divider instead of just a blank line.
+
+---
+
 ## [0.2.2] - 2026-07-12
 
 ### Added

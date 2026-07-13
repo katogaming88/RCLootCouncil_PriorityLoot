@@ -74,6 +74,7 @@ globals = {
     "RCPL_Data_ResetData",
     "RCPL_Data_MarkAwarded",
     "RCPL_Data_UnmarkAwarded",
+    "RCPL_Data_RankColor",
     "RCPL_ShowImportFrame",
     "RCPL_ShowPrioPreview",
     "RCPL_ShowAwardsFrame",

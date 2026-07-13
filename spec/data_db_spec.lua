@@ -335,3 +335,33 @@ describe("RCPL_Data_GetPlayerPriority", function()
         assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 42, "INVTYPE_ROBE"))
     end)
 end)
+
+-- ── RCPL_Data_RankColor ──────────────────────────────────────────────────────
+-- Public wrapper (#27) so Modules/prioPreviewFrame.lua can color-code ranks
+-- with the exact same scheme the voting/loot frame overlay uses.
+
+describe("RCPL_Data_RankColor", function()
+    setup(function()
+        mocks.loadAddonSources()
+    end)
+
+    it("returns green for rank 1", function()
+        local color = RCPL_Data_RankColor(1)
+        assert.equals(0.0, color.r)
+        assert.equals(1.0, color.g)
+    end)
+
+    it("returns yellow for rank 2", function()
+        local color = RCPL_Data_RankColor(2)
+        assert.equals(1.0, color.r)
+        assert.equals(1.0, color.g)
+    end)
+
+    it("returns orange for rank 3 and beyond", function()
+        for _, rank in ipairs({ 3, 4, 10 }) do
+            local color = RCPL_Data_RankColor(rank)
+            assert.equals(1.0, color.r)
+            assert.equals(0.5, color.g)
+        end
+    end)
+end)
