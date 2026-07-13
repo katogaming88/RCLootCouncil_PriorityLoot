@@ -165,6 +165,21 @@ describe("RCPL_Data_GetPlayerPriority", function()
             assert.is_nil(track)
         end)
 
+        it("returns the raw numeric rank as a fourth value, item-centric list", function()
+            mocks.setInstanceInfo("raid", 15)
+            local text, _, _, rank = RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD")
+            assert.equals("2nd", text)
+            assert.equals(2, rank)
+        end)
+
+        it("returns the raw numeric rank as a fourth value, per-player BiS fallback", function()
+            _G.RCPL_DB.priority = {}
+            _G.RCPL_DB.players["Alice-Realm"] = { helm = { bis = { 999, 500 } } }
+            local text, _, _, rank = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
+            assert.equals("2nd", text)
+            assert.equals(2, rank)
+        end)
+
         it("returns N/A grey for a track the item has no ranking for", function()
             _G.RCPL_DB.priority["501"] = { H = { "Alice-Realm" } }  -- no Mythic list
             mocks.setInstanceInfo("raid", 16)
