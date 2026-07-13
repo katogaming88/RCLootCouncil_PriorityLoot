@@ -102,18 +102,26 @@ function RCPLootFrame:OnInitialize()
         local entry = em.entries[item]
         if type(entry) ~= "table" then return end
 
-        -- GetEntry can return an already-created entry on every refresh
-        -- without that entry's own Update necessarily re-running, so relying
-        -- on GetEntry alone (as before) is fine for our own dedicated
-        -- overlay (a plain overwrite is always safe) but not for appending
-        -- onto the shared itemLvl line -- that needs to run right after each
-        -- native reset, so hook the entry's own Update once, the same point
-        -- RCLootCouncil_wowaudit hooks for the same reason.
+        -- Appending onto the shared itemLvl line needs to run right after
+        -- each native text reset, so hook the entry's own Update once, the
+        -- same point RCLootCouncil_wowaudit hooks for the same reason --
+        -- rather than calling UpdateEntry here in the GetEntry hook itself.
+        --
+        -- EntryManager:GetEntry's "restored" branch (reusing a pooled entry)
+        -- calls entry:Update(item) *inside* the original GetEntry -- for an
+        -- already-hooked entry that already triggers this same Update hook
+        -- during this very GetEntry call, so calling UpdateEntry a second
+        -- time here unconditionally would append the priority text twice
+        -- onto the one native reset (and again on every subsequent refresh,
+        -- e.g. clicking Upgrade/Catalyst/Pass, compounding further). Only
+        -- call it directly the one time we attach the hook, to cover a
+        -- brand-new entry (GetNewEntry/GetRollEntry) whose own internal
+        -- Update(item) call already ran *before* we could hook it.
         if not self:IsHooked(entry, "Update") then
             self:SecureHook(entry, "Update", function(e)
                 pcall(UpdateEntry, e, item, playerName)
             end)
+            pcall(UpdateEntry, entry, item, playerName)
         end
-        pcall(UpdateEntry, entry, item, playerName)
     end)
 end
