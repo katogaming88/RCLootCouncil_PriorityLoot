@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120007, 120100
 ## Title: RCLootCouncil - Priority Loot
 ## Notes: Displays BiS loot priority data in the RCLootCouncil voting and loot frames.
 ## Author:

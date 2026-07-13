@@ -17,6 +17,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **`/rcpl prio` window: color-coded ranks and grid layout (#27).** Each ranked player entry now shows in the same green/yellow/orange scheme (rank 1/2/3+) the voting/loot frame overlay already uses, via a new `RCPL_Data_RankColor` public wrapper around `Data/db.lua`'s existing color logic -- instead of every rank blending into one flat grey line. Ranked lists and the player roster now lay out as a fixed-width grid (4 per row) rather than one long word-wrapped string, so a long list wraps predictably instead of however the FontString happens to break. Items within the Priority Lists section are now separated by a lighter dotted divider instead of just a blank line.
 
+### Fixed
+
+- **`## Interface` declares both 120007 and 120100 instead of only 120100.** A single-value bump to 120100 (WoW 12.1.0) was premature -- that patch isn't live yet, and a client running the actual current interface (120007) refuses to load an addon whose declared `## Interface` is higher than its own, showing it as out-of-date/disabled rather than just a compatibility warning. The TOC format supports a comma-separated list, so declaring both keeps the addon working right now on 12.0.7 and ready with no further change once 12.1.0 ships.
+
 ---
 
 ## [0.2.2] - 2026-07-12
