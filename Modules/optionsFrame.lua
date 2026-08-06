@@ -49,12 +49,7 @@ local function Build()
     frame = CreateFrame("Frame", "RCPLOptionsFrame", UIParent, "BackdropTemplate")
     frame:SetSize(440, 100)  -- height finalized at the bottom of Build()
     frame:SetPoint("CENTER")
-    frame:SetBackdrop({
-        bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
-        edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 8, right = 8, top = 8, bottom = 8 },
-    })
+    RCPL_ApplyPanelBackdrop(frame)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -64,9 +59,8 @@ local function Build()
     frame:Hide()
     tinsert(UISpecialFrames, "RCPLOptionsFrame")
 
-    local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    titleText:SetPoint("TOP", 0, -14)
-    titleText:SetText("RCLootCouncil Priority Loot - Options")
+    RCPL_CreateHeaderStrip(frame, 34)
+    RCPL_CreateStyledTitle(frame, "RCLootCouncil Priority Loot - Options")
 
     local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", -2, -2)
@@ -74,10 +68,8 @@ local function Build()
 
     local y = -50
     for _, entry in ipairs(ACTIONS) do
-        local btn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-        btn:SetSize(BTN_W, BTN_H)
+        local btn = RCPL_CreateStyledButton(frame, BTN_W, BTN_H, entry.label)
         btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
-        btn:SetText(entry.label)
         btn:SetScript("OnClick", function()
             frame:Hide()
             entry.action()

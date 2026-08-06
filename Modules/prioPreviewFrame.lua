@@ -25,12 +25,7 @@ local function Build()
     frame = CreateFrame("Frame", "RCPLPrioPreviewFrame", UIParent, "BackdropTemplate")
     frame:SetSize(560, 540)
     frame:SetPoint("CENTER")
-    frame:SetBackdrop({
-        bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
-        edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 8, right = 8, top = 8, bottom = 8 },
-    })
+    RCPL_ApplyPanelBackdrop(frame)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -47,9 +42,8 @@ local function Build()
         end
     end)
 
-    local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    titleText:SetPoint("TOP", 0, -14)
-    titleText:SetText("RCLootCouncil Priority Data")
+    RCPL_CreateHeaderStrip(frame, 44)
+    local titleText = RCPL_CreateStyledTitle(frame, "RCLootCouncil Priority Data")
 
     local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", -2, -2)

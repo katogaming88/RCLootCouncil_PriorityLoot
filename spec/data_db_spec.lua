@@ -427,11 +427,18 @@ describe("RCPL_Data_RankColor", function()
         assert.equals(1.0, color.g)
     end)
 
-    it("returns orange for rank 3 and beyond", function()
-        for _, rank in ipairs({ 3, 4, 10 }) do
+    it("returns orange for rank 3", function()
+        local color = RCPL_Data_RankColor(3)
+        assert.equals(1.0, color.r)
+        assert.equals(0.5, color.g)
+    end)
+
+    it("returns grey for ranks below 3rd", function()
+        for _, rank in ipairs({ 4, 5, 10 }) do
             local color = RCPL_Data_RankColor(rank)
-            assert.equals(1.0, color.r)
-            assert.equals(0.5, color.g)
+            assert.equals(0.6, color.r)
+            assert.equals(0.6, color.g)
+            assert.equals(0.6, color.b)
         end
     end)
 end)

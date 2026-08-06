@@ -7,7 +7,7 @@ local RCPLootFrame = RCPLAddon:NewModule("RCPLootFrame", "AceHook-3.0", "AceTime
 
 local overlayPool = {}
 
--- Past this rank, the raider-facing overlay shows "On your BiS list" instead
+-- Past this rank, the raider-facing overlay shows "On your wishlist" instead
 -- of the exact number. A raider who sees "Prio: 8th" tends to just not
 -- bother clicking Upgrade/OS/M+ at all -- and since a non-click reads to the
 -- loot council as "doesn't want it right now", that can quietly hide them
@@ -79,7 +79,7 @@ local function UpdateEntry(entry, item, playerName)
         -- still useful context on its own -- a raider deciding whether to
         -- click Upgrade/OS/M+ cares whether this is the Heroic or Mythic
         -- drop even when they don't need their exact rank.
-        displayText = "On your BiS list" .. trackSuffix
+        displayText = "On your wishlist" .. trackSuffix
         displayColor = { r = 1, g = 1, b = 1 }
     else
         displayText = "Prio: " .. text .. trackSuffix

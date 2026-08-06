@@ -15,12 +15,7 @@ local function Build()
     frame = CreateFrame("Frame", "RCPLAwardsFrame", UIParent, "BackdropTemplate")
     frame:SetSize(500, 440)
     frame:SetPoint("CENTER")
-    frame:SetBackdrop({
-        bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
-        edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 8, right = 8, top = 8, bottom = 8 },
-    })
+    RCPL_ApplyPanelBackdrop(frame)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -30,9 +25,8 @@ local function Build()
     frame:Hide()
     tinsert(UISpecialFrames, "RCPLAwardsFrame")
 
-    local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    titleText:SetPoint("TOP", 0, -14)
-    titleText:SetText("Priority Loot — Season Awards")
+    RCPL_CreateHeaderStrip(frame, 44)
+    local titleText = RCPL_CreateStyledTitle(frame, "Priority Loot - Season Awards")
 
     local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", -2, -2)
@@ -42,10 +36,8 @@ local function Build()
     sub:SetPoint("TOP", titleText, "BOTTOM", 0, -4)
     frame.subtitle = sub
 
-    local removeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    removeBtn:SetSize(140, 22)
+    local removeBtn = RCPL_CreateStyledButton(frame, 140, 22, "Remove Award")
     removeBtn:SetPoint("BOTTOM", 0, 10)
-    removeBtn:SetText("Remove Award")
     removeBtn:SetEnabled(false)
     removeBtn:SetScript("OnClick", function()
         for _, cb in ipairs(frame.checkPool) do

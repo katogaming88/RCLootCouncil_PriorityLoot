@@ -51,7 +51,11 @@ end
 local function RankColor(rank)
     if     rank == 1 then return COLOR_GREEN
     elseif rank == 2 then return COLOR_YELLOW
-    else                   return COLOR_ORANGE
+    elseif rank == 3 then return COLOR_ORANGE
+    -- Anyone below 3rd priority is unlikely to actually receive the item,
+    -- so fade them to grey rather than keep stretching the same orange
+    -- across an arbitrarily long tail of ranks.
+    else                   return COLOR_GREY
     end
 end
 
