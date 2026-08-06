@@ -9,6 +9,14 @@ local BORDER_COLOR = { 0.71, 0.55, 0.15, 1 }
 local HEADER_COLOR = { 0.71, 0.55, 0.15, 0.18 }
 local TITLE_COLOR  = { 1, 0.82, 0 }
 
+-- Window titles sit directly on the gold-tinted header strip (HEADER_COLOR),
+-- not the plain dark panel body -- gold-on-gold-tint still clears WCAG's
+-- luminance-only contrast math (they're different alpha/opacity, so the
+-- strip stays dark), but reads as one flat hue at a glance. White text keeps
+-- the title legible as text rather than a smear of gold, while borders and
+-- buttons stay gold for the accent color.
+local HEADING_COLOR = { 1, 1, 1 }
+
 -- Applies the shared backdrop to any BackdropTemplate frame. Callers still
 -- own size/point/strata/movability -- this only touches the skin.
 function RCPL_ApplyPanelBackdrop(frame)
@@ -33,12 +41,13 @@ function RCPL_CreateHeaderStrip(parent, headerHeight)
     return header
 end
 
--- Gold GameFontNormalLarge title, centered at the top of the frame.
+-- White GameFontNormalLarge title, centered at the top of the frame -- see
+-- HEADING_COLOR above for why this isn't gold like the border/buttons.
 function RCPL_CreateStyledTitle(parent, text)
     local titleText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     titleText:SetPoint("TOP", 0, -12)
     titleText:SetText(text)
-    titleText:SetTextColor(unpack(TITLE_COLOR))
+    titleText:SetTextColor(unpack(HEADING_COLOR))
     return titleText
 end
 
