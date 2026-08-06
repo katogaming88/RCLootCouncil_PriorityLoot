@@ -10,9 +10,9 @@ local RCVotingFrame = addon:GetModule("RCVotingFrame")
 local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
 local RCPLVotingPanel = RCPLAddon:NewModule("RCPLVotingPriorityPanel", "AceHook-3.0", "AceTimer-3.0", "AceEvent-3.0")
 
-local ROW_H     = 18
-local CONTENT_W = 220
-local PAD       = 6
+local ROW_H     = 20
+local CONTENT_W = 240
+local PAD       = 8
 
 local panel
 local currentSession = 1
@@ -20,7 +20,7 @@ local linePool = {}
 
 local function GetOrCreateLine(i)
     if not linePool[i] then
-        local fs = panel.content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        local fs = panel.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         fs:SetJustifyH("LEFT")
         fs:SetWidth(CONTENT_W - PAD * 2)
         linePool[i] = fs
@@ -41,18 +41,16 @@ local function Build()
     panel = CreateFrame("Frame", "RCPLVotingPriorityPanel", RCVotingFrame.frame, "BackdropTemplate")
     panel:SetSize(CONTENT_W + 20, 340)
     panel:SetPoint("TOPLEFT", RCVotingFrame.frame, "TOPRIGHT", 8, 0)
-    panel:SetBackdrop({
-        bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
-        edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 8, right = 8, top = 8, bottom = 8 },
-    })
+    -- Same tooltip-style skin as the Options/Priority Preview/Season Awards/
+    -- Version Checker windows (Modules/frameStyle.lua) -- reads much more
+    -- clearly against the raid/voting UI behind it than the old tiled stone
+    -- DialogBox skin, which washed out at this panel's small size.
+    RCPL_ApplyPanelBackdrop(panel)
     panel:SetFrameStrata(RCVotingFrame.frame:GetFrameStrata())
     panel:Hide()
 
-    local titleText = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    titleText:SetPoint("TOP", 0, -14)
-    titleText:SetText("Full Priority Order")
+    RCPL_CreateHeaderStrip(panel, 42)
+    local titleText = RCPL_CreateStyledTitle(panel, "Full Priority Order")
     panel.title = titleText
 
     local itemText = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -61,7 +59,7 @@ local function Build()
     panel.itemText = itemText
 
     local scrollFrame = CreateFrame("ScrollFrame", "RCPLVotingPriorityPanelScroll", panel, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -50)
+    scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -54)
     scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -28, 10)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
@@ -126,8 +124,14 @@ local function Refresh()
             if type(list) == "table" and #list > 0 then
                 any = true
                 local label = RCPL_Data_TrackLabel(trackKey) or trackKey
-                if trackKey == dropTrack then label = label .. " (this drop)" end
-                add("|cFFCCCCCC" .. label .. ":|r")
+                if trackKey == dropTrack then
+                    -- Gold instead of the plain grey heading color so the
+                    -- track that actually matters for this drop pops out
+                    -- immediately instead of reading as just another list.
+                    add("|cFFFFD100" .. label .. " (this drop):|r")
+                else
+                    add("|cFFCCCCCC" .. label .. ":|r")
+                end
                 for rank, playerName in ipairs(list) do
                     local hex = ColorHex(RCPL_Data_RankColor(rank))
                     add("  |cFF" .. hex .. rank .. ". " .. ShortName(playerName) .. "|r")

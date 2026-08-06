@@ -102,33 +102,81 @@ function Log.DumpToChat(limit)
     end
 end
 
--- Opens an AceGUI window with the full log when AceGUI is available;
--- falls back to a chat dump otherwise. Uses plain text (no colour codes)
--- inside the edit box so the contents are easy to copy and paste.
+local logFrame
+
+-- Own BackdropTemplate frame using the same tooltip-style skin as every
+-- other window in the addon (Modules/frameStyle.lua) -- previously this drew
+-- an AceGUI Frame widget instead, which came with its own tiled DialogFrame
+-- header art that didn't match, and (being a shared library instance)
+-- couldn't be reskinned without risking whatever other addon's copy of
+-- AceGUI happened to win the shared LibStub registration.
+local function BuildLogFrame()
+    local f = CreateFrame("Frame", "RCPLLogFrame", UIParent, "BackdropTemplate")
+    f:SetSize(640, 420)
+    f:SetPoint("CENTER")
+    RCPL_ApplyPanelBackdrop(f)
+    f:SetMovable(true)
+    f:EnableMouse(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    f:SetFrameStrata("DIALOG")
+    f:Hide()
+    tinsert(UISpecialFrames, "RCPLLogFrame")
+
+    RCPL_CreateHeaderStrip(f, 34)
+    f.title = RCPL_CreateStyledTitle(f, "RCLootCouncil_PriorityLoot Log")
+
+    local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+    closeBtn:SetPoint("TOPRIGHT", -2, -2)
+    closeBtn:SetScript("OnClick", function() f:Hide() end)
+
+    local scrollFrame = CreateFrame("ScrollFrame", "RCPLLogScroll", f, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 14, -44)
+    scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -32, 14)
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local cur = self:GetVerticalScroll()
+        local maxScroll = math.max(0, f.editBox:GetHeight() - self:GetHeight())
+        self:SetVerticalScroll(math.max(0, math.min(maxScroll, cur - delta * 16 * 3)))
+    end)
+
+    -- Plain text (no colour codes) in a selectable EditBox, same approach
+    -- Modules/importFrame.lua uses, so the contents are easy to copy out.
+    local editBox = CreateFrame("EditBox", "RCPLLogEditBox", scrollFrame)
+    editBox:SetFontObject(ChatFontNormal)
+    editBox:SetMultiLine(true)
+    editBox:SetAutoFocus(false)
+    editBox:SetWidth(scrollFrame:GetWidth())
+    editBox:SetHeight(1)
+    editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    editBox:SetScript("OnTextChanged", function() scrollFrame:UpdateScrollChildRect() end)
+    scrollFrame:SetScrollChild(editBox)
+    f.editBox = editBox
+
+    return f
+end
+
+-- Opens the log window. CreateFrame only fails to exist outside a live WoW
+-- client (i.e. the busted test harness, which doesn't mock the frame API --
+-- see spec/wow_mocks.lua), where a chat dump is the only option anyway.
 function Log.Show()
-    local ok, AceGUI = pcall(function() return LibStub("AceGUI-3.0", true) end)
-    if not ok or not AceGUI then
+    if type(CreateFrame) ~= "function" then
         Log.DumpToChat()
         return
     end
 
-    local frame = AceGUI:Create("Frame")
-    frame:SetTitle("RCLootCouncil_PriorityLoot Log (" .. #entries .. " entries)")
-    frame:SetLayout("Fill")
-    frame:SetWidth(640)
-    frame:SetHeight(420)
-
-    local box = AceGUI:Create("MultiLineEditBox")
-    box:SetLabel("")
-    box:DisableButton(true)
+    if not logFrame then logFrame = BuildLogFrame() end
 
     local lines = {}
     for i, e in ipairs(entries) do
         lines[i] = string.format("[%s] [%s] %s",
             date("%H:%M:%S", e.ts), e.level, e.message)
     end
-    box:SetText(table.concat(lines, "\n"))
-    frame:AddChild(box)
+    logFrame.title:SetText("RCLootCouncil_PriorityLoot Log (" .. #entries .. " entries)")
+    logFrame.editBox:SetText(table.concat(lines, "\n"))
+    logFrame.editBox:SetHeight(math.max(1, #lines * 14))
+    logFrame:Show()
 end
 
 _G.RCPL_Log = Log

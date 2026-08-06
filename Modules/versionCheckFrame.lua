@@ -43,12 +43,7 @@ local function Build()
     frame = CreateFrame("Frame", "RCPLVersionCheckFrame", UIParent, "BackdropTemplate")
     frame:SetSize(420, 420)
     frame:SetPoint("CENTER")
-    frame:SetBackdrop({
-        bgFile   = "Interface/DialogFrame/UI-DialogBox-Background",
-        edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 8, right = 8, top = 8, bottom = 8 },
-    })
+    RCPL_ApplyPanelBackdrop(frame)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -58,24 +53,23 @@ local function Build()
     frame:Hide()
     tinsert(UISpecialFrames, "RCPLVersionCheckFrame")
 
-    local titleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    titleText:SetPoint("TOP", 0, -14)
-    titleText:SetText("RCLootCouncil Priority Loot - Version Checker")
+    RCPL_CreateHeaderStrip(frame, 34)
+    RCPL_CreateStyledTitle(frame, "RCLootCouncil Priority Loot - Version Checker")
 
     local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", -2, -2)
     closeBtn:SetScript("OnClick", function() frame:Hide() end)
 
     local headerName = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    headerName:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -40)
+    headerName:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -44)
     headerName:SetText("Name")
 
     local headerVersion = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    headerVersion:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -34, -40)
+    headerVersion:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -34, -44)
     headerVersion:SetText("Version")
 
     local scrollFrame = CreateFrame("ScrollFrame", "RCPLVersionCheckScroll", frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -60)
+    scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -64)
     scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30, 48)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
@@ -91,20 +85,16 @@ local function Build()
     scrollFrame:SetScrollChild(content)
     frame.content = content
 
-    local guildBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    guildBtn:SetSize(80, 22)
+    local guildBtn = RCPL_CreateStyledButton(frame, 80, 22, "Guild")
     guildBtn:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 14, 12)
-    guildBtn:SetText("Guild")
     guildBtn:SetScript("OnClick", function()
         local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
         local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
         RCPLAddon:StartVersionCheck("guild")
     end)
 
-    local groupBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    groupBtn:SetSize(80, 22)
+    local groupBtn = RCPL_CreateStyledButton(frame, 80, 22, "Group")
     groupBtn:SetPoint("LEFT", guildBtn, "RIGHT", 8, 0)
-    groupBtn:SetText("Group")
     groupBtn:SetScript("OnClick", function()
         local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
         local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")

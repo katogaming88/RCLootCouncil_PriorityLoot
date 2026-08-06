@@ -11,6 +11,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.4.0] - 2026-08-06
+
+### Changed
+
+- **All addon windows now share one dark/gold tooltip-style look.** Options, Priority Preview, Season Awards, Version Checker, Import, the Full Priority Order voting panel, and the Log window previously each carried their own copy of the old tiled red-and-stone Blizzard DialogFrame skin (or, for the Log window, a completely different AceGUI-drawn frame that couldn't match at all). They now all pull from a single shared style (`Modules/frameStyle.lua`): a solid near-black background, thin gold border, and a gold header strip behind the title. Every custom action button across these windows (Import's Confirm, Season Awards' Remove Award, Version Checker's Guild/Group, and all of the Options panel's action buttons) got the same flat dark/gold treatment in place of the default red Blizzard button art.
+- **Priority ranks below 3rd now render grey instead of orange.** Previously every rank from 3rd onward shared the same orange, so a long priority list gave no visual cue for who's actually in realistic contention. Rank 1 stays green, 2 stays yellow, 3 stays orange, and 4th onward now fades to grey -- consistent everywhere the shared rank color is used (loot frame overlay, voting frame Priority column, Priority Preview, and the Full Priority Order panel).
+- **The raider-facing loot frame overlay now says "On your wishlist" instead of "On your BiS list".** Wording update to match current wishlist terminology; no behavior change.
+
+---
+
 ## [0.3.0] - 2026-07-13
 
 ### Added

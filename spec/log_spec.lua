@@ -8,7 +8,8 @@
 --     chat when the flag is true
 --   * persistent toggle round trip (SetDebug / ToggleDebug / IsDebugOn)
 --   * Clear() empties the buffer
---   * Show() falls back to DumpToChat when AceGUI is unavailable
+--   * Show() falls back to DumpToChat when CreateFrame is unavailable
+--     (i.e. outside a live WoW client, such as this test harness)
 
 local mocks = require "spec.wow_mocks"
 
@@ -133,8 +134,8 @@ describe("Modules/log.lua", function()
 
     -- ── Show fallback ───────────────────────────────────────────────────────
 
-    it("Show falls back to DumpToChat when LibStub is absent", function()
-        _G.LibStub = nil  -- guarantee fallback path
+    it("Show falls back to DumpToChat when CreateFrame is absent", function()
+        _G.CreateFrame = nil  -- guarantee fallback path (never nil in a live client)
         Log.info("entry one")
         Log.info("entry two")
         printCalls = mocks.capturePrint()  -- reset so we only count Show output
