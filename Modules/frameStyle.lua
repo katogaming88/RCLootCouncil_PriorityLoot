@@ -42,7 +42,12 @@ function RCPL_CreateStyledTitle(parent, text)
     return titleText
 end
 
-local DISABLED_COLOR = { 0.4, 0.4, 0.4, 1 }
+-- 0.55 rather than the visually "dimmer" 0.4 -- 0.4 only clears ~3.0:1
+-- against the button's dark fill, below WCAG AA's 4.5:1 for text (WCAG 1.4.3
+-- exempts disabled controls, but there's no reason not to clear it anyway).
+-- 0.55 lands at ~5.2:1 against the button fill and ~6.3:1 against the panel
+-- background, comfortably past AA with margin to spare.
+local DISABLED_COLOR = { 0.55, 0.55, 0.55, 1 }
 
 -- Flat dark button with a thin gold edge, matching the panel skin -- used in
 -- place of UIPanelButtonTemplate's red/brown Blizzard button art, which
