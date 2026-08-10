@@ -9,6 +9,7 @@
 ## AddonCompartmentFunc: RCPL_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: RCPL_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: RCPL_OnAddonCompartmentLeave
+## X-Curse-Project-ID: 1608381
 
 Libs\LibJSON.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
