@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A "Bonus" column on the voting frame flags any candidate who already used their weekly Bonus Roll on the current boss.** RCLootCouncil already tracks this itself (broadcast group-wide, reset every ENCOUNTER_END) for its own non-tradeable icon strip -- this surfaces the same signal as a plain "BONUS" label next to the Priority column, so officers can see at a glance that a candidate already had an independent shot at this boss's loot table before deciding who gets the normal drop.
+
 ---
 
 ## [0.4.0] - 2026-08-06

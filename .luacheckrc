@@ -80,6 +80,7 @@ globals = {
     "RCPL_Data_RankColor",
     "RCPL_Data_TrackLabel",
     "RCPL_Data_CurrentTrack",
+    "RCPL_Data_HasBonusRolled",
     "RCPL_ApplyPanelBackdrop",
     "RCPL_CreateHeaderStrip",
     "RCPL_CreateStyledTitle",
