@@ -138,6 +138,29 @@ local function BaseName(name)
     return (name:match("^([^%-]+)")) or name
 end
 
+-- `nonTradeables` is RCLootCouncil's own addon.nonTradeables list (Core.lua):
+-- every {link, reason, owner} broadcast group-wide by OnBonusRoll/
+-- OnTradeableStatusReceived since the last ENCOUNTER_END, which is when
+-- RCLootCouncil wipes it. That reset is exactly the scope we want -- "has
+-- this candidate already used their weekly Bonus Roll on the current boss" --
+-- with no bookkeeping of our own needed. playerName may come with or without
+-- a realm suffix on either side (comm senders and voting-frame candidate
+-- names aren't guaranteed to agree), so both are compared via BaseName.
+function RCPL_Data_HasBonusRolled(nonTradeables, playerName)
+    if type(nonTradeables) ~= "table" or type(playerName) ~= "string" then
+        return false
+    end
+    local baseName = BaseName(playerName)
+    for _, entry in ipairs(nonTradeables) do
+        if type(entry) == "table" and entry.reason == "bonus_roll" and type(entry.owner) == "string" then
+            if entry.owner == playerName or BaseName(entry.owner) == baseName then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 -- Item IDs are shared between the Heroic and Mythic version of a given piece
 -- (this game's item tracks scale ilvl, not the base item ID -- confirmed
 -- from the WGA Raid Hub Supabase schema, which stores one wow_item_id per
