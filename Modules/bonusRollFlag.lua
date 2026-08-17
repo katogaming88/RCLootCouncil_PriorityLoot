@@ -21,34 +21,29 @@ function RCPLBonusRollFlag:OnInitialize()
 end
 
 function RCPLBonusRollFlag:InjectColumn()
-    -- Guard against double injection if OnEnable is ever called more than once.
-    for _, col in ipairs(RCVotingFrame.scrollCols) do
-        if col.colName == "RCPL_bonusRoll" then return end
-    end
+    -- Guard against double injection if OnEnable is ever called more than
+    -- once -- RCVotingFrame:AddColumn() errors on a duplicate colName rather
+    -- than silently no-opping, unlike the old direct-scrollCols approach.
+    if RCVotingFrame:GetColumnIndex("RCPL_bonusRoll") then return end
 
-    -- Right after the Priority column so the two related signals sit
-    -- together; falls back to the end of the list if that column is
-    -- somehow missing (load order changed, or votingFrame.lua's own
-    -- rescheduled OnInitialize hasn't injected yet).
-    local insertAt = #RCVotingFrame.scrollCols + 1
-    for i, col in ipairs(RCVotingFrame.scrollCols) do
-        if col.colName == "RCPL_priority" then
-            insertAt = i + 1
-            break
-        end
-    end
-
-    tinsert(RCVotingFrame.scrollCols, insertAt, {
+    local spec = {
+        colName      = "RCPL_bonusRoll",
         name         = "Bonus",
         width        = 50,
         align        = "CENTER",
         DoCellUpdate = RCPLBonusRollFlag.SetCellBonusRoll,
-        colName      = "RCPL_bonusRoll",
-    })
+    }
 
-    local f = RCVotingFrame.frame
-    if f and f.UpdateSt then
-        f.UpdateSt()
+    -- Right after the Priority column so the two related signals sit
+    -- together; falls back to the end of the list if that column is
+    -- somehow missing (load order changed, or votingFrame.lua's own
+    -- rescheduled OnInitialize hasn't injected yet). AddColumn() already
+    -- refreshes the column layout/table view internally -- no separate
+    -- f.UpdateSt() call needed, unlike the old manual scrollCols approach.
+    if RCVotingFrame:GetColumnIndex("RCPL_priority") then
+        RCVotingFrame:AddColumn(spec, "RCPL_priority", "after")
+    else
+        RCVotingFrame:AddColumn(spec)
     end
 end
 

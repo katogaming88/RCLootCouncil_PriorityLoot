@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.5] - 2026-08-17
+
+### Changed
+
+- **Migrated the Priority and Bonus voting-frame columns to RCLootCouncil 3.23.0's official Column API** (`RCVotingFrame:AddColumn()`/`:GetColumnIndex()`), replacing direct `scrollCols` table manipulation. That old approach is "preserved for backwards compatibility" per RCLootCouncil's own 3.23.0 changelog but is expected to eventually be removed -- migrating now while it's a small, mechanical, behavior-preserving change (same columns, same position, same look) avoids a scramble later. No user-facing change.
+
+---
+
 ## [0.6.4] - 2026-08-17
 
 ### Fixed

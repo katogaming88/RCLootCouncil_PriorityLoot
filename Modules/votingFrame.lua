@@ -20,32 +20,27 @@ function RCPLVotingFrame:OnInitialize()
 end
 
 function RCPLVotingFrame:InjectColumn()
-    -- Guard against double injection if OnEnable is ever called more than once.
-    for _, col in ipairs(RCVotingFrame.scrollCols) do
-        if col.colName == "RCPL_priority" then return end
-    end
+    -- Guard against double injection if OnEnable is ever called more than
+    -- once -- RCVotingFrame:AddColumn() errors on a duplicate colName rather
+    -- than silently no-opping, unlike the old direct-scrollCols approach.
+    if RCVotingFrame:GetColumnIndex("RCPL_priority") then return end
 
-    -- Insert before the wowaudit wishlist column; fall back to position 8
-    -- (right after Diff) if wowaudit is not installed.
-    local insertAt = 8
-    for i, col in ipairs(RCVotingFrame.scrollCols) do
-        if col.colName == "wishlist" then
-            insertAt = i
-            break
-        end
-    end
-
-    tinsert(RCVotingFrame.scrollCols, insertAt, {
+    local spec = {
+        colName      = "RCPL_priority",
         name         = "Priority",
         width        = 60,
         align        = "CENTER",
         DoCellUpdate = RCPLVotingFrame.SetCellPriority,
-        colName      = "RCPL_priority",
-    })
+    }
 
-    local f = RCVotingFrame.frame
-    if f and f.UpdateSt then
-        f.UpdateSt()
+    -- Insert before the wowaudit wishlist column; fall back to position 8
+    -- (right after Diff) if wowaudit is not installed. AddColumn() already
+    -- refreshes the column layout/table view internally -- no separate
+    -- f.UpdateSt() call needed, unlike the old manual scrollCols approach.
+    if RCVotingFrame:GetColumnIndex("wishlist") then
+        RCVotingFrame:AddColumn(spec, "wishlist", "before")
+    else
+        RCVotingFrame:AddColumn(spec, 8)
     end
 end
 
