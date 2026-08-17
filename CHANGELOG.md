@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.4] - 2026-08-17
+
+### Fixed
+
+- **The "Full Priority Order" side panel (`Modules/votingPriorityPanel.lua`) could fail to reappear after a raid lead/Master Looter handoff.** It tracked visibility by hooking `RCVotingFrame:Show()`/`:Hide()`, the Ace3 module's own wrapper methods -- but `RCVotingFrame:Show()` has an internal guard that can leave the real frame hidden even though `:Show()` was called (our hook still fired regardless), and any code path that shows/hides the underlying frame object directly wouldn't reach a method-level hook at all. In current retail RCLootCouncil treats raid lead and Master Looter as the same thing, so a lead pass forces its own session-state resync -- confirmed live as the trigger. Now tracks the actual Blizzard frame's own `OnShow`/`OnHide` script instead, which fires for every real visibility change no matter what caused it.
+
+---
+
 ## [0.6.3] - 2026-08-17
 
 ### Added

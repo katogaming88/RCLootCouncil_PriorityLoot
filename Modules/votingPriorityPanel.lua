@@ -8,7 +8,7 @@
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
 local RCVotingFrame = addon:GetModule("RCVotingFrame")
 local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
-local RCPLVotingPanel = RCPLAddon:NewModule("RCPLVotingPriorityPanel", "AceHook-3.0", "AceTimer-3.0", "AceEvent-3.0")
+local RCPLVotingPanel = RCPLAddon:NewModule("RCPLVotingPriorityPanel", "AceTimer-3.0", "AceEvent-3.0")
 
 local ROW_H     = 20
 local CONTENT_W = 240
@@ -163,9 +163,23 @@ function RCPLVotingPanel:OnInitialize()
     end
     Build()
 
-    -- Show/hide together with the voting frame itself.
-    self:SecureHook(RCVotingFrame, "Show", function() panel:Show(); Refresh() end)
-    self:SecureHook(RCVotingFrame, "Hide", function() panel:Hide() end)
+    -- Show/hide together with the voting frame itself -- tracked via the
+    -- underlying Blizzard frame's own OnShow/OnHide script rather than
+    -- SecureHook-ing RCVotingFrame:Show()/:Hide() (the Ace3 module wrapper
+    -- methods). A method hook only fires when that specific method gets
+    -- called, and RCVotingFrame:Show() has its own internal guard
+    -- (`if self.frame and lootTable[session] then ... else print "No
+    -- session running" end`) that can leave the real frame hidden even
+    -- though :Show() was called (SecureHook still fires our handler
+    -- unconditionally afterward) -- confirmed live: the panel sometimes
+    -- failed to reappear after a raid lead/Master Looter handoff (in
+    -- current retail, RCLootCouncil treats these as the same thing, so a
+    -- lead pass forces its own ML/session-state resync). OnShow/OnHide
+    -- fire for every real visibility change to the frame no matter which
+    -- internal code path caused it, so this can't drift out of sync with
+    -- what's actually on screen the way a method hook can.
+    RCVotingFrame.frame:HookScript("OnShow", function() panel:Show(); Refresh() end)
+    RCVotingFrame.frame:HookScript("OnHide", function() panel:Hide() end)
 
     -- RCSessionChangedPre is delivered before RCVotingFrame's own session
     -- index updates, but it passes the new session number as the message
