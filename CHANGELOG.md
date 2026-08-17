@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.1] - 2026-08-17
+
+### Fixed
+
+- **CurseForge uploads were silently failing** -- `.github/workflows/release.yml` set `CF_API_TOKEN`, but the pinned `BigWigsMods/packager@v2` action (resolves to v2.5.1, predating upstream's env var rename) only reads `CF_API_KEY`. `release.sh`'s `upload_curseforge()` returns immediately with no error or log output when its token variable is empty, so v0.6.0's zip and GitHub Release published fine while the CurseForge upload never even attempted. Now sets both env vars to the same token.
+
+---
+
 ## [0.6.0] - 2026-08-17
 
 ### Added

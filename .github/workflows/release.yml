@@ -80,10 +80,24 @@ jobs:
       # field) using the same release_notes.md excerpt as the GitHub Release
       # above, via .pkgmeta's manual-changelog directive -- otherwise this
       # action falls back to its own auto-generated git-log changelog, which
-      # is what CurseForge showed before this step existed. Only CF_API_TOKEN
-      # is set (no WOWI_/WAGO_ tokens), so WoWInterface/Wago uploads are
+      # is what CurseForge showed before this step existed. Only these two
+      # tokens are set (no WOWI_/WAGO_), so WoWInterface/Wago uploads are
       # skipped automatically; this repo doesn't publish to those sites.
+      #
+      # CF_API_KEY + CF_API_TOKEN, both set to the same secret: the v2 action
+      # tag currently resolves to v2.5.1 (2025-12-02), whose release.sh only
+      # reads CF_API_KEY -- CF_API_TOKEN support (upstream's "Normalize api
+      # token env vars", 36b4c3b) landed on master afterward but hasn't
+      # shipped in a tagged v2.x release yet. Setting CF_API_TOKEN alone
+      # silently no-ops the whole CurseForge upload (release.sh's
+      # upload_curseforge() returns 0 immediately when its token var is
+      # empty, no error/log output at all) -- confirmed live: v0.6.0's
+      # "CurseForge ID: 1608381" log line was missing the "[token set]"
+      # suffix release.sh only prints when it actually resolved a token.
+      # Once BigWigsMods tags a v2.x release including that commit, CF_API_KEY
+      # becomes redundant but harmless to leave.
       - name: Package and release to CurseForge
         uses: BigWigsMods/packager@v2
         env:
+          CF_API_KEY: ${{ secrets.CF_API_TOKEN }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
