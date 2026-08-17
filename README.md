@@ -13,8 +13,9 @@ A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [
 - **Raider loot frame** — overlays the local player's own priority rank below each item button so raiders can immediately see where an item sits on their wishlist. Ranks 1st-5th show the exact position; beyond that it just says "On your wishlist" instead, so a low rank doesn't discourage someone from clicking Upgrade/OS/M+ at all (a raider who never clicks reads to the loot council as "doesn't want it right now," which can hide them from a deliberate priority override).
 - **Priority preview** — `/rcpl prio` opens a scrollable popup showing all imported priority lists and the full player roster, so officers can verify data before a raid.
 - **Offline-first** — data is imported once per week by an officer via a single in-game paste; no external server, desktop client, or API key required.
+- **Raid/party sync** — importing broadcasts the data to the raid or party right away, so every other officer's voting frame and every raider's loot frame picks it up without each person separately running `/rcpl import`. A client that reloads or joins mid-raid also gets automatically resynced shortly after the roster changes. `/rcpl broadcast` and `/rcpl sync` cover it manually if needed. **Only the current raid/party leader can import while grouped** — `/rcpl import` refuses outright for anyone else, naming the leader and (if the leader already has data) when they imported it, rather than letting a non-leader end up with priority data nobody else in the raid will ever see. Importing while ungrouped (the normal pre-raid workflow) is unaffected, since there's no leader to defer to yet.
 - **Guild version broadcast** — on login the addon quietly announces its version to the guild. Officers running an older version receive a one-time chat warning naming the sender and their version so the guild stays in sync without manual coordination.
-- **Optional for raiders** — raiders who do not install the addon see the default RCLootCouncil UI with no changes.
+- **Optional for raiders** — raiders who do not install the addon see the default RCLootCouncil UI with no changes. Raiders who do install it never need to run `/rcpl import` themselves -- they just need to be in the raid/party when an officer imports (or shortly after joining).
 
 ---
 
@@ -42,9 +43,10 @@ A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [
 ## Weekly Officer Workflow
 
 1. Open the WGA Raid Hub officer dashboard's Priority tab and click **Generate** (or **Regenerate**) — this produces a **Base64-encoded JSON string** matching the format below, computed live, no manual spreadsheet step required.
-2. In-game, type `/rcpl import`.
+2. In-game, type `/rcpl import`. **If you're already grouped, you must be the raid/party leader** -- anyone else gets refused outright (the window names the current leader, and when they last imported if they already have). Importing before the raid forms (not grouped yet) always works, since there's no leader to defer to.
 3. Paste the export string into the text box and click **Confirm**.
 4. The addon prints a confirmation with the number of players and priority items imported, then prompts to reload your UI. Reload when it asks -- SavedVariables only get written to disk on reload/logout, so the import isn't safely saved until then. Data persists via SavedVariables until the next import or a manual reset.
+5. The import also broadcasts the data to your current raid/party immediately, so other officers and raiders in the group pick it up without importing themselves. If you imported before the raid formed, pass yourself raid lead once it does (or have the leader run `/rcpl sync` once grouped, or re-run `/rcpl broadcast` yourself after becoming leader) so the broadcast actually goes out. If someone missed it (e.g. joined afterward), have them run `/rcpl sync` once they're in the group.
 
 ---
 
@@ -54,6 +56,8 @@ A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [
 |---|---|
 | `/rcpl import` | Open the import window. |
 | `/rcpl prio` | Open a scrollable preview of all imported priority data (toggle). |
+| `/rcpl broadcast` | (Re-)send your currently-stored priority data to the raid/party. Happens automatically after an import; use this to manually resend (e.g. to a raid that's since grown). |
+| `/rcpl sync` | Ask the raid/party to (re-)send their priority data to you. Useful if you joined/reloaded after the automatic roster-change resync window already passed. |
 | `/rcpl reset` | Wipe all stored priority data from SavedVariables. |
 | `/rcpl version` | Open the version checker -- shows your own version immediately; Guild/Group buttons trigger the actual poll (never an automatic one, matching base RCLootCouncil's own version checker). Aliases: `ver`, `v`. |
 | `/rcpl version guild` | Same window, but also fires the guild poll immediately -- a shortcut for chat-only workflows. |
@@ -137,6 +141,7 @@ RCLootCouncil_PriorityLoot/
 │   ├── votingFrame.lua               voting frame column injection
 │   ├── lootFrame.lua                 raider loot frame overlay
 │   ├── importFrame.lua               in-game import UI, Base64 decoder
+│   ├── prioSync.lua                  raid/party broadcast of imported data
 │   └── prioPreviewFrame.lua          /rcpl prio scrollable data preview
 ├── Libs/
 │   └── LibJSON.lua                   bundled pure-Lua JSON decoder
