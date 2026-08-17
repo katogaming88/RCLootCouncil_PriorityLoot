@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.2] - 2026-08-17
+
+### Fixed
+
+- **The item-level Heroic/Mythic detection fallback (`Data/db.lua`'s `TrackFromItemLevel`) was still using Season 1's item level ranges (Heroic 259-276, Mythic 272-289), now stale after Season 2's launch.** A Season 2 item (e.g. Ula'tek's Abyssal Broodfiend's Bardiche, ilvl 305) fell outside both old ranges entirely, so this fallback silently returned nothing -- and since a `/rc test` link never carries the primary `instanceDifficultyID` signal by design, that left `/rc test` runs and other synthetic links unable to resolve a track at all this season. Updated to Season 2's actual ranges: Heroic 305-321, Mythic 318-344 (the 318-321 overlap stays genuinely ambiguous, same as before).
+
+---
+
 ## [0.6.1] - 2026-08-17
 
 ### Fixed

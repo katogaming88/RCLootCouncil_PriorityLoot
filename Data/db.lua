@@ -186,8 +186,8 @@ end
 --      single exact value per track: item level climbs per boss within a
 --      raid tier (an early boss's Heroic drop is a lower ilvl than a later
 --      boss's Heroic drop), so there is no single "the Heroic ilvl" to
---      match against. Season 1 (per Kat, 2026-07-13): Heroic 259-276,
---      Mythic 272-289 -- these overlap (272-276 exists on both difficulties
+--      match against. Season 2 (per Kat, 2026-08-17): Heroic 305-321,
+--      Mythic 318-344 -- these overlap (318-321 exists on both difficulties
 --      depending on which boss), so that band is left genuinely ambiguous
 --      (returns nil) rather than guessed.
 --   3. GetInstanceInfo()'s live raid difficulty (TrackFromInstance) -- a
@@ -197,10 +197,10 @@ end
 -- None of the three depend on RCLootCouncil_wowaudit's bonus-ID table, which
 -- this addon no longer needs and which the user plans to eventually
 -- uninstall.
-local TIER_HEROIC_ILVL_MIN = 259
-local TIER_HEROIC_ILVL_MAX = 276
-local TIER_MYTHIC_ILVL_MIN = 272
-local TIER_MYTHIC_ILVL_MAX = 289
+local TIER_HEROIC_ILVL_MIN = 305
+local TIER_HEROIC_ILVL_MAX = 321
+local TIER_MYTHIC_ILVL_MIN = 318
+local TIER_MYTHIC_ILVL_MAX = 344
 
 local RAID_DIFFICULTY_TRACK = { [15] = "H", [16] = "M" }
 

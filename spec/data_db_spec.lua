@@ -222,20 +222,20 @@ describe("RCPL_Data_GetPlayerPriority", function()
         it("prefers instanceDifficultyID over a conflicting live raid difficulty or item level", function()
             mocks.setInstanceInfo("raid", 15)  -- Heroic raid
             local mythicLink = "item:500:0:0:0:0:0:0:0:0:0:0:16:0"  -- but this drop is Mythic
-            mocks.setItemLevel(mythicLink, 266)  -- and a (contradictory) Heroic item level
+            mocks.setItemLevel(mythicLink, 310)  -- and a (contradictory) Heroic item level
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", mythicLink))
         end)
 
         it("falls back to item level for a synthetic link with no instanceDifficultyID field", function()
             mocks.setInstanceInfo(nil, nil)
-            mocks.setItemLevel("item:500", 279)  -- /rc test-style bare link
+            mocks.setItemLevel("item:500", 330)  -- /rc test-style bare link
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", "item:500"))
         end)
 
         it("falls back to item level for an unmapped instanceDifficultyID (e.g. LFR)", function()
             mocks.setInstanceInfo(nil, nil)
             local lfrLink = "item:500:0:0:0:0:0:0:0:0:0:0:17:0"
-            mocks.setItemLevel(lfrLink, 279)  -- Mythic ilvl, even though this specific drop is LFR
+            mocks.setItemLevel(lfrLink, 330)  -- Mythic ilvl, even though this specific drop is LFR
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", lfrLink))
         end)
 
@@ -245,13 +245,13 @@ describe("RCPL_Data_GetPlayerPriority", function()
             -- Mirrors /rc test: never actually in a raid, but the fake test
             -- item still carries a real item level.
             mocks.setInstanceInfo(nil, nil)
-            mocks.setItemLevel("item:500", 279)  -- within Mythic's range only (Data/db.lua's TIER_MYTHIC_ILVL_MIN/MAX)
+            mocks.setItemLevel("item:500", 330)  -- within Mythic's range only (Data/db.lua's TIER_MYTHIC_ILVL_MIN/MAX)
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", "item:500"))
         end)
 
         it("prefers the item's own item level over a conflicting live raid difficulty", function()
             mocks.setInstanceInfo("raid", 15)  -- Heroic raid
-            mocks.setItemLevel("item:500", 279)  -- but this drop is Mythic-range-only ilvl
+            mocks.setItemLevel("item:500", 330)  -- but this drop is Mythic-range-only ilvl
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", "item:500"))
         end)
 
@@ -271,30 +271,30 @@ describe("RCPL_Data_GetPlayerPriority", function()
         -- ── Item-level ranges, not a single exact value per track (#335-followup) ──
         -- ilvl climbs per boss within a raid tier (an early boss's Heroic
         -- drop is a lower ilvl than a later boss's Heroic drop), so there's
-        -- no single "the Heroic ilvl" to match against -- Season 1 (per Kat):
-        -- Heroic 259-276, Mythic 272-289. These overlap at 272-276.
+        -- no single "the Heroic ilvl" to match against -- Season 2 (per Kat):
+        -- Heroic 305-321, Mythic 318-344. These overlap at 318-321.
 
-        it("resolves Heroic anywhere in its non-overlapping range (259-271)", function()
+        it("resolves Heroic anywhere in its non-overlapping range (305-317)", function()
             mocks.setInstanceInfo(nil, nil)
-            for _, ilvl in ipairs({ 259, 265, 271 }) do
+            for _, ilvl in ipairs({ 305, 311, 317 }) do
                 local link = "item:500:0:0:0:0:0:0:0:0:0:0:0:0"
                 mocks.setItemLevel(link, ilvl)
                 assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", link))
             end
         end)
 
-        it("resolves Mythic anywhere in its non-overlapping range (277-289)", function()
+        it("resolves Mythic anywhere in its non-overlapping range (322-344)", function()
             mocks.setInstanceInfo(nil, nil)
-            for _, ilvl in ipairs({ 277, 283, 289 }) do
+            for _, ilvl in ipairs({ 322, 333, 344 }) do
                 local link = "item:500:0:0:0:0:0:0:0:0:0:0:0:0"
                 mocks.setItemLevel(link, ilvl)
                 assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", link))
             end
         end)
 
-        it("leaves the overlapping band (272-276) genuinely ambiguous instead of guessing", function()
+        it("leaves the overlapping band (318-321) genuinely ambiguous instead of guessing", function()
             mocks.setInstanceInfo(nil, nil)  -- no instance fallback available either
-            for _, ilvl in ipairs({ 272, 274, 276 }) do
+            for _, ilvl in ipairs({ 318, 319, 321 }) do
                 local link = "item:500:0:0:0:0:0:0:0:0:0:0:0:0"
                 mocks.setItemLevel(link, ilvl)
                 local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", link)
