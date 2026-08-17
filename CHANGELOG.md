@@ -9,14 +9,25 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.6.0] - 2026-08-17
+
 ### Added
 
-- **A "Bonus" column on the voting frame flags any candidate who already used their weekly Bonus Roll on the current boss.** RCLootCouncil already tracks this itself (broadcast group-wide, reset every ENCOUNTER_END) for its own non-tradeable icon strip -- this surfaces the same signal as a plain "BONUS" label next to the Priority column, so officers can see at a glance that a candidate already had an independent shot at this boss's loot table before deciding who gets the normal drop.
 - **Priority/BiS data now syncs to the raid or party automatically, instead of staying local to whoever ran `/rcpl import`.** Previously `RCPL_DB` was purely per-account SavedVariables -- only the officer who pasted the export string had it, so every other officer's voting frame and every raider's loot frame showed nothing until they each separately ran their own import. A successful import now broadcasts the data group-wide right away; a client that reloads or joins mid-raid also gets automatically resynced a few seconds after the roster changes, picking up whatever the group already has. `/rcpl broadcast` (re-)sends your own data on demand; `/rcpl sync` asks the group to send you theirs -- both useful if the automatic paths miss a particular client. Built on RCLootCouncil's own `Services.Comms` (same mechanism `RCLootCouncil_wowaudit` uses for its wishlist sync), so large payloads are compressed and chunked automatically. **Only the current raid/party leader's data ever actually reaches anyone else.** A non-leader who tries `/rcpl import` while grouped gets refused outright (naming the leader, and the timestamp of the leader's existing import if there is one) instead of saving priority data locally that nobody else in the raid will ever see. Applies while ungrouped too (the normal pre-raid import workflow) since there's no leader to defer to yet.
 
 ### Fixed
 
 - **The import screen's success/failure message (and the "Reload UI now?" prompt) now checks both the player and priority entry counts, not just player count.** Previously an import with real ranked-priority data but zero BiS-wishlist entries (a legitimate, common state -- BiS wishlist is a separate, optional layer) showed "Import succeeded but contained no player entries" as if it had failed, and -- more importantly -- skipped the reload prompt entirely. Since SavedVariables only get flushed to disk on a UI reload/logout, the priority data those officers imported lived in memory only; the next `/reload` or relog silently discarded it with no warning, and the rolling/voting frames went back to showing nothing.
+
+---
+
+## [0.5.0] - 2026-08-09
+
+### Added
+
+- **A "Bonus" column on the voting frame flags any candidate who already used their weekly Bonus Roll on the current boss.** RCLootCouncil already tracks this itself (broadcast group-wide, reset every ENCOUNTER_END) for its own non-tradeable icon strip -- this surfaces the same signal as a plain "BONUS" label next to the Priority column, so officers can see at a glance that a candidate already had an independent shot at this boss's loot table before deciding who gets the normal drop.
 
 ---
 
