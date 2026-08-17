@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.3] - 2026-08-17
+
+### Added
+
+- **A client with no priority data loaded now gets a proactive chat warning a few seconds after joining/forming a raid or party, instead of silently sitting on an empty voting-frame side panel and N/A loot overlays with no indication why.** Easy to hit on a client that's a version or two behind (missed the import-status/reload-prompt fixes, or predates the sync module existing entirely, meaning it was never even subscribed to receive anyone else's broadcast). The raid/party leader gets told to `/rcpl import`; anyone else gets an automatic `/rcpl sync` request sent on their behalf, plus a nudge to ask the leader for a manual `/rcpl broadcast` or check their addon is up to date if it doesn't resolve. Fires once per empty streak (resets if data later arrives, so it can warn again if it goes empty a second time), not on every roster change.
+
+---
+
 ## [0.6.2] - 2026-08-17
 
 ### Fixed

@@ -189,6 +189,40 @@ local function OnPrioRequestReceived(_, sender)
     RCPLSync:Broadcast("requested by " .. tostring(sender))
 end
 
+-- Resets (rather than a permanent one-shot) so a client that goes empty
+-- again later in the session -- e.g. /rcpl reset -- can warn again, but
+-- won't repeat on every single roster change while it stays empty.
+local warnedEmpty = false
+
+-- A client stuck with no priority data at all otherwise just sits on an
+-- empty voting-frame side panel and an N/A loot overlay for a whole raid
+-- with zero indication why -- easy to happen on a client that's a version
+-- or two behind (missed the import-status/reload-prompt fixes, or predates
+-- this sync module existing entirely, so it was never even subscribed to
+-- receive anyone else's broadcast). Fires once per empty streak, a few
+-- seconds after joining/forming a group.
+function RCPLSync:WarnIfEmpty()
+    if CurrentPayload() then
+        warnedEmpty = false
+        return
+    end
+    if warnedEmpty then return end
+    warnedEmpty = true
+
+    if self:IsLocalPlayerLeader() then
+        print("|cFFFFCC00[RCLootCouncil_PriorityLoot]|r No priority data loaded. Run /rcpl import to load this"
+            .. " week's export.")
+    else
+        local leader = self:GetLeaderName() or "the raid/party leader"
+        print(string.format(
+            "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r No priority data loaded yet -- requesting it from the"
+                .. " group. If this doesn't resolve shortly, ask %s to run /rcpl broadcast, or check that your"
+                .. " addon is up to date.", leader
+        ))
+        self:RequestSync()
+    end
+end
+
 function RCPLSync:OnInitialize()
     self.Send = Comms:GetSender(PREFIX)
     Comms:BulkSubscribe(PREFIX, {
@@ -214,5 +248,6 @@ function RCPLSync:OnGroupRosterUpdate()
     self._rosterTimer = self:ScheduleTimer(function()
         self._rosterTimer = nil
         self:Broadcast("roster update")
+        self:WarnIfEmpty()
     end, ROSTER_DEBOUNCE)
 end
