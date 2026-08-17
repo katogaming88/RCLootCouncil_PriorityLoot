@@ -32,7 +32,7 @@ read_globals = {
     -- Item / unit info
     "GetItemInfo", "GetItemInfoInstant", "Item", "C_Item",
     "UnitName", "UnitGUID", "UnitClass", "UnitRace", "UnitFactionGroup",
-    "UnitIsPlayer", "UnitIsConnected", "UnitExists",
+    "UnitIsPlayer", "UnitIsConnected", "UnitExists", "UnitIsGroupLeader",
 
     -- Frame templates referenced by name
     "BasicFrameTemplateWithInset", "BackdropTemplate",
