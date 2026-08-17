@@ -129,10 +129,11 @@ local function CreateImportFrame()
         end
 
         local playerCount, priorityCount = RCPL_Data_SaveImportedData(decoded)
-        if playerCount == 0 then
-            statusText:SetText("|cFFFF4444Import succeeded but contained no player entries.|r")
+        priorityCount = priorityCount or 0
+        if playerCount == 0 and priorityCount == 0 then
+            statusText:SetText("|cFFFF4444Import succeeded but contained no player or priority entries.|r")
         else
-            local msg = string.format("Imported %d player(s) and %d priority item(s).", playerCount, priorityCount or 0)
+            local msg = string.format("Imported %d player(s) and %d priority item(s).", playerCount, priorityCount)
             statusText:SetText("|cFF00FF00" .. msg .. "|r")
             print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r " .. msg)
             StaticPopup_Show("RCPL_RELOAD_AFTER_IMPORT")
