@@ -281,6 +281,8 @@ SlashCmdList["RCPL"] = function(input)
             print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Commands:")
             print("  /rcpl import                   open the priority data import window")
             print("  /rcpl prio                     preview imported priority data")
+            print("  /rcpl broadcast                (re-)send your priority data to the raid/party")
+            print("  /rcpl sync                     ask the raid/party to (re-)send priority data to you")
             print("  /rcpl reset                    clear all stored priority data")
             print("  /rcpl awards                   open the season awards window")
             print("  /rcpl award <player> <item>    manually record an award")
@@ -297,6 +299,21 @@ SlashCmdList["RCPL"] = function(input)
     elseif cmd == "reset" then
         RCPL_Data_ResetData()
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r All priority data cleared.")
+    elseif cmd == "broadcast" then
+        local sync = RCPLAddon:GetModule("RCPLPrioSync", true)
+        if sync then
+            sync:Broadcast("manual")
+        else
+            print("|cFFFF4444[RCPL]|r Sync module not loaded.")
+        end
+    elseif cmd == "sync" then
+        local sync = RCPLAddon:GetModule("RCPLPrioSync", true)
+        if sync then
+            sync:RequestSync()
+            print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Requested priority data from the raid/party.")
+        else
+            print("|cFFFF4444[RCPL]|r Sync module not loaded.")
+        end
     elseif cmd == "awards" then
         RCPL_ShowAwardsFrame()
     elseif cmd == "award" then

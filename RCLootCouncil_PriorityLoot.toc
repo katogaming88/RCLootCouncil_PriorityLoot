@@ -23,6 +23,7 @@ Modules\bonusRollFlag.lua
 Modules\votingPriorityPanel.lua
 Modules\lootFrame.lua
 Modules\importFrame.lua
+Modules\prioSync.lua
 Modules\prioPreviewFrame.lua
 Modules\awardsFrame.lua
 Modules\versionCheckFrame.lua

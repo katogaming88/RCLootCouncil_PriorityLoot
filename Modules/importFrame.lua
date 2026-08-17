@@ -137,6 +137,11 @@ local function CreateImportFrame()
             statusText:SetText("|cFF00FF00" .. msg .. "|r")
             print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r " .. msg)
             StaticPopup_Show("RCPL_RELOAD_AFTER_IMPORT")
+            -- Share the freshly-imported data with the rest of the raid/party
+            -- right away, so other officers/raiders don't each have to run
+            -- their own /rcpl import separately (Modules/prioSync.lua).
+            local sync = RCLootCouncil_PriorityLoot and RCLootCouncil_PriorityLoot:GetModule("RCPLPrioSync", true)
+            if sync then sync:Broadcast("import") end
         end
 
         editBox:SetText("")
