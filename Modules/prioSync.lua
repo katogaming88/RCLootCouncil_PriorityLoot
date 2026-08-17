@@ -81,6 +81,26 @@ local function CurrentPayload()
     return { players = players, priority = priority }, playerCount, priorityCount
 end
 
+-- Public so Modules/importFrame.lua can reuse the exact same leader
+-- resolution this module already applies to broadcasts, rather than a
+-- second, possibly-drifting copy of the raid/party iteration.
+function RCPLSync:GetLeaderName()
+    return GetGroupLeaderName()
+end
+
+-- Whether the local player is currently allowed to import: either the
+-- group has no resolvable leader (ungrouped -- the normal pre-raid import
+-- workflow -- or the rare leaderless edge case), or the local player *is*
+-- that leader. Modules/importFrame.lua uses this to refuse a non-leader's
+-- import outright rather than letting them end up looking at priority data
+-- nobody else in the raid will ever see (Broadcast() below would refuse to
+-- send it anyway).
+function RCPLSync:IsLocalPlayerLeader()
+    local leader = GetGroupLeaderName()
+    if not leader then return true end
+    return addon.Utils:UnitName("player") == leader
+end
+
 -- Sends whatever this client currently has to the raid/party. A no-op for
 -- the vast majority of clients (raiders who never ran /rcpl import), since
 -- CurrentPayload() returns nil when there's nothing to offer -- and, while

@@ -116,6 +116,25 @@ local function CreateImportFrame()
             return
         end
 
+        -- Only the raid/party leader's import can ever reach anyone else
+        -- (Modules/prioSync.lua's Broadcast() refuses to send a non-leader's
+        -- data). Refuse to even save one locally here, rather than letting a
+        -- non-leader end up looking at priority data nobody else in the raid
+        -- will ever see.
+        local sync = RCLootCouncil_PriorityLoot and RCLootCouncil_PriorityLoot:GetModule("RCPLPrioSync", true)
+        if sync and not sync:IsLocalPlayerLeader() then
+            local leader = sync:GetLeaderName() or "The raid/party leader"
+            local when = type(RCPL_DB) == "table" and RCPL_DB.importedAt
+            if when then
+                statusText:SetText(string.format(
+                    "|cFFFF4444Only the raid/party leader can import. %s already imported at %s.|r", leader, when))
+            else
+                statusText:SetText(string.format(
+                    "|cFFFF4444Only the raid/party leader can import. (%s is currently the leader.)|r", leader))
+            end
+            return
+        end
+
         local jsonStr, decodeErr = Base64Decode(raw)
         if not jsonStr then
             statusText:SetText("|cFFFF4444Decode error: " .. (decodeErr or "unknown") .. "|r")
@@ -140,8 +159,8 @@ local function CreateImportFrame()
             -- Share the freshly-imported data with the rest of the raid/party
             -- right away, so other officers/raiders don't each have to run
             -- their own /rcpl import separately (Modules/prioSync.lua).
-            local sync = RCLootCouncil_PriorityLoot and RCLootCouncil_PriorityLoot:GetModule("RCPLPrioSync", true)
-            if sync then sync:Broadcast("import") end
+            local broadcastSync = RCLootCouncil_PriorityLoot and RCLootCouncil_PriorityLoot:GetModule("RCPLPrioSync", true)
+            if broadcastSync then broadcastSync:Broadcast("import") end
         end
 
         editBox:SetText("")
