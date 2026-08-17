@@ -83,12 +83,31 @@ end
 
 -- Sends whatever this client currently has to the raid/party. A no-op for
 -- the vast majority of clients (raiders who never ran /rcpl import), since
--- CurrentPayload() returns nil when there's nothing to offer.
+-- CurrentPayload() returns nil when there's nothing to offer -- and, while
+-- actually grouped, a no-op for anyone but the raid/party leader, since
+-- OnPrioDataReceived() below only ever applies a leader's data anyway.
+-- Skipping the send here (rather than letting every non-leader client's
+-- broadcast go out and quietly get rejected by everyone else) means the
+-- non-leader who tried to import sees *why* nothing propagated, right in
+-- their own chat, instead of just silence.
 function RCPLSync:Broadcast(reason)
     local payload, playerCount, priorityCount = CurrentPayload()
     if not payload then
         Log.debug("Broadcast skipped (%s): no data to send", tostring(reason))
         return
+    end
+    if IsInRaid() or IsInGroup() then
+        local leader = GetGroupLeaderName()
+        local me = addon.Utils:UnitName("player")
+        if leader and me ~= leader then
+            print(string.format(
+                "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Not sent -- only the raid/party leader's priority"
+                    .. " data syncs to the group. Ask %s to import, or have raid lead passed to you.",
+                leader
+            ))
+            Log.debug("Broadcast skipped (%s): not raid/party leader (leader=%s)", tostring(reason), tostring(leader))
+            return
+        end
     end
     self:Send("group", COMMAND_DATA, payload)
     Log.debug("Broadcast sent (%s): %d player(s), %d priority item(s)", tostring(reason), playerCount, priorityCount)
@@ -102,31 +121,38 @@ function RCPLSync:RequestSync()
     Log.debug("Sent prio_request to group")
 end
 
--- Accepts a sync unless it actually conflicts with data this client already
--- has: an empty/no-data client always accepts (nothing to conflict with), a
--- duplicate of what's already stored is a harmless no-op, and anyone can
--- still send -- but once real, different data is already stored, only the
--- current raid/party leader is allowed to overwrite it. Blocks a random
--- group member (accidentally or otherwise) from clobbering everyone's
--- already-synced priority display with something else, without depending
--- on RCLootCouncil's own council roster having propagated yet.
+-- Only ever applies data sent by the current raid/party leader -- not just
+-- when it conflicts with something already stored, but unconditionally,
+-- including the very first sync of the night. A raid assist (or anyone
+-- else) importing a different string can still save it to their own
+-- client, but it never reaches anyone else: Broadcast() above already
+-- refuses to send it for a non-leader, and this is the backstop in case it
+-- somehow gets sent anyway (e.g. leftover raw AceComm traffic, a modified
+-- client). Uses UnitIsGroupLeader() over raid/party unit tokens rather than
+-- RCLootCouncil's own council roster, since that roster isn't guaranteed
+-- to have propagated to every client yet, especially early in a raid.
 local function OnPrioDataReceived(data, sender)
-    if sender == UnitName("player") then return end
+    local me = addon.Utils:UnitName("player")
+    if sender == me then return end
     local payload = data[1]
     if type(payload) ~= "table" then return end
 
-    local current = CurrentPayload()
-    if current and not DeepEqual(payload, current) then
-        local leader = GetGroupLeaderName()
-        if sender ~= leader then
+    local leader = GetGroupLeaderName()
+    if sender ~= leader then
+        -- Only worth a chat warning when this would actually have changed
+        -- something -- a non-leader's data that happens to match what's
+        -- already stored (or nothing being stored, with nothing to lose)
+        -- doesn't need to alarm anyone.
+        local current = CurrentPayload()
+        if not current or not DeepEqual(payload, current) then
             print(string.format(
-                "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored priority data from %s -- it differs from"
-                    .. " what you already have, and %s isn't the raid/party leader.",
+                "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored priority data from %s -- only the raid/party"
+                    .. " leader's data is applied, and %s isn't the leader.",
                 sender, sender
             ))
-            Log.debug("Rejected conflicting prio_data from %s (leader=%s)", sender, tostring(leader))
-            return
+            Log.debug("Rejected prio_data from %s: not raid/party leader (leader=%s)", sender, tostring(leader))
         end
+        return
     end
 
     local playerCount, priorityCount = RCPL_Data_SaveImportedData(payload)
@@ -139,7 +165,7 @@ local function OnPrioDataReceived(data, sender)
 end
 
 local function OnPrioRequestReceived(_, sender)
-    if sender == UnitName("player") then return end
+    if sender == addon.Utils:UnitName("player") then return end
     RCPLSync:Broadcast("requested by " .. tostring(sender))
 end
 
