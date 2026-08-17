@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.6] - 2026-08-17
+
+### Fixed
+
+- **A non-leader with priority data already loaded got spammed with "Not sent -- only the raid/party leader's priority data syncs to the group" once per roster change, all raid.** `Broadcast()`'s non-leader chat warning was meant for an explicit user action (`/rcpl import`, `/rcpl broadcast`) but was also firing from the silent background roster-update resync every time anyone joined the group, and from auto-replying to another client's `/rcpl sync` request. Both of those paths are now silent (still logged for `/rcpl debug`) -- only a direct `/rcpl import`/`/rcpl broadcast` attempt still tells you why it wasn't sent.
+
+---
+
 ## [0.6.5] - 2026-08-17
 
 ### Changed

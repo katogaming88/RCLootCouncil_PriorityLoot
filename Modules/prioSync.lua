@@ -106,11 +106,16 @@ end
 -- CurrentPayload() returns nil when there's nothing to offer -- and, while
 -- actually grouped, a no-op for anyone but the raid/party leader, since
 -- OnPrioDataReceived() below only ever applies a leader's data anyway.
--- Skipping the send here (rather than letting every non-leader client's
--- broadcast go out and quietly get rejected by everyone else) means the
--- non-leader who tried to import sees *why* nothing propagated, right in
--- their own chat, instead of just silence.
-function RCPLSync:Broadcast(reason)
+--
+-- silent suppresses the "Not sent" chat line for the non-leader case --
+-- pass true for background/reactive calls (the roster-update resync below,
+-- replying to someone else's prio_request) that fire automatically and
+-- repeatedly with no user action behind them, so a non-leader with data
+-- doesn't get spammed once per roster change all raid. Leave it audible
+-- (the default) for a direct user action -- /rcpl import, /rcpl broadcast --
+-- where the non-leader who just tried something deserves to know why it
+-- didn't propagate, right in their own chat, instead of just silence.
+function RCPLSync:Broadcast(reason, silent)
     local payload, playerCount, priorityCount = CurrentPayload()
     if not payload then
         Log.debug("Broadcast skipped (%s): no data to send", tostring(reason))
@@ -120,11 +125,13 @@ function RCPLSync:Broadcast(reason)
         local leader = GetGroupLeaderName()
         local me = addon.Utils:UnitName("player")
         if leader and me ~= leader then
-            print(string.format(
-                "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Not sent -- only the raid/party leader's priority"
-                    .. " data syncs to the group. Ask %s to import, or have raid lead passed to you.",
-                leader
-            ))
+            if not silent then
+                print(string.format(
+                    "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Not sent -- only the raid/party leader's priority"
+                        .. " data syncs to the group. Ask %s to import, or have raid lead passed to you.",
+                    leader
+                ))
+            end
             Log.debug("Broadcast skipped (%s): not raid/party leader (leader=%s)", tostring(reason), tostring(leader))
             return
         end
@@ -186,7 +193,7 @@ end
 
 local function OnPrioRequestReceived(_, sender)
     if sender == addon.Utils:UnitName("player") then return end
-    RCPLSync:Broadcast("requested by " .. tostring(sender))
+    RCPLSync:Broadcast("requested by " .. tostring(sender), true)
 end
 
 -- Resets (rather than a permanent one-shot) so a client that goes empty
@@ -247,7 +254,7 @@ function RCPLSync:OnGroupRosterUpdate()
     if self._rosterTimer then return end
     self._rosterTimer = self:ScheduleTimer(function()
         self._rosterTimer = nil
-        self:Broadcast("roster update")
+        self:Broadcast("roster update", true)
         self:WarnIfEmpty()
     end, ROSTER_DEBOUNCE)
 end
