@@ -75,7 +75,12 @@ function RCPL_Data_TrackLabel(track)
     return TRACK_LABEL[track]
 end
 
-function RCPL_Data_SaveImportedData(decoded)
+-- `source` records where this data came from -- "local" for a string the
+-- player pasted into the import frame themselves, "sync" for data applied
+-- from another client's broadcast (Modules/prioSync.lua). Modules/prioSync.lua
+-- checks this to avoid letting an automatic group sync silently overwrite
+-- data the player deliberately imported on their own client (#1).
+function RCPL_Data_SaveImportedData(decoded, source)
     if type(decoded) ~= "table" or type(decoded.players) ~= "table" then
         print("|cFFFF4444[RCLootCouncil_PriorityLoot]|r Import failed: invalid data structure.")
         return 0, 0
@@ -85,6 +90,7 @@ function RCPL_Data_SaveImportedData(decoded)
     RCPL_DB.players  = {}
     RCPL_DB.priority = {}
     RCPL_DB.awarded  = {}
+    RCPL_DB.importSource = source or "local"
 
     local playerCount = 0
     for playerKey, slots in pairs(decoded.players) do
@@ -110,10 +116,11 @@ end
 
 function RCPL_Data_ResetData()
     if type(RCPL_DB) == "table" then
-        RCPL_DB.players    = {}
-        RCPL_DB.priority   = {}
-        RCPL_DB.awarded    = {}
-        RCPL_DB.importedAt = nil
+        RCPL_DB.players      = {}
+        RCPL_DB.priority     = {}
+        RCPL_DB.awarded      = {}
+        RCPL_DB.importedAt   = nil
+        RCPL_DB.importSource = nil
     end
 end
 

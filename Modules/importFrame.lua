@@ -147,7 +147,7 @@ local function CreateImportFrame()
             return
         end
 
-        local playerCount, priorityCount = RCPL_Data_SaveImportedData(decoded)
+        local playerCount, priorityCount = RCPL_Data_SaveImportedData(decoded, "local")
         priorityCount = priorityCount or 0
         if playerCount == 0 and priorityCount == 0 then
             statusText:SetText("|cFFFF4444Import succeeded but contained no player or priority entries.|r")

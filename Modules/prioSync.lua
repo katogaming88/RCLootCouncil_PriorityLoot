@@ -149,40 +149,60 @@ function RCPLSync:RequestSync()
 end
 
 -- Only ever applies data sent by the current raid/party leader -- not just
--- when it conflicts with something already stored, but unconditionally,
--- including the very first sync of the night. A raid assist (or anyone
--- else) importing a different string can still save it to their own
--- client, but it never reaches anyone else: Broadcast() above already
--- refuses to send it for a non-leader, and this is the backstop in case it
--- somehow gets sent anyway (e.g. leftover raw AceComm traffic, a modified
--- client). Uses UnitIsGroupLeader() over raid/party unit tokens rather than
--- RCLootCouncil's own council roster, since that roster isn't guaranteed
--- to have propagated to every client yet, especially early in a raid.
+-- when it conflicts with something already stored, but including the very
+-- first sync of the night. A raid assist (or anyone else) importing a
+-- different string can still save it to their own client, but it never
+-- reaches anyone else: Broadcast() above already refuses to send it for a
+-- non-leader, and this is the backstop in case it somehow gets sent anyway
+-- (e.g. leftover raw AceComm traffic, a modified client). Uses
+-- UnitIsGroupLeader() over raid/party unit tokens rather than RCLootCouncil's
+-- own council roster, since that roster isn't guaranteed to have propagated
+-- to every client yet, especially early in a raid.
+--
+-- One exception: if the local player has their own data on file from
+-- pasting an import string themselves (RCPL_DB.importSource == "local"),
+-- a leader's differing broadcast is rejected the same way a non-leader's
+-- would be, rather than silently clobbering it -- a player who went to the
+-- trouble of importing a string didn't do it just to have it overwritten
+-- the moment a group forms. /rcpl reset clears that protection if the
+-- player does want to pick up the leader's data instead.
 local function OnPrioDataReceived(data, sender)
     local me = addon.Utils:UnitName("player")
     if sender == me then return end
     local payload = data[1]
     if type(payload) ~= "table" then return end
 
+    local current = CurrentPayload()
+    local unchanged = current ~= nil and DeepEqual(payload, current)
+
+    -- A duplicate rebroadcast of data already stored is a routine part of
+    -- every roster-change resync (Broadcast() above fires on every roster
+    -- update) -- apply it as a silent no-op rather than reprinting the same
+    -- "synced" line once per roster change all raid long.
+    if unchanged then return end
+
     local leader = GetGroupLeaderName()
     if sender ~= leader then
-        -- Only worth a chat warning when this would actually have changed
-        -- something -- a non-leader's data that happens to match what's
-        -- already stored (or nothing being stored, with nothing to lose)
-        -- doesn't need to alarm anyone.
-        local current = CurrentPayload()
-        if not current or not DeepEqual(payload, current) then
-            print(string.format(
-                "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored priority data from %s -- only the raid/party"
-                    .. " leader's data is applied, and %s isn't the leader.",
-                sender, sender
-            ))
-            Log.debug("Rejected prio_data from %s: not raid/party leader (leader=%s)", sender, tostring(leader))
-        end
+        print(string.format(
+            "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored priority data from %s -- only the raid/party"
+                .. " leader's data is applied, and %s isn't the leader.",
+            sender, sender
+        ))
+        Log.debug("Rejected prio_data from %s: not raid/party leader (leader=%s)", sender, tostring(leader))
         return
     end
 
-    local playerCount, priorityCount = RCPL_Data_SaveImportedData(payload)
+    if type(RCPL_DB) == "table" and RCPL_DB.importSource == "local" then
+        print(string.format(
+            "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored differing priority data from %s -- keeping your own"
+                .. " imported data. Run /rcpl reset if you want to accept theirs instead.",
+            sender
+        ))
+        Log.debug("Rejected prio_data from %s: local player has self-imported data", sender)
+        return
+    end
+
+    local playerCount, priorityCount = RCPL_Data_SaveImportedData(payload, "sync")
     priorityCount = priorityCount or 0
     print(string.format(
         "|cFF00FF00[RCLootCouncil_PriorityLoot]|r Priority data synced from %s (%d player(s), %d priority item(s)).",
