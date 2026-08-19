@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.7] - 2026-08-18
+
+### Fixed
+
+- **Every roster-change resync rebroadcast the leader's priority data to the whole group, and each recipient printed a "Priority data synced" chat line even when the data hadn't changed** -- flooding chat on every join/leave/reload during a raid. Incoming sync data identical to what's already stored is now applied silently, with the chat line only printed when the data actually changes.
+- **A player who imported their own priority string could have it silently overwritten by a differing leader broadcast.** `RCPL_DB` now tracks whether stored data came from a local `/rcpl import` or from a group sync; a leader's differing broadcast is rejected (with a chat warning) when the local data was self-imported, rather than silently applied. `/rcpl reset` clears the protection if you do want to pick up the leader's data instead.
+
+---
+
 ## [0.6.6] - 2026-08-17
 
 ### Fixed
