@@ -65,7 +65,7 @@ local function UpdateEntry(entry, item, playerName)
     if not equipLoc or equipLoc == "" then clearOverlay() return end
 
     local text, color, track, rank = RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, item.link)
-    if text == "N/A" or text:find("wowaudit") then clearOverlay() return end
+    if text == "N/A" then clearOverlay() return end
 
     -- track is only set when the rank came from the item-centric priority
     -- list (Layer 1) -- the per-player BiS fallback (Layer 2) isn't

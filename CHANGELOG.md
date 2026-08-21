@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.10] - 2026-08-21
+
+### Fixed
+
+- **Cloak/Wrist/Waist/Feet items always showed a generic "no priority for this slot" message in the voting and loot frames, even when WGA Raid Hub had already exported a real ranking for the item** -- confirmed live: the Full Priority Order side panel showed a 5-player ranking for a Waist item while every row in the voting frame said there was no priority for it. These four slots used to have no per-player BiS category at all and always deferred to a separate message, back when WGA Raid Hub didn't track them. It tracks (and exports priority for) every slot now, so the special case is gone entirely -- Cloak/Wrist/Waist/Feet are ordinary slots like any other, checked against the item-centric priority list first and the per-player BiS list second, same as Head/Chest/Legs/etc.
+
+---
+
 ## [0.6.9] - 2026-08-21
 
 ### Fixed
