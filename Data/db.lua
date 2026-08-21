@@ -337,7 +337,17 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             local priorityList = itemPriority[track]
             if type(priorityList) == "table" then
                 for rank, name in ipairs(priorityList) do
-                    if name == playerName or name == baseName then
+                    -- The exported list always stores "Name-Realm" (see
+                    -- rclc_export.sql), but RCLootCouncil hands the voting
+                    -- frame a bare name for anyone the game treats as the
+                    -- viewer's own realm -- same realm, or a connected one --
+                    -- so playerName/baseName can both be realm-less while
+                    -- every stored `name` still carries a realm suffix.
+                    -- BaseName(name) covers that case; the direct checks
+                    -- above still handle a genuinely cross-realm playerName
+                    -- that already carries its own (possibly different)
+                    -- realm suffix.
+                    if name == playerName or name == baseName or BaseName(name) == baseName then
                         return OrdinalLabel(rank), RankColor(rank), track, rank
                     end
                 end
@@ -347,6 +357,18 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
     end
 
     local playerData = RCPL_DB.players[playerName] or RCPL_DB.players[baseName]
+    if type(playerData) ~= "table" then
+        -- Same connected-realm/bare-name mismatch as the priority list
+        -- above -- RCPL_DB.players is always keyed by Name-Realm (see
+        -- rclc_export.sql), so a bare roster name needs a base-name scan
+        -- rather than a direct key lookup.
+        for storedName, data in pairs(RCPL_DB.players) do
+            if BaseName(storedName) == baseName then
+                playerData = data
+                break
+            end
+        end
+    end
     if type(playerData) ~= "table" then
         return "N/A", COLOR_GREY
     end
