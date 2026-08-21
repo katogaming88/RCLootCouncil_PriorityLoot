@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.8] - 2026-08-21
+
+### Fixed
+
+- **The voting frame's Priority column showed "N/A" for most raiders on the viewer's own (or a connected) realm, even though they were plainly ranked in the exact same list the Full Priority Order side panel prints in full.** The exported priority list always stores full "Name-Realm" strings, but RCLootCouncil hands the voting frame a bare name (no realm suffix) for any candidate the game treats as the viewer's own realm. The lookup only ever compared that bare name (or a realm-stripped version of it) against the full stored name, so it could only ever match a genuinely cross-realm candidate. It now also checks whether the *stored* name's own realm-stripped form matches, the same fallback already used for the bonus-roll-tracking lookup.
+
+---
+
 ## [0.6.7] - 2026-08-18
 
 ### Fixed

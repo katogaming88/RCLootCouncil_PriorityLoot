@@ -121,6 +121,53 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
     end)
 
+    -- ── Connected-realm / same-realm bare name (voting frame N/A bug) ────────
+    --
+    -- RCLootCouncil hands the voting frame a bare name (no "-Realm" suffix)
+    -- for any candidate the game treats as the viewer's own realm -- same
+    -- realm, or a connected one -- even though the exported priority list
+    -- (rclc_export.sql) always stores full "Name-Realm" strings for every
+    -- entry, with no exceptions. Before this fix, only a candidate whose
+    -- *roster* name happened to already carry a realm suffix (i.e. was
+    -- genuinely cross-realm from the viewer's point of view) could ever
+    -- match a list entry -- every same/connected-realm candidate silently
+    -- fell through to "N/A" despite being plainly ranked in the very same
+    -- list the side panel (votingPriorityPanel.lua) prints in full.
+    describe("bare roster name vs Name-Realm-keyed saved data", function()
+        before_each(function()
+            mocks.setInstanceInfo("raid", 15)
+        end)
+
+        it("matches the item-centric priority list when the roster gives a bare name", function()
+            _G.RCPL_DB.priority = {
+                ["12345"] = { H = { "Alice-Realm", "Bob-Realm", "Carol-Realm" } },
+            }
+            -- RCLootCouncil would call this with just "Bob" for a
+            -- same/connected-realm candidate, not "Bob-Realm".
+            local text, color = RCPL_Data_GetPlayerPriority("Bob", 12345, "INVTYPE_HEAD")
+            assert.equals("2nd", text)
+            assert.equals(1.0, color.r)
+            assert.equals(1.0, color.g)
+        end)
+
+        it("still returns N/A for a bare name genuinely absent from the list", function()
+            _G.RCPL_DB.priority = {
+                ["12345"] = { H = { "Alice-Realm", "Bob-Realm" } },
+            }
+            local text = RCPL_Data_GetPlayerPriority("Dave", 12345, "INVTYPE_HEAD")
+            assert.equals("N/A", text)
+        end)
+
+        it("falls back to the per-player BiS list by bare name when no item-centric list exists", function()
+            _G.RCPL_DB.priority = {}
+            _G.RCPL_DB.players = {
+                ["Alice-Realm"] = { helm = { bis = { 100, 200 } } },
+            }
+            local text = RCPL_Data_GetPlayerPriority("Alice", 200, "INVTYPE_HEAD")
+            assert.equals("2nd", text)
+        end)
+    end)
+
     -- ── Track-aware lookup (#335) ─────────────────────────────────────────────
 
     describe("track-aware priority (Heroic vs Mythic)", function()
