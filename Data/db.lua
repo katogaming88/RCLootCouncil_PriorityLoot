@@ -285,11 +285,23 @@ local function TrackFromInstance()
     return track
 end
 
+-- Link-only track detection, no live-instance fallback -- used to interpret
+-- a *stored* award link (Data/db.lua's RCPL_DB.awarded), where falling back
+-- to GetInstanceInfo() would wrongly describe a past award using whatever
+-- raid difficulty happens to be live right now.
+local function TrackFromLinkOnly(itemLink)
+    return TrackFromItemLink(itemLink) or TrackFromItemLevel(itemLink)
+end
+
 local function CurrentTrack(itemLink)
-    local track = TrackFromItemLink(itemLink) or TrackFromItemLevel(itemLink) or TrackFromInstance()
+    local track = TrackFromLinkOnly(itemLink) or TrackFromInstance()
     Log.debug("CurrentTrack: link=%s -> %s", tostring(itemLink), tostring(track))
     return track
 end
+
+-- H < M -- used to tell a same-or-better past award apart from one on a
+-- strictly lower track than the current drop.
+local TRACK_RANK = { H = 1, M = 2 }
 
 -- Public wrapper so a caller that doesn't have a specific player in mind yet
 -- (Modules/votingPriorityPanel.lua, to decide section order) can still
@@ -312,9 +324,21 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
 
     if type(RCPL_DB.awarded) == "table" then
         local awardsForItem = RCPL_DB.awarded[tostring(itemID)]
-        if type(awardsForItem) == "table"
-        and (awardsForItem[playerName] or awardsForItem[baseName]) then
-            return "Awarded", COLOR_GREY
+        local awardedValue = type(awardsForItem) == "table" and (awardsForItem[playerName] or awardsForItem[baseName])
+        if awardedValue then
+            -- A dupe on a *lower* track than the current drop shouldn't
+            -- hide this drop's own priority -- already having the Heroic
+            -- version doesn't make a Mythic-track drop of the same item a
+            -- non-issue. Only short-circuits to "Awarded" when both tracks
+            -- are actually resolvable and the past award is the same track
+            -- or better; an unknown track on either side keeps the old
+            -- "any award at all counts" behavior rather than risk silently
+            -- hiding a genuine dupe from council.
+            local awardedTrack = type(awardedValue) == "string" and TrackFromLinkOnly(awardedValue)
+            local dropTrack = awardedTrack and CurrentTrack(itemLink)
+            if not awardedTrack or not dropTrack or TRACK_RANK[awardedTrack] >= TRACK_RANK[dropTrack] then
+                return "Awarded", COLOR_GREY
+            end
         end
     end
 

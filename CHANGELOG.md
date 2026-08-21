@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.9] - 2026-08-21
+
+### Fixed
+
+- **The loot/voting frame's Priority said "Awarded" for an item already given out on a lower difficulty, even when the current drop was a genuine upgrade the player still needed.** The awarded check only ever looked at whether *any* award for that item existed, with no regard for which track it was on. It now compares the stored award's track against the current drop's track and only short-circuits to "Awarded" when the past award is the same track or better -- a Heroic award no longer suppresses priority for a fresh Mythic-track drop of the same item. An award with no resolvable track on either side (legacy data, or a drop whose track genuinely can't be determined) keeps the old unconditional behavior.
+
+---
+
 ## [0.6.8] - 2026-08-21
 
 ### Fixed
