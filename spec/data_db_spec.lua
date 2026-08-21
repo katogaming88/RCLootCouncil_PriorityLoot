@@ -69,6 +69,70 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end
     end)
 
+    -- ── Awarded short-circuit (track-aware) ──────────────────────────────────
+    --
+    -- RCPL_DB.awarded[itemID][playerName] stores the item link the award was
+    -- recorded against (Core.lua's HandleAwardSubcommand / OnAward hook).
+    -- A past award only short-circuits to "Awarded" when it's the same track
+    -- as the *current* drop or better -- e.g. already having the Heroic
+    -- version doesn't mean a fresh Mythic-track drop of the same item is a
+    -- non-issue for this player. An unresolvable track on either side (a
+    -- legacy `true` sentinel with no link, or a drop link with no
+    -- determinable track) keeps the old "any award at all counts" behavior
+    -- rather than risk silently hiding a genuine dupe from council.
+
+    describe("awarded short-circuit", function()
+        it("still says Awarded when the past award and the current drop are the same track", function()
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = heroicLink } }
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicLink)
+            assert.equals("Awarded", text)
+        end)
+
+        it("still says Awarded when the past award is a HIGHER track than the current drop", function()
+            local mythicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:16:0"
+            local heroicDrop = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = mythicLink } }
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicDrop)
+            assert.equals("Awarded", text)
+        end)
+
+        it("does NOT say Awarded when the past award is a LOWER track than the current drop", function()
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            local mythicDrop = "item:12345:0:0:0:0:0:0:0:0:0:0:16:0"
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = heroicLink } }
+            _G.RCPL_DB.priority = {
+                ["12345"] = { M = { "Alice-Realm" } },
+            }
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", mythicDrop)
+            assert.equals("1st", text)
+        end)
+
+        it("falls back to the old unconditional Awarded when the stored award has no link (legacy `true`)", function()
+            local mythicDrop = "item:12345:0:0:0:0:0:0:0:0:0:0:16:0"
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = true } }
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", mythicDrop)
+            assert.equals("Awarded", text)
+        end)
+
+        it("falls back to unconditional Awarded when the current drop's own track can't be resolved", function()
+            mocks.setInstanceInfo(nil, nil)
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = heroicLink } }
+            -- No instanceDifficultyID, no cached item level, no live raid --
+            -- the current drop's track genuinely can't be determined.
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", "item:12345")
+            assert.equals("Awarded", text)
+        end)
+
+        it("matches an awarded baseName the same way the direct-name check does", function()
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice"] = heroicLink } }
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicLink)
+            assert.equals("Awarded", text)
+        end)
+    end)
+
     -- ── Layer 1: item-centric priority list ──────────────────────────────────
 
     describe("item-centric priority", function()
