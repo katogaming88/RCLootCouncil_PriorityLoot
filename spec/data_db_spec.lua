@@ -19,8 +19,10 @@
 -- than instanceDifficultyID; (3) GetInstanceInfo()'s live raid difficulty
 -- (mocks.setInstanceInfo), for the rare case the item level isn't cached yet.
 --
--- Secondary slots (cloak / wrist / waist / feet) intentionally short-circuit
--- to a "see wowaudit wishlist" message regardless of saved data.
+-- Cloak/Wrist/Waist/Feet are ordinary CORE_EQUIPLOC slots (cloak/bracers/
+-- belt/boots) like any other -- WGA Raid Hub tracks and exports priority for
+-- them the same as Head/Chest/Legs/etc., so they walk both layers exactly
+-- the same way.
 
 local mocks = require "spec.wow_mocks"
 
@@ -58,26 +60,26 @@ describe("RCPL_Data_GetPlayerPriority", function()
         assert.equals("N/A", text)
     end)
 
-    -- ── Secondary equipLocs defer to wowaudit ────────────────────────────────
+    -- ── Cloak/Wrist/Waist/Feet are ordinary slots ────────────────────────────
+    --
+    -- These four used to have no per-player BiS category and always
+    -- short-circuited to a "see wowaudit wishlist" message, back when WGA
+    -- Raid Hub didn't track them. It exports real priority data for every
+    -- slot now (confirmed live: a Waist item's Full Priority Order side
+    -- panel showed a 5-player ranking while the voting frame showed no
+    -- priority for any of them), so the special case is gone -- they resolve
+    -- through the same two layers Head/Chest/Legs/etc. do.
 
-    it("returns wowaudit-defer message for cloak/wrist/waist/feet with no item-centric list", function()
+    it("returns N/A grey for cloak/wrist/waist/feet with no data at all, same as any other slot", function()
         local secondaries = { "INVTYPE_CLOAK", "INVTYPE_WRIST", "INVTYPE_WAIST", "INVTYPE_FEET" }
         for _, equipLoc in ipairs(secondaries) do
             local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, equipLoc)
-            assert.matches("wowaudit", text)
+            assert.equals("N/A", text)
             assert.equals(0.6, color.r)  -- grey
         end
     end)
 
-    -- A "secondary" slot (Cloak/Wrist/Waist/Feet) has no per-player BiS
-    -- category in RCPL_DB.players (see CORE_EQUIPLOC), but the item-centric
-    -- priority list is itemID-keyed, not slot-keyed -- WGA Raid Hub tracks
-    -- and exports a real ranking for these slots too (confirmed live: a
-    -- Waist item's Full Priority Order side panel showed a 5-player ranking
-    -- while every voting-frame row said "No priority, see wowaudit
-    -- wishlist"). The item-centric list must win over the wowaudit deferral
-    -- whenever one actually exists for this item.
-    it("uses the item-centric priority list for a secondary slot when one exists, instead of deferring to wowaudit", function()
+    it("uses the item-centric priority list for cloak/wrist/waist/feet when one exists", function()
         mocks.setInstanceInfo("raid", 15)
         _G.RCPL_DB.priority = {
             ["999"] = { H = { "Alice-Realm", "Bob-Realm" } },
@@ -88,17 +90,20 @@ describe("RCPL_Data_GetPlayerPriority", function()
         assert.equals(1.0, color.g)
     end)
 
-    it("still defers to wowaudit for a secondary slot once the item-centric list has no entry for this track", function()
-        mocks.setInstanceInfo("raid", 16)  -- Mythic
-        _G.RCPL_DB.priority = {
-            ["999"] = { H = { "Alice-Realm" } },  -- Heroic list only
+    it("falls back to the per-player BiS list for cloak/wrist/waist/feet when no item-centric list exists", function()
+        _G.RCPL_DB.priority = {}
+        _G.RCPL_DB.players = {
+            ["Alice-Realm"] = {
+                cloak   = { bis = { 100 } },
+                bracers = { bis = { 200 } },
+                belt    = { bis = { 300 } },
+                boots   = { bis = { 400 } },
+            },
         }
-        local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_WRIST")
-        -- No Mythic sub-list for this item -> the item-centric branch itself
-        -- returns "N/A", not the wowaudit message; that's a deliberate
-        -- distinction (a real list exists but doesn't cover this track,
-        -- vs. no list at all).
-        assert.equals("N/A", text)
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 100, "INVTYPE_CLOAK"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 200, "INVTYPE_WRIST"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 300, "INVTYPE_WAIST"))
+        assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 400, "INVTYPE_FEET"))
     end)
 
     -- ── Layer 1: item-centric priority list ──────────────────────────────────

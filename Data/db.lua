@@ -10,21 +10,24 @@ local Log = RCPL_Log or {
     warn = function() end, error = function() end,
 }
 
-local SECONDARY_EQUIPLOC = {
-    INVTYPE_CLOAK = "cloak",
-    INVTYPE_WRIST = "bracers",
-    INVTYPE_WAIST = "belt",
-    INVTYPE_FEET  = "boots",
-}
-
+-- Cloak/Wrist/Waist/Feet used to have no per-player BiS category here and
+-- deferred to a generic "no priority for this slot" message instead (the old
+-- SECONDARY_EQUIPLOC special case, since removed). WGA Raid Hub tracks and
+-- exports real priority data for every slot now, so these four are just
+-- ordinary CORE_EQUIPLOC entries, keyed to match rclc_export.sql's slot_key
+-- mapping (Back/Wrist/Waist/Feet -> cloak/bracers/belt/boots) exactly.
 local CORE_EQUIPLOC = {
     INVTYPE_HEAD            = { "helm" },
     INVTYPE_NECK            = { "neck" },
     INVTYPE_SHOULDER        = { "shoulders" },
+    INVTYPE_CLOAK           = { "cloak" },
     INVTYPE_CHEST           = { "chest" },
     INVTYPE_ROBE            = { "chest" },
+    INVTYPE_WRIST           = { "bracers" },
     INVTYPE_HAND            = { "gloves" },
+    INVTYPE_WAIST           = { "belt" },
     INVTYPE_LEGS            = { "legs" },
+    INVTYPE_FEET            = { "boots" },
     INVTYPE_FINGER          = { "ring1", "ring2" },
     INVTYPE_TRINKET         = { "trinket1", "trinket2" },
     INVTYPE_WEAPON          = { "mh2h" },
@@ -201,9 +204,6 @@ end
 --      fallback for the rare case an item's detailed level info isn't
 --      cached client-side yet (GetDetailedItemLevelInfo can return nil on
 --      the first frame an item is seen).
--- None of the three depend on RCLootCouncil_wowaudit's bonus-ID table, which
--- this addon no longer needs and which the user plans to eventually
--- uninstall.
 local TIER_HEROIC_ILVL_MIN = 305
 local TIER_HEROIC_ILVL_MAX = 321
 local TIER_MYTHIC_ILVL_MIN = 318
@@ -318,16 +318,9 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
         end
     end
 
-    -- Item-centric priority list (Layer 1) is itemID-keyed, not slot-keyed --
-    -- it can carry a real ranking for a belt/cloak/bracers/boots item even
-    -- though those "secondary" slots have no per-player BiS category (see
-    -- CORE_EQUIPLOC) for the Layer 2 fallback below. So this has to run
-    -- *before* the SECONDARY_EQUIPLOC check, not after it -- otherwise a
-    -- genuinely contested Waist/Wrist/Cloak/Feet item always got the
-    -- generic "see wowaudit wishlist" deferral even when WGA Raid Hub had
-    -- already exported a real ranking for it (confirmed live: the Full
-    -- Priority Order side panel showed a 5-player ranking for a Waist item
-    -- while every row in the voting frame said "No priority").
+    -- Item-centric priority list (Layer 1) -- WGA Raid Hub exports a real
+    -- ranking for every slot now, so this is checked ahead of the Layer 2
+    -- per-player BiS fallback for every equipLoc, not just a subset.
     if type(RCPL_DB.priority) == "table" then
         local itemPriority = RCPL_DB.priority[tostring(itemID)]
         if type(itemPriority) == "table" then
@@ -355,10 +348,6 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             end
             return "N/A", COLOR_GREY
         end
-    end
-
-    if SECONDARY_EQUIPLOC[equipLoc] then
-        return "No priority, see wowaudit wishlist", COLOR_GREY
     end
 
     local coreKeys = CORE_EQUIPLOC[equipLoc]

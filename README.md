@@ -116,15 +116,17 @@ The import string is a **Base64-encoded JSON** blob. When decoded, the expected 
 | `helm` | Head |
 | `neck` | Neck |
 | `shoulders` | Shoulders |
+| `cloak` | Back |
 | `chest` | Chest / Robe |
+| `bracers` | Wrist |
 | `gloves` | Hands |
+| `belt` | Waist |
 | `legs` | Legs |
+| `boots` | Feet |
 | `ring1`, `ring2` | Finger (both slots checked) |
 | `trinket1`, `trinket2` | Trinket (both slots checked) |
 | `mh2h` | Main-hand, Two-handed, Weapon |
 | `oh` | Off-hand |
-
-Secondary armor slots (Cloak, Bracers, Belt, Boots) are not part of the import. The Priority column defers to wowaudit wishlists for those item types.
 
 ---
 

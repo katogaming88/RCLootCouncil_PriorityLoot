@@ -104,7 +104,6 @@ Highest-value feature on the roadmap. Hover any item with a known itemID (bag, b
 
 - Hook `TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, ...)` (modern 12.0.5 API; older `OnTooltipSetItem` is deprecated).
 - For the local player by default; when `priority[itemID]` exists, also show "Top priority: PlayerA, PlayerB, PlayerC" line so officers can see at a glance.
-- Skip secondary slots (defer to wowaudit's own tooltip integration).
 - Tests: tooltip handler called with known item produces expected lines via mock GameTooltip.
 
 **Acceptance:** hovering items in bag, bank, AH, and equipment manager all show the priority line. Items without a known itemID (e.g. quest items, currencies) no-op without errors.

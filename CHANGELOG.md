@@ -15,7 +15,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- **A genuinely contested Waist/Wrist/Cloak/Feet item showed "No priority, see wowaudit wishlist" in the voting frame for every candidate, even when WGA Raid Hub had already exported a real ranking for it** -- confirmed live: the Full Priority Order side panel showed a 5-player ranking for a Waist item while every row in the voting frame said "No priority". The item-centric priority list is itemID-keyed, not slot-keyed, but the lookup checked the "secondary slot" wowaudit deferral before ever consulting that list, so a real ranking for one of these four slots was always shadowed by the generic deferral message. The item-centric list is now checked first and wins whenever it actually has an entry for the item.
+- **Cloak/Wrist/Waist/Feet items always showed a generic "no priority for this slot" message in the voting and loot frames, even when WGA Raid Hub had already exported a real ranking for the item** -- confirmed live: the Full Priority Order side panel showed a 5-player ranking for a Waist item while every row in the voting frame said there was no priority for it. These four slots used to have no per-player BiS category at all and always deferred to a separate message, back when WGA Raid Hub didn't track them. It tracks (and exports priority for) every slot now, so the special case is gone entirely -- Cloak/Wrist/Waist/Feet are ordinary slots like any other, checked against the item-centric priority list first and the per-player BiS list second, same as Head/Chest/Legs/etc.
 
 ---
 
