@@ -60,13 +60,45 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
     -- ── Secondary equipLocs defer to wowaudit ────────────────────────────────
 
-    it("returns wowaudit-defer message for cloak/wrist/waist/feet", function()
+    it("returns wowaudit-defer message for cloak/wrist/waist/feet with no item-centric list", function()
         local secondaries = { "INVTYPE_CLOAK", "INVTYPE_WRIST", "INVTYPE_WAIST", "INVTYPE_FEET" }
         for _, equipLoc in ipairs(secondaries) do
             local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, equipLoc)
             assert.matches("wowaudit", text)
             assert.equals(0.6, color.r)  -- grey
         end
+    end)
+
+    -- A "secondary" slot (Cloak/Wrist/Waist/Feet) has no per-player BiS
+    -- category in RCPL_DB.players (see CORE_EQUIPLOC), but the item-centric
+    -- priority list is itemID-keyed, not slot-keyed -- WGA Raid Hub tracks
+    -- and exports a real ranking for these slots too (confirmed live: a
+    -- Waist item's Full Priority Order side panel showed a 5-player ranking
+    -- while every voting-frame row said "No priority, see wowaudit
+    -- wishlist"). The item-centric list must win over the wowaudit deferral
+    -- whenever one actually exists for this item.
+    it("uses the item-centric priority list for a secondary slot when one exists, instead of deferring to wowaudit", function()
+        mocks.setInstanceInfo("raid", 15)
+        _G.RCPL_DB.priority = {
+            ["999"] = { H = { "Alice-Realm", "Bob-Realm" } },
+        }
+        local text, color = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_WAIST")
+        assert.equals("1st", text)
+        assert.equals(0.0, color.r)
+        assert.equals(1.0, color.g)
+    end)
+
+    it("still defers to wowaudit for a secondary slot once the item-centric list has no entry for this track", function()
+        mocks.setInstanceInfo("raid", 16)  -- Mythic
+        _G.RCPL_DB.priority = {
+            ["999"] = { H = { "Alice-Realm" } },  -- Heroic list only
+        }
+        local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 999, "INVTYPE_WRIST")
+        -- No Mythic sub-list for this item -> the item-centric branch itself
+        -- returns "N/A", not the wowaudit message; that's a deliberate
+        -- distinction (a real list exists but doesn't cover this track,
+        -- vs. no list at all).
+        assert.equals("N/A", text)
     end)
 
     -- ── Layer 1: item-centric priority list ──────────────────────────────────

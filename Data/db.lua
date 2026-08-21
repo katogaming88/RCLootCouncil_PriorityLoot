@@ -318,15 +318,16 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
         end
     end
 
-    if SECONDARY_EQUIPLOC[equipLoc] then
-        return "No priority, see wowaudit wishlist", COLOR_GREY
-    end
-
-    local coreKeys = CORE_EQUIPLOC[equipLoc]
-    if not coreKeys then
-        return "N/A", COLOR_GREY
-    end
-
+    -- Item-centric priority list (Layer 1) is itemID-keyed, not slot-keyed --
+    -- it can carry a real ranking for a belt/cloak/bracers/boots item even
+    -- though those "secondary" slots have no per-player BiS category (see
+    -- CORE_EQUIPLOC) for the Layer 2 fallback below. So this has to run
+    -- *before* the SECONDARY_EQUIPLOC check, not after it -- otherwise a
+    -- genuinely contested Waist/Wrist/Cloak/Feet item always got the
+    -- generic "see wowaudit wishlist" deferral even when WGA Raid Hub had
+    -- already exported a real ranking for it (confirmed live: the Full
+    -- Priority Order side panel showed a 5-player ranking for a Waist item
+    -- while every row in the voting frame said "No priority").
     if type(RCPL_DB.priority) == "table" then
         local itemPriority = RCPL_DB.priority[tostring(itemID)]
         if type(itemPriority) == "table" then
@@ -354,6 +355,15 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             end
             return "N/A", COLOR_GREY
         end
+    end
+
+    if SECONDARY_EQUIPLOC[equipLoc] then
+        return "No priority, see wowaudit wishlist", COLOR_GREY
+    end
+
+    local coreKeys = CORE_EQUIPLOC[equipLoc]
+    if not coreKeys then
+        return "N/A", COLOR_GREY
     end
 
     local playerData = RCPL_DB.players[playerName] or RCPL_DB.players[baseName]
