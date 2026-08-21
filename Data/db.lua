@@ -209,7 +209,13 @@ local TIER_HEROIC_ILVL_MAX = 321
 local TIER_MYTHIC_ILVL_MIN = 318
 local TIER_MYTHIC_ILVL_MAX = 344
 
-local RAID_DIFFICULTY_TRACK = { [15] = "H", [16] = "M" }
+-- "N" (Normal, difficultyID 14) is tracked here purely so CurrentTrack can
+-- positively identify a Normal drop and hand back "N" instead of nil --
+-- WGA Raid Hub doesn't export Normal priority data, so itemPriority["N"]
+-- is never a table and the caller correctly falls through to a plain
+-- "N/A" rather than the (misleading, since the difficulty *is* known)
+-- "N/A (unknown raid difficulty)" message that a nil track produces.
+local RAID_DIFFICULTY_TRACK = { [14] = "N", [15] = "H", [16] = "M" }
 
 -- item:itemID:enchantID:gem1:gem2:gem3:gem4:suffixID:uniqueID:linkLevel:
 -- specializationID:upgradeTypeID:instanceDifficultyID:... -- 11 numeric
@@ -269,6 +275,13 @@ local function TrackFromItemLevel(itemLink)
     elseif inMythicRange then
         track = "M"
     end
+    -- No "N" case here -- Normal's ilvl range isn't tracked (no data is
+    -- exported for it anyway), and a low ilvl alone is too weak a signal
+    -- to mean "Normal" specifically vs. an unrelated non-raid item. Real
+    -- Normal drops are still caught via the difficulty-ID signals above
+    -- (TrackFromItemLink's embedded instanceDifficultyID, or
+    -- TrackFromInstance's live GetInstanceInfo()), both now mapped
+    -- through RAID_DIFFICULTY_TRACK[14] = "N".
 
     Log.debug(
         "TrackFromItemLevel: link=%s ilvl=%s isPreview=%s baseItemLevel=%s inHeroicRange=%s inMythicRange=%s -> %s",
@@ -299,9 +312,12 @@ local function CurrentTrack(itemLink)
     return track
 end
 
--- H < M -- used to tell a same-or-better past award apart from one on a
--- strictly lower track than the current drop.
-local TRACK_RANK = { H = 1, M = 2 }
+-- N < H < M -- used to tell a same-or-better past award apart from one on a
+-- strictly lower track than the current drop. N included now that
+-- CurrentTrack/TrackFromLinkOnly can resolve "N" for a Normal item instead
+-- of nil, so a past Normal award (or current Normal drop) still has a rank
+-- to compare instead of erroring on a missing table entry.
+local TRACK_RANK = { N = 0, H = 1, M = 2 }
 
 -- Public wrapper so a caller that doesn't have a specific player in mind yet
 -- (Modules/votingPriorityPanel.lua, to decide section order) can still
