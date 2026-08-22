@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Normal-difficulty items showed "N/A (unknown raid difficulty)" in the voting/loot frame Priority column, even though the difficulty is perfectly well known.** `RAID_DIFFICULTY_TRACK` only mapped Heroic (15) and Mythic (16) difficulty IDs to a track, so a Normal drop (14) -- whether read from the item link's own `instanceDifficultyID` or a live Normal raid instance -- always resolved to no track at all, which triggered the "unknown difficulty" message meant for a genuinely ambiguous case (e.g. the overlapping Heroic/Mythic item-level band). Normal is now mapped to its own `"N"` track, so it resolves cleanly and (since WGA Raid Hub doesn't export Normal priority data) correctly falls through to a plain "N/A" instead.
+
 ---
 
 ## [0.6.10] - 2026-08-21

@@ -387,6 +387,25 @@ describe("RCPL_Data_GetPlayerPriority", function()
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", lfrLink))
         end)
 
+        -- ── Normal difficulty ──────────────────────────────────────────────────
+        -- WGA Raid Hub doesn't export Normal priority data, but a Normal drop
+        -- is still a *known* difficulty -- it should read as a plain "N/A",
+        -- not the "unknown raid difficulty" message that's meant for a
+        -- genuinely undetectable track.
+
+        it("resolves a real Normal drop (instanceDifficultyID 14) to plain N/A, not unknown-difficulty", function()
+            mocks.setInstanceInfo(nil, nil)
+            local normalLink = "item:500:0:0:0:0:0:0:0:0:0:0:14:0"
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", normalLink)
+            assert.equals("N/A", text)
+        end)
+
+        it("resolves a live Normal raid instance to plain N/A, not unknown-difficulty", function()
+            mocks.setInstanceInfo("raid", 14)
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD")
+            assert.equals("N/A", text)
+        end)
+
         -- ── Item-level detection (fallback for synthetic/test links) ──────────
 
         it("uses the item's own item level to pick the track, with no raid instance at all", function()
