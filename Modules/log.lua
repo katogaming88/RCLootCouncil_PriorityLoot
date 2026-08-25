@@ -7,9 +7,13 @@
 --   RCPL_Log.warn(fmt, ...)
 --   RCPL_Log.error(fmt, ...)
 --
--- Every call records into an in-memory ring buffer regardless of debug state,
--- so /rcpl log show can replay the recent history even when debug is off.
--- Entries are volatile; the buffer resets on /reload.
+-- Every call records into a ring buffer regardless of debug state, so
+-- /rcpl log show can replay the recent history even when debug is off. The
+-- buffer lives in RCPL_DB.log (SavedVariables), the same approach the base
+-- RCLootCouncil addon's own Log class uses (Log:InitLogging binds its
+-- buffer straight to a SavedVariables table) -- so entries survive /reload
+-- and logout, and can be inspected after the fact without needing debug
+-- mode turned on ahead of time, mid-raid, before the bug happens.
 --
 -- Persisted state lives in RCPL_DB.debug (boolean) and is toggled by
 -- /rcpl debug. Defaults to false.
@@ -23,7 +27,14 @@ local LEVEL_COLORS  = {
     ERROR = "|cFFFF4444",
 }
 
-local entries = {}
+-- SavedVariables are already loaded into the RCPL_DB global by the time any
+-- addon file executes, so this table reference is stable for the rest of
+-- the session -- Core.lua's own OnInitialize does the same lazy-init dance
+-- for RCPL_DB's other fields, just later (log.lua loads first, per the
+-- .toc, since Core.lua wants RCPL_Log available immediately).
+if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
+if type(RCPL_DB.log) ~= "table" then RCPL_DB.log = {} end
+local entries = RCPL_DB.log
 
 local Log = {}
 
