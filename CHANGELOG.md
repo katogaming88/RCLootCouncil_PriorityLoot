@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.12] - 2026-08-25
+
+### Fixed
+
+- **An item with a tertiary stat or socket it doesn't normally carry could show the wrong priority rank (e.g. "1st" for a player who was actually 4th).** `instanceDifficultyID` -- the field in a real item link that tells the addon whether a drop is Heroic or Mythic -- was being read one field too late (field 12 instead of field 11), which happened to land on `numBonusIDs` instead. A plain item with few bonus IDs rarely tripped this, but an item with extra bonus IDs (an unusual tertiary stat and/or a socket) could produce a `numBonusIDs` value that coincidentally matched a real difficulty ID (14/15/16), silently pointing the lookup at the wrong track's priority list. Confirmed against this account's own saved item links and fixed with regression coverage for both a Heroic drop carrying extra bonus IDs and a bonus-ID count that collides with a real difficulty ID.
+
+---
+
 ## [0.6.11] - 2026-08-21
 
 ### Fixed

@@ -120,23 +120,23 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
     describe("awarded short-circuit", function()
         it("still says Awarded when the past award and the current drop are the same track", function()
-            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:15:0"
             _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = heroicLink } }
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicLink)
             assert.equals("Awarded", text)
         end)
 
         it("still says Awarded when the past award is a HIGHER track than the current drop", function()
-            local mythicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:16:0"
-            local heroicDrop = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            local mythicLink = "item:12345:0:0:0:0:0:0:0:0:0:16:0"
+            local heroicDrop = "item:12345:0:0:0:0:0:0:0:0:0:15:0"
             _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = mythicLink } }
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicDrop)
             assert.equals("Awarded", text)
         end)
 
         it("does NOT say Awarded when the past award is a LOWER track than the current drop", function()
-            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
-            local mythicDrop = "item:12345:0:0:0:0:0:0:0:0:0:0:16:0"
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:15:0"
+            local mythicDrop = "item:12345:0:0:0:0:0:0:0:0:0:16:0"
             _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = heroicLink } }
             _G.RCPL_DB.priority = {
                 ["12345"] = { M = { "Alice-Realm" } },
@@ -146,7 +146,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("falls back to the old unconditional Awarded when the stored award has no link (legacy `true`)", function()
-            local mythicDrop = "item:12345:0:0:0:0:0:0:0:0:0:0:16:0"
+            local mythicDrop = "item:12345:0:0:0:0:0:0:0:0:0:16:0"
             _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = true } }
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", mythicDrop)
             assert.equals("Awarded", text)
@@ -154,7 +154,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
         it("falls back to unconditional Awarded when the current drop's own track can't be resolved", function()
             mocks.setInstanceInfo(nil, nil)
-            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:15:0"
             _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = heroicLink } }
             -- No instanceDifficultyID, no cached item level, no live raid --
             -- the current drop's track genuinely can't be determined.
@@ -163,7 +163,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         end)
 
         it("matches an awarded baseName the same way the direct-name check does", function()
-            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:0:15:0"
+            local heroicLink = "item:12345:0:0:0:0:0:0:0:0:0:15:0"
             _G.RCPL_DB.awarded = { ["12345"] = { ["Alice"] = heroicLink } }
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicLink)
             assert.equals("Awarded", text)
@@ -351,25 +351,47 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
         -- ── instanceDifficultyID from the item link (primary signal) ──────────
         -- Real loot drops (Start Session) carry this in the item string itself
-        -- (field 13 of "item:itemID:...:instanceDifficultyID:numBonuses:...").
+        -- (field 11 of "item:itemID:...:instanceDifficultyID:numBonusIDs:...").
         -- Synthetic links (e.g. /rc test) don't have it, which the item-level
         -- fallback tests below cover.
 
         it("uses instanceDifficultyID from a real Heroic drop's item link", function()
             mocks.setInstanceInfo(nil, nil)  -- no live raid, no item level cached
-            local heroicLink = "item:500:0:0:0:0:0:0:0:0:0:0:15:0"
+            local heroicLink = "item:500:0:0:0:0:0:0:0:0:0:15:0"
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", heroicLink))
         end)
 
         it("uses instanceDifficultyID from a real Mythic drop's item link", function()
             mocks.setInstanceInfo(nil, nil)
-            local mythicLink = "item:500:0:0:0:0:0:0:0:0:0:0:16:0"
+            local mythicLink = "item:500:0:0:0:0:0:0:0:0:0:16:0"
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", mythicLink))
+        end)
+
+        it("uses instanceDifficultyID correctly even when the drop carries extra bonus IDs (tertiary stat/socket)", function()
+            -- Regression for a real bug: the old pattern captured field 12
+            -- (numBonusIDs) instead of field 11 (instanceDifficultyID). A
+            -- plain drop with zero/few bonus IDs rarely tripped it, but an
+            -- item with an unusual tertiary stat or socket carries more
+            -- bonus IDs, and numBonusIDs landing on 14/15/16 by coincidence
+            -- would silently select the wrong track's priority list.
+            mocks.setInstanceInfo(nil, nil)
+            local heroicLinkWithBonusIDs = "item:500:0:0:0:0:0:0:0:0:0:15:3:1:2:3"
+            assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", heroicLinkWithBonusIDs))
+        end)
+
+        it("does not mistake numBonusIDs (field 12) for instanceDifficultyID (field 11)", function()
+            -- No live raid and no item level, so if numBonusIDs (16 here)
+            -- were misread as instanceDifficultyID, this would wrongly
+            -- resolve "M" instead of falling through to N/A (unknown).
+            mocks.setInstanceInfo(nil, nil)
+            local linkWithSixteenBonusIDs = "item:500:::::::::::16:1:2:3:4:5:6:7:8:9:10:11:12:13:14:15:16"
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", linkWithSixteenBonusIDs)
+            assert.matches("unknown raid difficulty", text)
         end)
 
         it("prefers instanceDifficultyID over a conflicting live raid difficulty or item level", function()
             mocks.setInstanceInfo("raid", 15)  -- Heroic raid
-            local mythicLink = "item:500:0:0:0:0:0:0:0:0:0:0:16:0"  -- but this drop is Mythic
+            local mythicLink = "item:500:0:0:0:0:0:0:0:0:0:16:0"  -- but this drop is Mythic
             mocks.setItemLevel(mythicLink, 310)  -- and a (contradictory) Heroic item level
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", mythicLink))
         end)
@@ -382,7 +404,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
         it("falls back to item level for an unmapped instanceDifficultyID (e.g. LFR)", function()
             mocks.setInstanceInfo(nil, nil)
-            local lfrLink = "item:500:0:0:0:0:0:0:0:0:0:0:17:0"
+            local lfrLink = "item:500:0:0:0:0:0:0:0:0:0:17:0"
             mocks.setItemLevel(lfrLink, 330)  -- Mythic ilvl, even though this specific drop is LFR
             assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", lfrLink))
         end)
@@ -395,7 +417,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
 
         it("resolves a real Normal drop (instanceDifficultyID 14) to plain N/A, not unknown-difficulty", function()
             mocks.setInstanceInfo(nil, nil)
-            local normalLink = "item:500:0:0:0:0:0:0:0:0:0:0:14:0"
+            local normalLink = "item:500:0:0:0:0:0:0:0:0:0:14:0"
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", normalLink)
             assert.equals("N/A", text)
         end)
@@ -444,7 +466,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         it("resolves Heroic anywhere in its non-overlapping range (305-317)", function()
             mocks.setInstanceInfo(nil, nil)
             for _, ilvl in ipairs({ 305, 311, 317 }) do
-                local link = "item:500:0:0:0:0:0:0:0:0:0:0:0:0"
+                local link = "item:500:0:0:0:0:0:0:0:0:0:0:0"
                 mocks.setItemLevel(link, ilvl)
                 assert.equals("1st", RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", link))
             end
@@ -453,7 +475,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         it("resolves Mythic anywhere in its non-overlapping range (322-344)", function()
             mocks.setInstanceInfo(nil, nil)
             for _, ilvl in ipairs({ 322, 333, 344 }) do
-                local link = "item:500:0:0:0:0:0:0:0:0:0:0:0:0"
+                local link = "item:500:0:0:0:0:0:0:0:0:0:0:0"
                 mocks.setItemLevel(link, ilvl)
                 assert.equals("1st", RCPL_Data_GetPlayerPriority("Bob-Realm", 500, "INVTYPE_HEAD", link))
             end
@@ -462,7 +484,7 @@ describe("RCPL_Data_GetPlayerPriority", function()
         it("leaves the overlapping band (318-321) genuinely ambiguous instead of guessing", function()
             mocks.setInstanceInfo(nil, nil)  -- no instance fallback available either
             for _, ilvl in ipairs({ 318, 319, 321 }) do
-                local link = "item:500:0:0:0:0:0:0:0:0:0:0:0:0"
+                local link = "item:500:0:0:0:0:0:0:0:0:0:0:0"
                 mocks.setItemLevel(link, ilvl)
                 local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 500, "INVTYPE_HEAD", link)
                 assert.matches("unknown raid difficulty", text)

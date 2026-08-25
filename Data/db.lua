@@ -179,7 +179,7 @@ end
 --
 -- Track detection, in priority order:
 --   1. instanceDifficultyID off the item link itself (TrackFromItemLink) --
---      a dedicated field in every item string (position 13 of the
+--      a dedicated field in every item string (position 11 of the
 --      colon-separated "item:" string, distinct from bonusIDs), set by the
 --      server the moment a real loot drop is generated. Correct for every
 --      real award path (Start Session voting/loot frames) with zero
@@ -218,10 +218,19 @@ local TIER_MYTHIC_ILVL_MAX = 344
 local RAID_DIFFICULTY_TRACK = { [14] = "N", [15] = "H", [16] = "M" }
 
 -- item:itemID:enchantID:gem1:gem2:gem3:gem4:suffixID:uniqueID:linkLevel:
--- specializationID:upgradeTypeID:instanceDifficultyID:... -- 11 numeric
--- fields (itemID through upgradeTypeID) after the "item:" literal, then the
--- 13th field (instanceDifficultyID) captured on its own.
-local ITEM_STRING_DIFFICULTY_PATTERN = "^item:" .. ("%-?%d*:"):rep(11) .. "(%-?%d*):"
+-- specializationID:instanceDifficultyID:numBonusIDs:bonusID1:... -- 10
+-- numeric fields (itemID through specializationID) after the "item:"
+-- literal, then the 11th field (instanceDifficultyID) captured on its own.
+-- Confirmed against real saved item links in this account's SavedVariables
+-- (field 11 is empty on a bag/award link with no drop context, field 12 is
+-- numBonusIDs). A previous version of this pattern captured field 12
+-- instead (numBonusIDs, not instanceDifficultyID) -- harmless for an item
+-- with zero or few bonus IDs, since numBonusIDs rarely lands on 14/15/16,
+-- but a drop with extra bonus IDs (a tertiary stat and/or a socket) could
+-- coincidentally produce a numBonusIDs value that collided with a real
+-- RAID_DIFFICULTY_TRACK key, silently picking the wrong track's priority
+-- list for that drop.
+local ITEM_STRING_DIFFICULTY_PATTERN = "^item:" .. ("%-?%d*:"):rep(10) .. "(%-?%d*):"
 
 -- Pure Lua string parsing, no WoW-specific API and no RCLootCouncil
 -- dependency -- mirrors the one-liner RCLootCouncil's own
