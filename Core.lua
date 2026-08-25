@@ -242,10 +242,10 @@ local function HandleAwardSubcommand(args, undo)
     end
     if undo then
         RCPL_Data_UnmarkAwarded(player, itemID)
-        print(string.format("|cFF00FF00[RCPL]|r Award removed: %s — %s", player, link))
+        print(string.format("|cFF00FF00[RCPL]|r Award removed: %s -- %s", player, link))
     else
         RCPL_Data_MarkAwarded(player, itemID, link)
-        print(string.format("|cFF00FF00[RCPL]|r Award recorded: %s — %s", player, link))
+        print(string.format("|cFF00FF00[RCPL]|r Award recorded: %s -- %s", player, link))
     end
 end
 
@@ -263,7 +263,7 @@ local function HandleLogSubcommand(rest)
         print("|cFF00FF00[RCPL]|r log subcommands:")
         print("  /rcpl log         open the log window")
         print("  /rcpl log dump    dump entries to chat")
-        print("  /rcpl log clear   clear the in-memory log")
+        print("  /rcpl log clear   clear the persisted log")
     end
 end
 

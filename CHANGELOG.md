@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.13] - 2026-08-25
+
+### Changed
+
+- **The debug log now persists in SavedVariables (`RCPL_DB.log`) instead of an in-memory buffer that reset on every `/reload`** -- same approach the base RCLootCouncil addon's own logger uses. Entries are still capped at the last 500 and are still recorded regardless of whether `/rcpl debug` is on, but now survive `/reload` and logout, so `/rcpl log` can be checked after a raid to diagnose something that happened earlier, instead of needing debug mode enabled and the window pulled up in the moment.
+
+---
+
 ## [0.6.12] - 2026-08-25
 
 ### Fixed
