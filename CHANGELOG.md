@@ -12,6 +12,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - **A stale-data indicator.** `/rcpl prio` now colors its "Imported: ..." timestamp green/yellow/orange by age (1 day / 3 days), instead of showing a bare date with no sense of how old it is. A raid/party member also now gets a one-time chat warning (per stale streak, not repeated every roster change) if their loaded priority data is more than 3 days old, nudging them to `/rcpl sync` or ask an officer to `/rcpl broadcast` a refresh.
+- **Wishlist tier tags in the officer voting frame's "Full Priority Order" panel.** Each ranked name can now show `(BiS)`/`(2nd Choice)`/`(Sidegrade)` (or whatever your team's actually-configured Wishlist Tier Labels say -- pulled from the WGA Raid Hub export, not hardcoded) next to it, so an officer can tell a real BiS pick apart from a lower-tier pick that still made the ranked list, or a rank with no wishlist entry behind it at all (no tag). Loot-council-only by design -- never shown on the raider-facing loot roll frame or the Priority column. Requires a WGA Raid Hub export from after [#760](https://github.com/katogaming88/WGA-Raid-Hub/pull/761); older exports simply show no tags.
 
 ### Fixed
 

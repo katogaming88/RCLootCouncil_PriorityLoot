@@ -94,6 +94,22 @@ describe("RCPL_Data_SaveImportedData", function()
         assert.matches("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d$", _G.RCPL_DB.importedAt)
     end)
 
+    it("stores statusLabels when the import includes them", function()
+        RCPL_Data_SaveImportedData({
+            players = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },
+            statusLabels = { bis = "BiS", good = "2nd Choice", ok = "Sidegrade" },
+        })
+        assert.same({ bis = "BiS", good = "2nd Choice", ok = "Sidegrade" }, _G.RCPL_DB.statusLabels)
+    end)
+
+    it("leaves a prior statusLabels value alone when the new import doesn't include one", function()
+        _G.RCPL_DB = { statusLabels = { bis = "BiS" } }
+        RCPL_Data_SaveImportedData({
+            players = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },
+        })
+        assert.same({ bis = "BiS" }, _G.RCPL_DB.statusLabels)
+    end)
+
     it("stamps importedAtEpoch so RCPL_Data_ImportAge can compute staleness", function()
         RCPL_Data_SaveImportedData({
             players = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },

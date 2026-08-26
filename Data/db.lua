@@ -78,6 +78,45 @@ function RCPL_Data_TrackLabel(track)
     return TRACK_LABEL[track]
 end
 
+-- WGA Raid Hub's rclc export (build_rclc_export, #760) attaches each ranked
+-- player's wishlist status via "<track>_status" sibling keys alongside the
+-- existing H/M ranked-name arrays (e.g. priority[itemID].H_status =
+-- {["Name-Realm"] = "bis"}) -- only bis/good/ok ever appear there (catalyst
+-- and pass aren't "wants this" wishlist tiers). Sparse: a ranked player with
+-- no backing item_preferences row (e.g. a fallback-ranked player from
+-- tier-token matching) simply has no entry, by design -- not every rank has
+-- a wishlist tier to report.
+--
+-- The export also attaches a top-level statusLabels object (RCPL_DB.statusLabels
+-- below) with each team's *actual* configured tier names -- WGA Raid Hub's
+-- Wishlist Tier Labels are officer-editable per team, so a hardcoded "Good"/
+-- "OK" here would already be wrong for a team that renamed them (confirmed
+-- live: one team uses "2nd Choice"/"Sidegrade" instead). These site defaults
+-- are only a fallback for a client that imported an export from before
+-- #760 shipped statusLabels at all.
+local WISHLIST_STATUS_LABEL_DEFAULT = { bis = "BiS", good = "2nd Choice", ok = "Sidegrade" }
+
+-- Public so Modules/votingPriorityPanel.lua (the only caller -- this is
+-- loot-council-only by product decision, never shown on the raider-facing
+-- loot roll frame) can turn a raw export status into the same label
+-- everywhere, and so a client on an addon version older than #760 (whose
+-- export has no "<track>_status" key at all) degrades to nil/no tag rather
+-- than erroring.
+function RCPL_Data_WishlistStatusLabel(itemPriority, track, playerName)
+    if type(itemPriority) ~= "table" or type(track) ~= "string" or type(playerName) ~= "string" then
+        return nil
+    end
+    local statuses = itemPriority[track .. "_status"]
+    if type(statuses) ~= "table" then return nil end
+    local status = statuses[playerName]
+    if not status then return nil end
+    local labels = type(RCPL_DB) == "table" and RCPL_DB.statusLabels
+    if type(labels) == "table" and labels[status] then
+        return labels[status]
+    end
+    return WISHLIST_STATUS_LABEL_DEFAULT[status]
+end
+
 -- `source` records where this data came from -- "local" for a string the
 -- player pasted into the import frame themselves, "sync" for data applied
 -- from another client's broadcast (Modules/prioSync.lua). Modules/prioSync.lua
@@ -90,10 +129,19 @@ function RCPL_Data_SaveImportedData(decoded, source)
     end
 
     if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
-    RCPL_DB.players  = {}
-    RCPL_DB.priority = {}
-    RCPL_DB.awarded  = {}
+    RCPL_DB.players      = {}
+    RCPL_DB.priority     = {}
+    RCPL_DB.awarded      = {}
     RCPL_DB.importSource = source or "local"
+
+    -- Optional -- exports from before #760 shipped this have no
+    -- statusLabels key at all, so leave whatever's currently stored alone
+    -- (nil on a fresh client) rather than clobbering it with {} and losing
+    -- RCPL_Data_WishlistStatusLabel's ability to fall back to its own
+    -- hardcoded defaults.
+    if type(decoded.statusLabels) == "table" then
+        RCPL_DB.statusLabels = decoded.statusLabels
+    end
 
     local playerCount = 0
     for playerKey, slots in pairs(decoded.players) do
@@ -126,6 +174,7 @@ function RCPL_Data_ResetData()
         RCPL_DB.importedAt       = nil
         RCPL_DB.importedAtEpoch  = nil
         RCPL_DB.importSource     = nil
+        RCPL_DB.statusLabels     = nil
     end
 end
 

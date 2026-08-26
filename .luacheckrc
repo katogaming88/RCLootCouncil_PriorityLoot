@@ -83,6 +83,7 @@ globals = {
     "RCPL_Data_HasBonusRolled",
     "RCPL_Data_ImportAge",
     "RCPL_Data_StaleAlertSeconds",
+    "RCPL_Data_WishlistStatusLabel",
     "RCPL_ApplyPanelBackdrop",
     "RCPL_CreateHeaderStrip",
     "RCPL_CreateStyledTitle",
