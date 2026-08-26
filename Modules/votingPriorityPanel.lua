@@ -134,7 +134,15 @@ local function Refresh()
                 end
                 for rank, playerName in ipairs(list) do
                     local hex = ColorHex(RCPL_Data_RankColor(rank))
-                    add("  |cFF" .. hex .. rank .. ". " .. ShortName(playerName) .. "|r")
+                    -- Loot-council-only context (this whole panel is part of
+                    -- the officer voting frame) -- shows whether this rank
+                    -- is the player's real wishlist BiS pick vs. a
+                    -- lower-tier Good/OK pick vs. not wishlist-backed at all
+                    -- (no tag), instead of a bare rank number that reads the
+                    -- same for all three (#760).
+                    local statusLabel = RCPL_Data_WishlistStatusLabel(itemPriority, trackKey, playerName)
+                    local statusSuffix = statusLabel and (" |cFF999999(" .. statusLabel .. ")|r") or ""
+                    add("  |cFF" .. hex .. rank .. ". " .. ShortName(playerName) .. "|r" .. statusSuffix)
                 end
                 add("")
             end

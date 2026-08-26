@@ -14,9 +14,11 @@ local M = {}
 
 -- ── Globals that WoW exposes but standalone Lua 5.1 does not ────────────────
 
--- WoW exposes os.date as plain `date(...)`; the addon uses it for
--- the import timestamp.
+-- WoW exposes os.date and os.time as plain `date(...)`/`time(...)`; the
+-- addon uses date() for the human-readable import timestamp and time() for
+-- the epoch used to compute staleness.
 _G.date = os.date
+_G.time = os.time
 
 -- WoW's `bit` library is a built-in; LuaJIT and Lua 5.1 with luabitop
 -- both expose it under the same name.  No-op stub if absent so specs

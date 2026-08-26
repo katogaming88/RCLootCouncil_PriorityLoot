@@ -267,6 +267,24 @@ describe("RCPL_Data_GetPlayerPriority", function()
             local text = RCPL_Data_GetPlayerPriority("Alice", 200, "INVTYPE_HEAD")
             assert.equals("2nd", text)
         end)
+
+        it("prefers an exact Name-Realm match over a higher-ranked same-name player on another realm", function()
+            -- Regression: a raider on Stormrage saw "Prio: 3rd" in the loot
+            -- frame for an item where their real (exact Name-Realm) entry
+            -- was ranked 14th, because a same-named player on a different
+            -- realm ranked 3rd and the old single-pass loop matched on bare
+            -- name at the first hit instead of continuing to the real entry.
+            local priorityList = { "Filler1-Realm", "Filler2-Realm", "Bearsdh-OtherRealm" }
+            for i = 1, 10 do
+                priorityList[#priorityList + 1] = "Filler" .. (i + 2) .. "-Realm"
+            end
+            priorityList[#priorityList + 1] = "Bearsdh-Stormrage"
+            _G.RCPL_DB.priority = { ["12345"] = { H = priorityList } }
+
+            local text, _, _, rank = RCPL_Data_GetPlayerPriority("Bearsdh-Stormrage", 12345, "INVTYPE_HEAD")
+            assert.equals("14th", text)
+            assert.equals(14, rank)
+        end)
     end)
 
     -- ── Track-aware lookup (#335) ─────────────────────────────────────────────
@@ -649,5 +667,42 @@ describe("RCPL_Data_TrackLabel", function()
     it("returns nil for an unknown or absent track", function()
         assert.is_nil(RCPL_Data_TrackLabel("LFR"))
         assert.is_nil(RCPL_Data_TrackLabel(nil))
+    end)
+end)
+
+describe("RCPL_Data_WishlistStatusLabel", function()
+    setup(function()
+        mocks.loadAddonSources()
+    end)
+
+    before_each(function()
+        _G.RCPL_DB = {}
+    end)
+
+    it("uses the team's configured label when RCPL_DB.statusLabels has one", function()
+        _G.RCPL_DB.statusLabels = { bis = "BiS", good = "2nd Choice", ok = "Sidegrade" }
+        local itemPriority = { H_status = { ["Alice-Realm"] = "good" } }
+        assert.equals("2nd Choice", RCPL_Data_WishlistStatusLabel(itemPriority, "H", "Alice-Realm"))
+    end)
+
+    it("falls back to the site default label when RCPL_DB.statusLabels is missing (pre-#760 import)", function()
+        local itemPriority = { H_status = { ["Alice-Realm"] = "ok" } }
+        assert.equals("Sidegrade", RCPL_Data_WishlistStatusLabel(itemPriority, "H", "Alice-Realm"))
+    end)
+
+    it("falls back to the default for a status the team's override table doesn't cover", function()
+        _G.RCPL_DB.statusLabels = { good = "2nd Choice" }  -- no override for 'bis'
+        local itemPriority = { H_status = { ["Alice-Realm"] = "bis" } }
+        assert.equals("BiS", RCPL_Data_WishlistStatusLabel(itemPriority, "H", "Alice-Realm"))
+    end)
+
+    it("returns nil when the player has no wishlist status for this item/track", function()
+        local itemPriority = { H_status = { ["Alice-Realm"] = "bis" } }
+        assert.is_nil(RCPL_Data_WishlistStatusLabel(itemPriority, "H", "Bob-Realm"))
+    end)
+
+    it("returns nil when the track has no status map at all (pre-#760 export)", function()
+        local itemPriority = { H = { "Alice-Realm" } }
+        assert.is_nil(RCPL_Data_WishlistStatusLabel(itemPriority, "H", "Alice-Realm"))
     end)
 end)

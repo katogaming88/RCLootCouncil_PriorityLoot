@@ -78,6 +78,45 @@ function RCPL_Data_TrackLabel(track)
     return TRACK_LABEL[track]
 end
 
+-- WGA Raid Hub's rclc export (build_rclc_export, #760) attaches each ranked
+-- player's wishlist status via "<track>_status" sibling keys alongside the
+-- existing H/M ranked-name arrays (e.g. priority[itemID].H_status =
+-- {["Name-Realm"] = "bis"}) -- only bis/good/ok ever appear there (catalyst
+-- and pass aren't "wants this" wishlist tiers). Sparse: a ranked player with
+-- no backing item_preferences row (e.g. a fallback-ranked player from
+-- tier-token matching) simply has no entry, by design -- not every rank has
+-- a wishlist tier to report.
+--
+-- The export also attaches a top-level statusLabels object (RCPL_DB.statusLabels
+-- below) with each team's *actual* configured tier names -- WGA Raid Hub's
+-- Wishlist Tier Labels are officer-editable per team, so a hardcoded "Good"/
+-- "OK" here would already be wrong for a team that renamed them (confirmed
+-- live: one team uses "2nd Choice"/"Sidegrade" instead). These site defaults
+-- are only a fallback for a client that imported an export from before
+-- #760 shipped statusLabels at all.
+local WISHLIST_STATUS_LABEL_DEFAULT = { bis = "BiS", good = "2nd Choice", ok = "Sidegrade" }
+
+-- Public so Modules/votingPriorityPanel.lua (the only caller -- this is
+-- loot-council-only by product decision, never shown on the raider-facing
+-- loot roll frame) can turn a raw export status into the same label
+-- everywhere, and so a client on an addon version older than #760 (whose
+-- export has no "<track>_status" key at all) degrades to nil/no tag rather
+-- than erroring.
+function RCPL_Data_WishlistStatusLabel(itemPriority, track, playerName)
+    if type(itemPriority) ~= "table" or type(track) ~= "string" or type(playerName) ~= "string" then
+        return nil
+    end
+    local statuses = itemPriority[track .. "_status"]
+    if type(statuses) ~= "table" then return nil end
+    local status = statuses[playerName]
+    if not status then return nil end
+    local labels = type(RCPL_DB) == "table" and RCPL_DB.statusLabels
+    if type(labels) == "table" and labels[status] then
+        return labels[status]
+    end
+    return WISHLIST_STATUS_LABEL_DEFAULT[status]
+end
+
 -- `source` records where this data came from -- "local" for a string the
 -- player pasted into the import frame themselves, "sync" for data applied
 -- from another client's broadcast (Modules/prioSync.lua). Modules/prioSync.lua
@@ -90,10 +129,19 @@ function RCPL_Data_SaveImportedData(decoded, source)
     end
 
     if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
-    RCPL_DB.players  = {}
-    RCPL_DB.priority = {}
-    RCPL_DB.awarded  = {}
+    RCPL_DB.players      = {}
+    RCPL_DB.priority     = {}
+    RCPL_DB.awarded      = {}
     RCPL_DB.importSource = source or "local"
+
+    -- Optional -- exports from before #760 shipped this have no
+    -- statusLabels key at all, so leave whatever's currently stored alone
+    -- (nil on a fresh client) rather than clobbering it with {} and losing
+    -- RCPL_Data_WishlistStatusLabel's ability to fall back to its own
+    -- hardcoded defaults.
+    if type(decoded.statusLabels) == "table" then
+        RCPL_DB.statusLabels = decoded.statusLabels
+    end
 
     local playerCount = 0
     for playerKey, slots in pairs(decoded.players) do
@@ -113,18 +161,59 @@ function RCPL_Data_SaveImportedData(decoded, source)
         end
     end
 
-    RCPL_DB.importedAt = date("%Y-%m-%d %H:%M")
+    RCPL_DB.importedAt      = date("%Y-%m-%d %H:%M")
+    RCPL_DB.importedAtEpoch = time()
     return playerCount, priorityCount
 end
 
 function RCPL_Data_ResetData()
     if type(RCPL_DB) == "table" then
-        RCPL_DB.players      = {}
-        RCPL_DB.priority     = {}
-        RCPL_DB.awarded      = {}
-        RCPL_DB.importedAt   = nil
-        RCPL_DB.importSource = nil
+        RCPL_DB.players          = {}
+        RCPL_DB.priority         = {}
+        RCPL_DB.awarded          = {}
+        RCPL_DB.importedAt       = nil
+        RCPL_DB.importedAtEpoch  = nil
+        RCPL_DB.importSource     = nil
+        RCPL_DB.statusLabels     = nil
     end
+end
+
+-- Age thresholds for RCPL_Data_ImportAge()'s color -- purely a visual
+-- "how long has this client been running on the same import" cue, not a
+-- claim that the data is actually wrong. Nothing tells the client whether
+-- the source priority list has changed since -- a week-old import can still
+-- be perfectly current if nothing changed, and a five-minute-old one can
+-- already be stale if the site changed right after. This just makes the age
+-- visible instead of silently trusted, so a raider/officer can judge it
+-- themselves (#raid report where a display bug was mistaken for stale data
+-- before the real cause -- a recycled loot-frame widget -- was found).
+local STALE_WARN_SECONDS  = 24 * 60 * 60  -- 1 day: yellow
+local STALE_ALERT_SECONDS = 3  * 24 * 60 * 60  -- 3 days: red
+
+-- Public so Modules/prioSync.lua's chat warning can key off the same "alert"
+-- threshold this file uses for the preview window's color, instead of a
+-- second copy of the number that could drift out of sync with it.
+function RCPL_Data_StaleAlertSeconds()
+    return STALE_ALERT_SECONDS
+end
+
+-- Returns (ageSeconds, color) for the currently loaded import, or (nil, nil)
+-- when nothing has been imported yet (including data from before this
+-- field existed -- importedAtEpoch is nil until the next import/sync).
+function RCPL_Data_ImportAge()
+    if type(RCPL_DB) ~= "table" or type(RCPL_DB.importedAtEpoch) ~= "number" then
+        return nil, nil
+    end
+    local age = time() - RCPL_DB.importedAtEpoch
+    local color
+    if age >= STALE_ALERT_SECONDS then
+        color = COLOR_ORANGE
+    elseif age >= STALE_WARN_SECONDS then
+        color = COLOR_YELLOW
+    else
+        color = COLOR_GREEN
+    end
+    return age, color
 end
 
 function RCPL_Data_MarkAwarded(playerName, itemID, link)
@@ -379,18 +468,29 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             end
             local priorityList = itemPriority[track]
             if type(priorityList) == "table" then
+                -- Two passes rather than one combined check: an exact
+                -- "Name-Realm" match must win over a same-character-name
+                -- match on a *different* realm, no matter which one the
+                -- list happens to rank higher. A single pass that accepted
+                -- either condition at the first hit could return a
+                -- same-named stranger's (higher) rank instead of this
+                -- player's own (possibly much lower) one -- confirmed from
+                -- a raider report: loot frame showed "Prio: 3rd" while the
+                -- real entry for that exact Name-Realm was 14th, because a
+                -- different-realm namesake ranked 3rd matched first.
                 for rank, name in ipairs(priorityList) do
-                    -- The exported list always stores "Name-Realm" (see
-                    -- rclc_export.sql), but RCLootCouncil hands the voting
-                    -- frame a bare name for anyone the game treats as the
-                    -- viewer's own realm -- same realm, or a connected one --
-                    -- so playerName/baseName can both be realm-less while
-                    -- every stored `name` still carries a realm suffix.
-                    -- BaseName(name) covers that case; the direct checks
-                    -- above still handle a genuinely cross-realm playerName
-                    -- that already carries its own (possibly different)
-                    -- realm suffix.
-                    if name == playerName or name == baseName or BaseName(name) == baseName then
+                    if name == playerName or name == baseName then
+                        return OrdinalLabel(rank), RankColor(rank), track, rank
+                    end
+                end
+                -- No exact match anywhere in the list -- fall back to a
+                -- bare-name match. This is what actually covers the
+                -- connected-realm case (RCLootCouncil hands the voting/loot
+                -- frame a bare name for anyone the game treats as the
+                -- viewer's own realm), since a real connected-realm player
+                -- has no exact "Name-Realm" entry to have matched above.
+                for rank, name in ipairs(priorityList) do
+                    if BaseName(name) == baseName then
                         return OrdinalLabel(rank), RankColor(rank), track, rank
                     end
                 end

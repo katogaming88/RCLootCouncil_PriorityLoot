@@ -144,9 +144,14 @@ function Populate()
         for _ in pairs(priority) do itemCount   = itemCount   + 1 end
         for _ in pairs(players)  do playerCount = playerCount + 1 end
 
+        -- Color the "Imported" timestamp by age so a stale-looking import is
+        -- visible at a glance instead of silently trusted -- same
+        -- green/yellow/orange scheme RCPL_Data_ImportAge() defines.
+        local _, ageColor = RCPL_Data_ImportAge()
+        local importedHex = ageColor and ColorHex(ageColor) or "ffffff"
         frame.subtitle:SetText(string.format(
-            "Imported: %s  |  %d priority items  |  %d players",
-            importedAt, itemCount, playerCount
+            "Imported: |cFF%s%s|r  |  %d priority items  |  %d players",
+            importedHex, importedAt, itemCount, playerCount
         ))
 
         if itemCount == 0 and playerCount == 0 then

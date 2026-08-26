@@ -132,7 +132,9 @@ function RCPLootFrame:OnInitialize()
         -- same point RCLootCouncil_wowaudit hooks for the same reason --
         -- rather than calling UpdateEntry here in the GetEntry hook itself.
         --
-        -- EntryManager:GetEntry's "restored" branch (reusing a pooled entry)
+        -- EntryManager:GetEntry's "restored" branch (reusing a trashed
+        -- entry widget for a brand-new, unrelated item -- see its
+        -- EntryManager:Get/:GetEntry in RCLootCouncil's own lootFrame.lua)
         -- calls entry:Update(item) *inside* the original GetEntry -- for an
         -- already-hooked entry that already triggers this same Update hook
         -- during this very GetEntry call, so calling UpdateEntry a second
@@ -142,9 +144,24 @@ function RCPLootFrame:OnInitialize()
         -- call it directly the one time we attach the hook, to cover a
         -- brand-new entry (GetNewEntry/GetRollEntry) whose own internal
         -- Update(item) call already ran *before* we could hook it.
+        --
+        -- The hook wrapper below reads e.item rather than closing over this
+        -- call's `item` -- confirmed bug (a raider reported "Prio: 3rd" on
+        -- a loot roll for an item their real rank was 14th on): RCLootCouncil
+        -- recycles entry widgets by slot type (a trashed Neck entry gets
+        -- reused for the next Neck item that drops), and a widget stays
+        -- hooked for its whole lifetime, so the IsHooked guard above skips
+        -- re-attaching/re-running UpdateEntry on every reuse after the
+        -- first. A closure over `item` would keep calling UpdateEntry with
+        -- whatever item this widget was first hooked for, forever -- even
+        -- though RCLootCouncil's own entry:Update(item) (lootFrame.lua,
+        -- entryPrototype.Update) sets entry.item = item as one of its very
+        -- first steps, before touching any text, so e.item is always the
+        -- item this Update call is actually for, on every call, pooled or
+        -- not.
         if not self:IsHooked(entry, "Update") then
             self:SecureHook(entry, "Update", function(e)
-                pcall(UpdateEntry, e, item, playerName)
+                pcall(UpdateEntry, e, e.item, playerName)
             end)
             pcall(UpdateEntry, entry, item, playerName)
         end

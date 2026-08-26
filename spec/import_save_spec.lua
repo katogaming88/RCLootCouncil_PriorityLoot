@@ -93,6 +93,80 @@ describe("RCPL_Data_SaveImportedData", function()
         assert.is_string(_G.RCPL_DB.importedAt)
         assert.matches("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d$", _G.RCPL_DB.importedAt)
     end)
+
+    it("stores statusLabels when the import includes them", function()
+        RCPL_Data_SaveImportedData({
+            players = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },
+            statusLabels = { bis = "BiS", good = "2nd Choice", ok = "Sidegrade" },
+        })
+        assert.same({ bis = "BiS", good = "2nd Choice", ok = "Sidegrade" }, _G.RCPL_DB.statusLabels)
+    end)
+
+    it("leaves a prior statusLabels value alone when the new import doesn't include one", function()
+        _G.RCPL_DB = { statusLabels = { bis = "BiS" } }
+        RCPL_Data_SaveImportedData({
+            players = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },
+        })
+        assert.same({ bis = "BiS" }, _G.RCPL_DB.statusLabels)
+    end)
+
+    it("stamps importedAtEpoch so RCPL_Data_ImportAge can compute staleness", function()
+        RCPL_Data_SaveImportedData({
+            players = { ["Alice-Realm"] = { helm = { bis = { 1 } } } },
+        })
+        assert.is_number(_G.RCPL_DB.importedAtEpoch)
+        local age = RCPL_Data_ImportAge()
+        assert.is_number(age)
+        assert.is_true(age >= 0 and age < 5)  -- just imported, in a fast test
+    end)
+end)
+
+describe("RCPL_Data_ImportAge", function()
+    setup(function()
+        mocks.loadAddonSources()
+    end)
+
+    before_each(function()
+        mocks.resetSavedVars()
+    end)
+
+    it("returns nil when nothing has ever been imported", function()
+        local age, color = RCPL_Data_ImportAge()
+        assert.is_nil(age)
+        assert.is_nil(color)
+    end)
+
+    it("returns nil for data saved before importedAtEpoch existed", function()
+        _G.RCPL_DB = { importedAt = "2026-01-01 00:00" }
+        local age, color = RCPL_Data_ImportAge()
+        assert.is_nil(age)
+        assert.is_nil(color)
+    end)
+
+    it("colors a fresh import green", function()
+        _G.RCPL_DB = { importedAtEpoch = os.time() }
+        local age, color = RCPL_Data_ImportAge()
+        assert.is_true(age < 60)
+        assert.equals(0.0, color.r)
+        assert.equals(1.0, color.g)
+    end)
+
+    it("colors a 2-day-old import yellow (past the warn threshold)", function()
+        _G.RCPL_DB = { importedAtEpoch = os.time() - (2 * 24 * 60 * 60) }
+        local _, color = RCPL_Data_ImportAge()
+        assert.equals(1.0, color.r)
+        assert.equals(1.0, color.g)
+        assert.equals(0.0, color.b)
+    end)
+
+    it("colors a 4-day-old import orange (past the alert threshold)", function()
+        _G.RCPL_DB = { importedAtEpoch = os.time() - (4 * 24 * 60 * 60) }
+        local age, color = RCPL_Data_ImportAge()
+        assert.equals(1.0, color.r)
+        assert.equals(0.5, color.g)
+        assert.equals(0.0, color.b)
+        assert.is_true(age >= RCPL_Data_StaleAlertSeconds())
+    end)
 end)
 
 describe("RCPL_Data_ResetData", function()
