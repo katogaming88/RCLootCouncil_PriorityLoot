@@ -379,18 +379,29 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             end
             local priorityList = itemPriority[track]
             if type(priorityList) == "table" then
+                -- Two passes rather than one combined check: an exact
+                -- "Name-Realm" match must win over a same-character-name
+                -- match on a *different* realm, no matter which one the
+                -- list happens to rank higher. A single pass that accepted
+                -- either condition at the first hit could return a
+                -- same-named stranger's (higher) rank instead of this
+                -- player's own (possibly much lower) one -- confirmed from
+                -- a raider report: loot frame showed "Prio: 3rd" while the
+                -- real entry for that exact Name-Realm was 14th, because a
+                -- different-realm namesake ranked 3rd matched first.
                 for rank, name in ipairs(priorityList) do
-                    -- The exported list always stores "Name-Realm" (see
-                    -- rclc_export.sql), but RCLootCouncil hands the voting
-                    -- frame a bare name for anyone the game treats as the
-                    -- viewer's own realm -- same realm, or a connected one --
-                    -- so playerName/baseName can both be realm-less while
-                    -- every stored `name` still carries a realm suffix.
-                    -- BaseName(name) covers that case; the direct checks
-                    -- above still handle a genuinely cross-realm playerName
-                    -- that already carries its own (possibly different)
-                    -- realm suffix.
-                    if name == playerName or name == baseName or BaseName(name) == baseName then
+                    if name == playerName or name == baseName then
+                        return OrdinalLabel(rank), RankColor(rank), track, rank
+                    end
+                end
+                -- No exact match anywhere in the list -- fall back to a
+                -- bare-name match. This is what actually covers the
+                -- connected-realm case (RCLootCouncil hands the voting/loot
+                -- frame a bare name for anyone the game treats as the
+                -- viewer's own realm), since a real connected-realm player
+                -- has no exact "Name-Realm" entry to have matched above.
+                for rank, name in ipairs(priorityList) do
+                    if BaseName(name) == baseName then
                         return OrdinalLabel(rank), RankColor(rank), track, rank
                     end
                 end

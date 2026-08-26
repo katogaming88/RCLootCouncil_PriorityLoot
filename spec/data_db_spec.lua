@@ -267,6 +267,24 @@ describe("RCPL_Data_GetPlayerPriority", function()
             local text = RCPL_Data_GetPlayerPriority("Alice", 200, "INVTYPE_HEAD")
             assert.equals("2nd", text)
         end)
+
+        it("prefers an exact Name-Realm match over a higher-ranked same-name player on another realm", function()
+            -- Regression: a raider on Stormrage saw "Prio: 3rd" in the loot
+            -- frame for an item where their real (exact Name-Realm) entry
+            -- was ranked 14th, because a same-named player on a different
+            -- realm ranked 3rd and the old single-pass loop matched on bare
+            -- name at the first hit instead of continuing to the real entry.
+            local priorityList = { "Filler1-Realm", "Filler2-Realm", "Bearsdh-OtherRealm" }
+            for i = 1, 10 do
+                priorityList[#priorityList + 1] = "Filler" .. (i + 2) .. "-Realm"
+            end
+            priorityList[#priorityList + 1] = "Bearsdh-Stormrage"
+            _G.RCPL_DB.priority = { ["12345"] = { H = priorityList } }
+
+            local text, _, _, rank = RCPL_Data_GetPlayerPriority("Bearsdh-Stormrage", 12345, "INVTYPE_HEAD")
+            assert.equals("14th", text)
+            assert.equals(14, rank)
+        end)
     end)
 
     -- ── Track-aware lookup (#335) ─────────────────────────────────────────────

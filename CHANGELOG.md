@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Item-centric priority lookup could return a same-named player's rank on a different realm instead of your own.** The loot frame and voting frame matched the ranked priority list by bare character name as soon as an exact `Name-Realm` match failed to appear yet, so a raider could see e.g. "Prio: 3rd" when their real rank was 14th, because a different-realm namesake happened to rank 3rd and was scanned first. Exact `Name-Realm` matches are now always checked across the whole list before falling back to a bare-name match.
+
 ---
 
 ## [0.6.13] - 2026-08-25
