@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.6.14] - 2026-08-26
+
 ### Added
 
 - **A stale-data indicator.** `/rcpl prio` now colors its "Imported: ..." timestamp green/yellow/orange by age (1 day / 3 days), instead of showing a bare date with no sense of how old it is. A raid/party member also now gets a one-time chat warning (per stale streak, not repeated every roster change) if their loaded priority data is more than 3 days old, nudging them to `/rcpl sync` or ask an officer to `/rcpl broadcast` a refresh.
