@@ -166,6 +166,21 @@ end
 -- trouble of importing a string didn't do it just to have it overwritten
 -- the moment a group forms. /rcpl reset clears that protection if the
 -- player does want to pick up the leader's data instead.
+-- Both rejection branches below used to print unconditionally on every
+-- received prio_data -- fine for a one-off, but Broadcast() above resends on
+-- every roster change (debounced, but still frequent over a raid night), so
+-- a client stuck in either rejection state got the same warning reprinted
+-- all night long (#confirmed report: a raider with self-imported data
+-- spammed once per roster churn after the leader started broadcasting a
+-- newer, differing import). Remember the last payload actually warned about
+-- per rejection reason and skip the reprint while nothing's changed --
+-- mirrors WarnIfEmpty/WarnIfStale's "warn once per streak" pattern, but
+-- keyed on payload content (via DeepEqual) rather than a single boolean,
+-- since a genuinely new differing payload arriving later is worth telling
+-- the player about again, not just the very first one.
+local lastWarnedNotLeaderPayload = nil
+local lastWarnedLocalDiffPayload = nil
+
 local function OnPrioDataReceived(data, sender)
     local me = addon.Utils:UnitName("player")
     if sender == me then return end
@@ -183,25 +198,33 @@ local function OnPrioDataReceived(data, sender)
 
     local leader = GetGroupLeaderName()
     if sender ~= leader then
-        print(string.format(
-            "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored priority data from %s -- only the raid/party"
-                .. " leader's data is applied, and %s isn't the leader.",
-            sender, sender
-        ))
+        if not (lastWarnedNotLeaderPayload and DeepEqual(payload, lastWarnedNotLeaderPayload)) then
+            lastWarnedNotLeaderPayload = payload
+            print(string.format(
+                "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored priority data from %s -- only the raid/party"
+                    .. " leader's data is applied, and %s isn't the leader.",
+                sender, sender
+            ))
+        end
         Log.debug("Rejected prio_data from %s: not raid/party leader (leader=%s)", sender, tostring(leader))
         return
     end
 
     if type(RCPL_DB) == "table" and RCPL_DB.importSource == "local" then
-        print(string.format(
-            "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored differing priority data from %s -- keeping your own"
-                .. " imported data. Run /rcpl reset if you want to accept theirs instead.",
-            sender
-        ))
+        if not (lastWarnedLocalDiffPayload and DeepEqual(payload, lastWarnedLocalDiffPayload)) then
+            lastWarnedLocalDiffPayload = payload
+            print(string.format(
+                "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Ignored differing priority data from %s -- keeping your"
+                    .. " own imported data. Run /rcpl reset if you want to accept theirs instead.",
+                sender
+            ))
+        end
         Log.debug("Rejected prio_data from %s: local player has self-imported data", sender)
         return
     end
 
+    lastWarnedNotLeaderPayload = nil
+    lastWarnedLocalDiffPayload = nil
     local playerCount, priorityCount = RCPL_Data_SaveImportedData(payload, "sync")
     priorityCount = priorityCount or 0
     print(string.format(
@@ -250,6 +273,36 @@ function RCPLSync:WarnIfEmpty()
     end
 end
 
+-- Same reset-not-one-shot reasoning as warnedEmpty above: a fresh import or
+-- sync during the session un-warns, so a client that goes stale again later
+-- (e.g. sits in the group for days without anyone re-importing) can warn
+-- again instead of staying silent forever after the first warning.
+local warnedStale = false
+
+-- Companion to WarnIfEmpty -- this covers the case where data *is* loaded
+-- but hasn't been refreshed in a while, which otherwise gives zero signal
+-- that what's on screen might not reflect a since-updated site export (a
+-- raid report was mistaken for this exact scenario before the real cause --
+-- a display bug unrelated to data freshness -- was found). Only warns at
+-- the same "alert" (red) threshold RCPL_Data_ImportAge() uses for the
+-- preview window, not the earlier "warn" (yellow) one -- a day-old import is
+-- normal between raid nights and not worth a chat interruption for.
+function RCPLSync:WarnIfStale()
+    local age = RCPL_Data_ImportAge()
+    if not age or age < RCPL_Data_StaleAlertSeconds() then
+        warnedStale = false
+        return
+    end
+    if warnedStale then return end
+    warnedStale = true
+
+    print(string.format(
+        "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Your priority data is %d+ days old (imported %s). If the"
+            .. " list has changed since, run /rcpl sync (or ask an officer to /rcpl broadcast) to refresh it.",
+        math.floor(age / (24 * 60 * 60)), RCPL_DB.importedAt or "unknown"
+    ))
+end
+
 function RCPLSync:OnInitialize()
     self.Send = Comms:GetSender(PREFIX)
     Comms:BulkSubscribe(PREFIX, {
@@ -276,5 +329,6 @@ function RCPLSync:OnGroupRosterUpdate()
         self._rosterTimer = nil
         self:Broadcast("roster update", true)
         self:WarnIfEmpty()
+        self:WarnIfStale()
     end, ROSTER_DEBOUNCE)
 end

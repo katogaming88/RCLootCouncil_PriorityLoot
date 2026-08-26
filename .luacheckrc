@@ -81,6 +81,8 @@ globals = {
     "RCPL_Data_TrackLabel",
     "RCPL_Data_CurrentTrack",
     "RCPL_Data_HasBonusRolled",
+    "RCPL_Data_ImportAge",
+    "RCPL_Data_StaleAlertSeconds",
     "RCPL_ApplyPanelBackdrop",
     "RCPL_CreateHeaderStrip",
     "RCPL_CreateStyledTitle",

@@ -113,18 +113,58 @@ function RCPL_Data_SaveImportedData(decoded, source)
         end
     end
 
-    RCPL_DB.importedAt = date("%Y-%m-%d %H:%M")
+    RCPL_DB.importedAt      = date("%Y-%m-%d %H:%M")
+    RCPL_DB.importedAtEpoch = time()
     return playerCount, priorityCount
 end
 
 function RCPL_Data_ResetData()
     if type(RCPL_DB) == "table" then
-        RCPL_DB.players      = {}
-        RCPL_DB.priority     = {}
-        RCPL_DB.awarded      = {}
-        RCPL_DB.importedAt   = nil
-        RCPL_DB.importSource = nil
+        RCPL_DB.players          = {}
+        RCPL_DB.priority         = {}
+        RCPL_DB.awarded          = {}
+        RCPL_DB.importedAt       = nil
+        RCPL_DB.importedAtEpoch  = nil
+        RCPL_DB.importSource     = nil
     end
+end
+
+-- Age thresholds for RCPL_Data_ImportAge()'s color -- purely a visual
+-- "how long has this client been running on the same import" cue, not a
+-- claim that the data is actually wrong. Nothing tells the client whether
+-- the source priority list has changed since -- a week-old import can still
+-- be perfectly current if nothing changed, and a five-minute-old one can
+-- already be stale if the site changed right after. This just makes the age
+-- visible instead of silently trusted, so a raider/officer can judge it
+-- themselves (#raid report where a display bug was mistaken for stale data
+-- before the real cause -- a recycled loot-frame widget -- was found).
+local STALE_WARN_SECONDS  = 24 * 60 * 60  -- 1 day: yellow
+local STALE_ALERT_SECONDS = 3  * 24 * 60 * 60  -- 3 days: red
+
+-- Public so Modules/prioSync.lua's chat warning can key off the same "alert"
+-- threshold this file uses for the preview window's color, instead of a
+-- second copy of the number that could drift out of sync with it.
+function RCPL_Data_StaleAlertSeconds()
+    return STALE_ALERT_SECONDS
+end
+
+-- Returns (ageSeconds, color) for the currently loaded import, or (nil, nil)
+-- when nothing has been imported yet (including data from before this
+-- field existed -- importedAtEpoch is nil until the next import/sync).
+function RCPL_Data_ImportAge()
+    if type(RCPL_DB) ~= "table" or type(RCPL_DB.importedAtEpoch) ~= "number" then
+        return nil, nil
+    end
+    local age = time() - RCPL_DB.importedAtEpoch
+    local color
+    if age >= STALE_ALERT_SECONDS then
+        color = COLOR_ORANGE
+    elseif age >= STALE_WARN_SECONDS then
+        color = COLOR_YELLOW
+    else
+        color = COLOR_GREEN
+    end
+    return age, color
 end
 
 function RCPL_Data_MarkAwarded(playerName, itemID, link)
