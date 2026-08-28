@@ -11,6 +11,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.15] - 2026-08-28
+
+### Added
+
+- **A search box in the `/rcpl prio` window (#49).** Typing filters the list in real time down to items whose name matches, or that have a ranked player whose name matches -- no more scrolling through 90+ items and dozens of names to find your own priority on something mid-raid. Not filterable by boss name -- the imported data has no boss/encounter association today.
+
+### Fixed
+
+- **A new raid leader could be blocked from importing right after a leadership pass (#50).** `RCPLPrioSync:IsLocalPlayerLeader()` resolved "am I the leader" by comparing `addon.Utils:UnitName()` strings for a raid/party unit token against the local player -- but that helper (RCLootCouncil's own `Utils.lua`) caches its resolved name-realm per literal unit token forever, with no invalidation when a roster change reassigns who's sitting at that index. A stale cached name for the leader's `raidN` slot could then never string-match the local player even though they genuinely were the new leader. Leader identity is now checked with `UnitIsUnit(unit, "player")`, which re-resolves both sides fresh every call instead of relying on that cache.
+- **The blocked-import message misattributed a stale timestamp to the leader.** "Only the raid/party leader can import. `<leader>` already imported at `<time>`" was actually reporting the *local* client's own `RCPL_DB.importedAt` (a prior self-import or stale sync), not the leader's -- misleading whenever those two didn't match. It now just names the leader instead of guessing at a timestamp it doesn't actually have.
+
+---
+
 ## [0.6.14] - 2026-08-26
 
 ### Added
