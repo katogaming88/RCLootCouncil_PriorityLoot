@@ -53,10 +53,45 @@ local function Build()
     sub:SetPoint("TOP", titleText, "BOTTOM", 0, -4)
     frame.subtitle = sub
 
+    -- Search box -- lets a player narrow ~90+ items / dozens of names down to
+    -- their own entries instead of scrolling the whole list (#49). Filters by
+    -- item name or player name (not boss -- RCPL_DB.priority is keyed by item
+    -- ID only, no boss/encounter association ships in the export).
+    local searchBox = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
+    searchBox:SetHeight(20)
+    searchBox:SetPoint("TOPLEFT",  sub, "BOTTOMLEFT",  0, -8)
+    searchBox:SetPoint("TOPRIGHT", sub, "BOTTOMRIGHT", 0, -8)
+    searchBox:SetBackdrop({
+        bgFile   = "Interface/Buttons/WHITE8x8",
+        edgeFile = "Interface/Buttons/WHITE8x8",
+        edgeSize = 1,
+    })
+    searchBox:SetBackdropColor(0.06, 0.06, 0.06, 0.95)
+    searchBox:SetBackdropBorderColor(0.71, 0.55, 0.15, 0.6)
+    searchBox:SetFontObject(ChatFontNormal)
+    searchBox:SetAutoFocus(false)
+    searchBox:SetTextInsets(6, 6, 0, 0)
+    searchBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    searchBox:SetScript("OnEnterPressed",  function(self) self:ClearFocus() end)
+
+    -- No native EditBox placeholder -- fake one with a FontString shown only
+    -- while the box is both empty and unfocused.
+    local hint = searchBox:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    hint:SetPoint("LEFT", searchBox, "LEFT", 6, 0)
+    hint:SetText("Search item or player...")
+
+    searchBox:SetScript("OnTextChanged", function(self)
+        hint:SetShown(self:GetText() == "")
+        Populate()
+    end)
+    searchBox:SetScript("OnEditFocusGained", function() hint:Hide() end)
+    searchBox:SetScript("OnEditFocusLost", function(self) hint:SetShown(self:GetText() == "") end)
+    frame.searchBox = searchBox
+
     -- Scroll frame (provides scrollbar via template)
     local scrollFrame = CreateFrame("ScrollFrame", "RCPLPrioScrollFrame", frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT",     frame, "TOPLEFT",     12,  -52)
-    scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30,  12)
+    scrollFrame:SetPoint("TOPLEFT",     searchBox, "BOTTOMLEFT",  0, -8)
+    scrollFrame:SetPoint("BOTTOMRIGHT", frame,     "BOTTOMRIGHT", -30, 12)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
         local cur      = self:GetVerticalScroll()
@@ -111,12 +146,22 @@ end
 -- entry.
 local PLAYERS_PER_ROW = 3
 
+-- Whether needle (already lowercased) appears anywhere in haystack, treating
+-- a nil/empty needle as "matches everything" so callers don't need a
+-- separate branch for "no filter active".
+local function Matches(needle, haystack)
+    if needle == "" then return true end
+    return haystack and haystack:lower():find(needle, 1, true) ~= nil
+end
+
 -- ── Populate ──────────────────────────────────────────────────────────────────
 
 function Populate()
     -- Hide every pooled line first
     for _, fs in ipairs(frame.linePool) do fs:Hide() end
     wipe(pendingItemIDs)
+
+    local filter = frame.searchBox and frame.searchBox:GetText():gsub("^%s+", ""):gsub("%s+$", ""):lower() or ""
 
     local lines = {}
     local function add(text, r, g, b, large)
@@ -157,32 +202,75 @@ function Populate()
         if itemCount == 0 and playerCount == 0 then
             add("|cFFFF6666No data imported yet.|r  Use /rcpl import.")
         else
-            -- ── Priority lists ────────────────────────────────────────────────
-            if itemCount > 0 then
-                add("|cFFFFD100Priority Lists  (" .. itemCount .. " items)|r")
-                sep()
+            local sortedIDs = {}
+            for idStr in pairs(priority) do sortedIDs[#sortedIDs + 1] = idStr end
+            table.sort(sortedIDs, function(a, b)
+                return (tonumber(a) or 0) < (tonumber(b) or 0)
+            end)
 
-                local sortedIDs = {}
-                for idStr in pairs(priority) do sortedIDs[#sortedIDs + 1] = idStr end
-                table.sort(sortedIDs, function(a, b)
-                    return (tonumber(a) or 0) < (tonumber(b) or 0)
-                end)
+            -- Resolve every item's display name up front (kicking off the
+            -- async fetch for anything not cached yet regardless of whether
+            -- it currently matches the filter, so a not-yet-loaded item can
+            -- still be found by name once GET_ITEM_INFO_RECEIVED redraws),
+            -- then decide which items the filter actually keeps. An item
+            -- matches on its own name/ID or on any ranked player's name --
+            -- there's no boss/encounter field in the imported data to filter
+            -- on (see the search box's own comment above).
+            local itemNames, matchedIDs = {}, {}
+            for _, idStr in ipairs(sortedIDs) do
+                local tracks = priority[idStr]
+                local itemID = tonumber(idStr)
+                local name   = itemID and GetItemInfo(itemID)
+                if itemID and not name then
+                    pendingItemIDs[itemID] = true
+                    if C_Item and C_Item.RequestLoadItemDataByID then
+                        C_Item.RequestLoadItemDataByID(itemID)
+                    end
+                end
+                itemNames[idStr] = name
+
+                local matches = Matches(filter, name) or Matches(filter, idStr)
+                if not matches then
+                    for _, trackKey in ipairs({ "H", "M" }) do
+                        local list = tracks[trackKey]
+                        if type(list) == "table" then
+                            for _, playerName in ipairs(list) do
+                                if Matches(filter, playerName) then
+                                    matches = true
+                                    break
+                                end
+                            end
+                        end
+                        if matches then break end
+                    end
+                end
+                if matches then matchedIDs[#matchedIDs + 1] = idStr end
+            end
+
+            -- ── Player roster (filtered by name, computed before the header
+            -- counts below need it) ─────────────────────────────────────────
+            local matchedNames = {}
+            for name in pairs(players) do
+                if Matches(filter, name) then matchedNames[#matchedNames + 1] = name end
+            end
+            table.sort(matchedNames)
+
+            if filter ~= "" and #matchedIDs == 0 and #matchedNames == 0 then
+                add("|cFFFF6666No items or players match \"" .. filter .. "\".|r")
+            end
+
+            -- ── Priority lists ────────────────────────────────────────────────
+            if #matchedIDs > 0 then
+                add("|cFFFFD100Priority Lists  (" .. #matchedIDs .. (filter ~= "" and (" of " .. itemCount) or "")
+                    .. " items)|r")
+                sep()
 
                 -- priority[idStr] is { H = {...}, M = {...} } (track-split,
                 -- #335) rather than a single flat list, since Heroic and
                 -- Mythic priority for an item can genuinely differ.
-                for i, idStr in ipairs(sortedIDs) do
+                for i, idStr in ipairs(matchedIDs) do
                     local tracks = priority[idStr]
-                    local itemID = tonumber(idStr)
-                    local name   = itemID and GetItemInfo(itemID)
-                    if itemID and not name then
-                        -- Not cached client-side yet -- kick off the async
-                        -- fetch and remember to redraw once it lands.
-                        pendingItemIDs[itemID] = true
-                        if C_Item and C_Item.RequestLoadItemDataByID then
-                            C_Item.RequestLoadItemDataByID(itemID)
-                        end
-                    end
+                    local name   = itemNames[idStr]
                     local label  = name
                         and ("|cFFffd200" .. name .. "|r")
                         or  ("|cFF888888Item #" .. idStr .. "|r")
@@ -212,19 +300,18 @@ function Populate()
                         end
                     end
 
-                    if i < #sortedIDs then itemDivider() end
+                    if i < #matchedIDs then itemDivider() end
                 end
                 add("")
             end
 
             -- ── Player roster ─────────────────────────────────────────────────
-            if playerCount > 0 then
-                add("|cFFFFD100Players  (" .. playerCount .. ")|r")
+            if #matchedNames > 0 then
+                add("|cFFFFD100Players  (" .. #matchedNames .. (filter ~= "" and (" of " .. playerCount) or "")
+                    .. ")|r")
                 sep()
 
-                local names = {}
-                for name in pairs(players) do names[#names + 1] = name end
-                table.sort(names)
+                local names = matchedNames
                 -- Grid instead of one name per line -- a full raid roster
                 -- (20+) shouldn't need that much scrolling just to list names
                 -- with no other information attached.

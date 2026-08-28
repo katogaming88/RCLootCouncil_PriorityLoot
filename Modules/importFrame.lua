@@ -123,15 +123,16 @@ local function CreateImportFrame()
         -- will ever see.
         local sync = RCLootCouncil_PriorityLoot and RCLootCouncil_PriorityLoot:GetModule("RCPLPrioSync", true)
         if sync and not sync:IsLocalPlayerLeader() then
+            -- Used to also report RCPL_DB.importedAt as "when %s already
+            -- imported" -- but that's this *local* client's own last-import
+            -- timestamp (whatever RCPL_DB happens to hold: a prior self-import
+            -- or a stale sync), not the leader's, so it misattributed stale
+            -- data to the wrong person whenever those two didn't match (#50).
+            -- The leader's actual import time isn't available client-side, so
+            -- just name the leader instead of guessing at a timestamp.
             local leader = sync:GetLeaderName() or "The raid/party leader"
-            local when = type(RCPL_DB) == "table" and RCPL_DB.importedAt
-            if when then
-                statusText:SetText(string.format(
-                    "|cFFFF4444Only the raid/party leader can import. %s already imported at %s.|r", leader, when))
-            else
-                statusText:SetText(string.format(
-                    "|cFFFF4444Only the raid/party leader can import. (%s is currently the leader.)|r", leader))
-            end
+            statusText:SetText(string.format(
+                "|cFFFF4444Only the raid/party leader can import. (%s is currently the leader.)|r", leader))
             return
         end
 

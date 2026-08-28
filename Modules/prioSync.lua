@@ -83,22 +83,50 @@ end
 
 -- Public so Modules/importFrame.lua can reuse the exact same leader
 -- resolution this module already applies to broadcasts, rather than a
--- second, possibly-drifting copy of the raid/party iteration.
+-- second, possibly-drifting copy of the raid/party iteration. Display-only --
+-- see IsPlayerTheLeaderUnit() below for why the actual gating logic doesn't
+-- use this.
 function RCPLSync:GetLeaderName()
     return GetGroupLeaderName()
 end
 
--- Whether the local player is currently allowed to import: either the
--- group has no resolvable leader (ungrouped -- the normal pre-raid import
--- workflow -- or the rare leaderless edge case), or the local player *is*
--- that leader. Modules/importFrame.lua uses this to refuse a non-leader's
--- import outright rather than letting them end up looking at priority data
--- nobody else in the raid will ever see (Broadcast() below would refuse to
--- send it anyway).
+-- Whether the local player is the raid/party leader, checked by walking the
+-- same raidN/partyN unit tokens as GetGroupLeaderName() but confirming
+-- identity with UnitIsUnit(unit, "player") instead of a name-string
+-- comparison (#50: a new raid leader was blocked from importing right after
+-- a leadership pass). addon.Utils:UnitName() caches its resolved name-realm
+-- per literal unit token forever (RCLootCouncil's Utils.lua unitNameLookup),
+-- with no invalidation when a roster change reassigns which character sits
+-- at that index -- so GetGroupLeaderName()'s UnitName("raidN") call could
+-- return a stale cached name for the *previous* occupant of raidN, which
+-- then never matches UnitName("player") even though the local player
+-- genuinely is the new leader. UnitIsUnit() resolves both sides fresh on
+-- every call with no such cache, so it can't drift the same way.
+local function IsPlayerTheLeaderUnit()
+    if IsInRaid() then
+        for i = 1, GetNumGroupMembers() do
+            local unit = "raid" .. i
+            if UnitIsGroupLeader(unit) then return UnitIsUnit(unit, "player") end
+        end
+        return false
+    elseif IsInGroup() then
+        if UnitIsGroupLeader("player") then return true end
+        for i = 1, GetNumGroupMembers() - 1 do
+            local unit = "party" .. i
+            if UnitIsGroupLeader(unit) then return UnitIsUnit(unit, "player") end
+        end
+        return false
+    end
+    -- Ungrouped: no leader to be blocked by -- the normal pre-raid import workflow.
+    return true
+end
+
+-- Whether the local player is currently allowed to import. Modules/importFrame.lua
+-- uses this to refuse a non-leader's import outright rather than letting them
+-- end up looking at priority data nobody else in the raid will ever see
+-- (Broadcast() below would refuse to send it anyway).
 function RCPLSync:IsLocalPlayerLeader()
-    local leader = GetGroupLeaderName()
-    if not leader then return true end
-    return addon.Utils:UnitName("player") == leader
+    return IsPlayerTheLeaderUnit()
 end
 
 -- Sends whatever this client currently has to the raid/party. A no-op for
@@ -121,10 +149,9 @@ function RCPLSync:Broadcast(reason, silent)
         Log.debug("Broadcast skipped (%s): no data to send", tostring(reason))
         return
     end
-    if IsInRaid() or IsInGroup() then
+    if (IsInRaid() or IsInGroup()) and not IsPlayerTheLeaderUnit() then
         local leader = GetGroupLeaderName()
-        local me = addon.Utils:UnitName("player")
-        if leader and me ~= leader then
+        if leader then
             if not silent then
                 print(string.format(
                     "|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Not sent -- only the raid/party leader's priority"
