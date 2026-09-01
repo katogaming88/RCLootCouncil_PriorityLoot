@@ -11,9 +11,26 @@ local ROW_GAP = 6
 
 local frame
 
+-- Whether Import is worth showing to the local player at all -- council/ML
+-- always see it (they're the ones expected to manage loot), and so does the
+-- current raid/party leader or anyone ungrouped (the only two states the
+-- import confirm handler itself actually permits, per prioSync.lua's
+-- IsLocalPlayerLeader()/IsPlayerTheLeaderUnit()). Hides the button for a
+-- plain raider mid-raid rather than showing it just to have them click it
+-- and get refused. Re-evaluated on every open (Layout() below), not cached,
+-- since leadership/council status can change mid-session.
+local function CanImport()
+    local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+    if addon.isCouncil or addon.isMasterLooter then return true end
+    local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
+    local sync = RCPLAddon:GetModule("RCPLPrioSync", true)
+    return sync ~= nil and sync:IsLocalPlayerLeader()
+end
+
 local ACTIONS = {
     { label = "Import", desc = "open the priority data import window",
-        action = function() RCPL_ShowImportFrame() end },
+        action = function() RCPL_ShowImportFrame() end,
+        visible = CanImport },
     { label = "Priority Preview", desc = "preview imported priority data",
         action = function() RCPL_ShowPrioPreview() end },
     { label = "Season Awards", desc = "open the season awards window",
@@ -49,7 +66,7 @@ local REFERENCE_ROWS = {
 
 local function Build()
     frame = CreateFrame("Frame", "RCPLOptionsFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(440, 100)  -- height finalized at the bottom of Build()
+    frame:SetSize(440, 100)  -- height finalized by Layout() on every open
     frame:SetPoint("CENTER")
     RCPL_ApplyPanelBackdrop(frame)
     frame:SetMovable(true)
@@ -68,10 +85,12 @@ local function Build()
     closeBtn:SetPoint("TOPRIGHT", -2, -2)
     closeBtn:SetScript("OnClick", function() frame:Hide() end)
 
-    local y = -50
+    -- Widgets are created once here and just repositioned/shown/hidden by
+    -- Layout() on every open -- entry.visible (e.g. CanImport()) can flip
+    -- between one open and the next (leadership pass, council roster
+    -- resync), so the row set can't be decided once at Build() time.
     for _, entry in ipairs(ACTIONS) do
         local btn = RCPL_CreateStyledButton(frame, BTN_W, BTN_H, entry.label)
-        btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
         btn:SetScript("OnClick", function()
             frame:Hide()
             entry.action()
@@ -84,36 +103,31 @@ local function Build()
         desc:SetTextColor(0.75, 0.75, 0.75)
         desc:SetText(entry.desc)
 
-        y = y - (BTN_H + ROW_GAP)
+        entry._btn, entry._desc = btn, desc
     end
 
-    y = y - 8
     local refHeader = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    refHeader:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
     refHeader:SetTextColor(0.6, 0.6, 0.6)
     refHeader:SetText("Reference only -- type these out:")
-    y = y - (BTN_H + ROW_GAP)
+    frame.refHeader = refHeader
 
     for _, entry in ipairs(REFERENCE_ROWS) do
         local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        label:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
         label:SetJustifyH("LEFT")
         label:SetWidth(BTN_W)
         label:SetText(entry.label)
 
         local desc = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        desc:SetPoint("TOPLEFT", frame, "TOPLEFT", 16 + BTN_W + 10, y - 2)
+        desc:SetPoint("LEFT", label, "RIGHT", 10, -2)
         desc:SetPoint("RIGHT", frame, "RIGHT", -16, 0)
         desc:SetJustifyH("LEFT")
         desc:SetTextColor(0.75, 0.75, 0.75)
         desc:SetText(entry.desc)
 
-        y = y - (BTN_H + ROW_GAP)
+        entry._label, entry._desc = label, desc
     end
 
-    y = y - 8
     local minimapCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
-    minimapCheck:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, y)
     minimapCheck:SetScript("OnClick", function(self)
         local shown = self:GetChecked()
         if type(RCPL_DB) == "table" and type(RCPL_DB.minimap) == "table" then
@@ -126,6 +140,43 @@ local function Build()
     local minimapLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     minimapLabel:SetPoint("LEFT", minimapCheck, "RIGHT", 4, 1)
     minimapLabel:SetText("Show minimap button")
+end
+
+-- Positions every row fresh, skipping (and hiding) any ACTIONS entry whose
+-- visible() predicate currently returns false, then resizes the frame to
+-- fit however many rows actually showed. Called on every RCPL_ShowOptionsFrame,
+-- not just once at Build() time -- see the comment on the widget-creation
+-- loop above for why a one-time layout isn't good enough here.
+local function Layout()
+    local y = -50
+    for _, entry in ipairs(ACTIONS) do
+        local visible = entry.visible == nil or entry.visible()
+        if visible then
+            entry._btn:ClearAllPoints()
+            entry._btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
+            entry._btn:Show()
+            entry._desc:Show()
+            y = y - (BTN_H + ROW_GAP)
+        else
+            entry._btn:Hide()
+            entry._desc:Hide()
+        end
+    end
+
+    y = y - 8
+    frame.refHeader:ClearAllPoints()
+    frame.refHeader:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
+    y = y - (BTN_H + ROW_GAP)
+
+    for _, entry in ipairs(REFERENCE_ROWS) do
+        entry._label:ClearAllPoints()
+        entry._label:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
+        y = y - (BTN_H + ROW_GAP)
+    end
+
+    y = y - 8
+    frame.minimapCheck:ClearAllPoints()
+    frame.minimapCheck:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, y)
     y = y - (BTN_H + ROW_GAP)
 
     frame:SetHeight(-y + 20)
@@ -138,6 +189,7 @@ function RCPL_ShowOptionsFrame()
     else
         local hidden = type(RCPL_DB) == "table" and type(RCPL_DB.minimap) == "table" and RCPL_DB.minimap.hide
         frame.minimapCheck:SetChecked(not hidden)
+        Layout()
         frame:Show()
     end
 end
