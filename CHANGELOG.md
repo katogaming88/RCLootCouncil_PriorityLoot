@@ -20,6 +20,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - **`/rcpl prio` no longer shows every raider the full ranked list for every item.** Only the master looter and current loot council see the full comparative "who's #1, #2, #3" breakdown -- everyone else sees just their own rank per item (same shape as the WGA Raid Hub website's own wishlist rank pill), and search no longer matches on another player's name for a non-privileged viewer. Full standings broadcast to every raider's SavedVariables so their own rank could show on the loot/voting frame overlay, but that also meant anyone could browse everyone else's spot on everything via `/rcpl prio` -- a comparison surface the website itself deliberately doesn't expose to raiders. The loot/voting frame overlays are unaffected (they only ever showed the viewer's own rank to begin with).
+- **The raider loot frame's "On your wishlist" fallback text is easier to read.** Past the top-5 reveal threshold, the overlay showed plain white text, which washed out against several loot frame skins/backgrounds -- it's now a distinct bright cyan, chosen specifically to not collide with any of the green/yellow/orange/grey rank-tier colors used for ranks 1st-5th (this message isn't a rank, so it shouldn't borrow a color that means one elsewhere in the addon).
 
 ---
 

@@ -19,6 +19,15 @@ local overlayPool = {}
 -- see on their own loot roll.
 local RAIDER_RANK_REVEAL_THRESHOLD = 5
 
+-- Color for the "On your wishlist" fallback text below the reveal threshold.
+-- Deliberately not plain white (low contrast against several loot frame
+-- skins/backgrounds -- reported hard to read) and deliberately not any of
+-- Data/db.lua's rank tiers (green/yellow/orange/grey, ranks 1st-3rd plus the
+-- 4th/5th fade) -- this message isn't a rank, so it shouldn't borrow a color
+-- that means one elsewhere in the addon. A bright cyan reads as "still
+-- relevant info" without implying a specific priority position.
+local WISHLIST_FALLBACK_COLOR = { r = 0.3, g = 0.9, b = 1.0 }
+
 local function GetItemIDFromLink(link)
     return tonumber((link or ""):match("item:(%d+):"))
 end
@@ -80,7 +89,7 @@ local function UpdateEntry(entry, item, playerName)
         -- click Upgrade/OS/M+ cares whether this is the Heroic or Mythic
         -- drop even when they don't need their exact rank.
         displayText = "On your wishlist" .. trackSuffix
-        displayColor = { r = 1, g = 1, b = 1 }
+        displayColor = WISHLIST_FALLBACK_COLOR
     else
         displayText = "Prio: " .. text .. trackSuffix
         displayColor = color
