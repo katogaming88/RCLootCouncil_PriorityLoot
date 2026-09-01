@@ -22,12 +22,12 @@ local ACTIONS = {
         action = function() RCPL_ShowSyncStatusFrame() end },
     { label = "Version Checker", desc = "open it (Guild/Group buttons trigger the poll)",
         action = function() RCPL_ShowVersionCheckFrame() end },
-    { label = "Check Guild Now", desc = "open the version checker and immediately poll your guild",
+    { label = "Check Group Now", desc = "open the version checker and immediately poll your raid/party",
         action = function()
             RCPL_ShowVersionCheckFrame()
             local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
             local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
-            RCPLAddon:StartVersionCheck("guild")
+            RCPLAddon:StartVersionCheck()
         end },
     { label = "Toggle Debug Logging", desc = "turn debug logging on or off",
         action = function()

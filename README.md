@@ -64,7 +64,7 @@ A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [
 | `/rcpl version guild` | Same window, but also fires the guild poll immediately -- a shortcut for chat-only workflows. |
 | `/rcpl debug` | Toggle debug logging on or off. Persisted across sessions in `RCPL_DB.debug`. Accepts `on`, `off`, `1`, `0`. |
 | `/rcpl log` | Open the in-memory log window. Subcommands: `dump` (prints to chat), `clear` (empties the buffer). |
-| `/rcpl` | Open the Options panel -- a button per action that opens a window with no required arguments (Import, Priority Preview, Season Awards, Sync Status, Version Checker, Check Guild Now, Toggle Debug Logging, Open Log). Commands needing typed arguments or that are destructive (`reset`, `award`, `unaward`) are listed as reference text only, not buttons. |
+| `/rcpl` | Open the Options panel -- a button per action that opens a window with no required arguments (Import, Priority Preview, Season Awards, Sync Status, Version Checker, Check Group Now, Toggle Debug Logging, Open Log). Commands needing typed arguments or that are destructive (`reset`, `award`, `unaward`) are listed as reference text only, not buttons. |
 
 ### Logging
 
