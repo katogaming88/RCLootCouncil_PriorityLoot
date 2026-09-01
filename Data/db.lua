@@ -78,6 +78,18 @@ function RCPL_Data_TrackLabel(track)
     return TRACK_LABEL[track]
 end
 
+local TRACK_LABEL_SHORT = { H = "HERO", M = "MYTH" }
+
+-- Condensed, all-caps variant of the above for space-constrained UI --
+-- currently just the raider loot frame overlay (Modules/lootFrame.lua),
+-- which is already competing with Upgrade/Catalyst/OS+M+/Pass for room on
+-- one row. Kept as its own public function rather than a caller-side
+-- abbreviation so every space-constrained caller stays on the same short
+-- form (same "one source of truth" reasoning as the full-word version).
+function RCPL_Data_TrackLabelShort(track)
+    return TRACK_LABEL_SHORT[track]
+end
+
 -- WGA Raid Hub's rclc export (build_rclc_export, #760) attaches each ranked
 -- player's wishlist status via "<track>_status" sibling keys alongside the
 -- existing H/M ranked-name arrays (e.g. priority[itemID].H_status =

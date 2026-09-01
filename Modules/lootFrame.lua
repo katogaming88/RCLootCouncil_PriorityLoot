@@ -7,7 +7,7 @@ local RCPLootFrame = RCPLAddon:NewModule("RCPLootFrame", "AceHook-3.0", "AceTime
 
 local overlayPool = {}
 
--- Past this rank, the raider-facing overlay shows "On your wishlist" instead
+-- Past this rank, the raider-facing overlay shows "ON WISHLIST" instead
 -- of the exact number. A raider who sees "Prio: 8th" tends to just not
 -- bother clicking Upgrade/OS/M+ at all -- and since a non-click reads to the
 -- loot council as "doesn't want it right now", that can quietly hide them
@@ -19,7 +19,7 @@ local overlayPool = {}
 -- see on their own loot roll.
 local RAIDER_RANK_REVEAL_THRESHOLD = 5
 
--- Color for the "On your wishlist" fallback text below the reveal threshold.
+-- Color for the "ON WISHLIST" fallback text below the reveal threshold.
 -- Deliberately not plain white (low contrast against several loot frame
 -- skins/backgrounds -- reported hard to read) and deliberately not any of
 -- Data/db.lua's rank tiers (green/yellow/orange/grey, ranks 1st-3rd plus the
@@ -83,8 +83,11 @@ local function UpdateEntry(entry, item, playerName)
 
     -- track is only set when the rank came from the item-centric priority
     -- list (Layer 1) -- the per-player BiS fallback (Layer 2) isn't
-    -- track-split, so there's nothing to show there.
-    local trackLabel = RCPL_Data_TrackLabel(track)
+    -- track-split, so there's nothing to show there. Short/all-caps form
+    -- (HERO/MYTH, not Heroic/Mythic) -- this row is already tight against
+    -- Upgrade/Catalyst/OS+M+/Pass, unlike the officer voting frame/prio
+    -- preview, which keep the full word.
+    local trackLabel = RCPL_Data_TrackLabelShort(track)
     local trackSuffix = trackLabel and (" (" .. trackLabel .. ")") or ""
 
     local displayText, displayColor
@@ -93,7 +96,7 @@ local function UpdateEntry(entry, item, playerName)
         -- still useful context on its own -- a raider deciding whether to
         -- click Upgrade/OS/M+ cares whether this is the Heroic or Mythic
         -- drop even when they don't need their exact rank.
-        displayText = "On your wishlist" .. trackSuffix
+        displayText = "ON WISHLIST" .. trackSuffix
         displayColor = WISHLIST_FALLBACK_COLOR
     else
         displayText = "Prio: " .. text .. trackSuffix

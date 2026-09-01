@@ -80,6 +80,7 @@ globals = {
     "RCPL_Data_UnmarkAwarded",
     "RCPL_Data_RankColor",
     "RCPL_Data_TrackLabel",
+    "RCPL_Data_TrackLabelShort",
     "RCPL_Data_CurrentTrack",
     "RCPL_Data_HasBonusRolled",
     "RCPL_Data_ImportAge",
