@@ -215,11 +215,26 @@ end
 -- Whispers this client's current data straight to one raid/party member,
 -- bypassing the wait for the next roster-change resync -- the answer to
 -- "someone's status came back Missing/Different, now what". Same leader-only
--- acceptance rule as a group Broadcast (OnPrioDataReceived below still checks
--- sender identity), so pushing from a non-leader still gets silently ignored
--- on their end with the usual "only the leader's data" message -- this
--- function doesn't duplicate that gate, it just reports send failure instead.
+-- acceptance rule as a group Broadcast: OnPrioDataReceived below still checks
+-- sender identity and would silently ignore a non-leader's whisper on the
+-- *recipient's* end -- but that rejection message only ever prints on their
+-- screen, never back to the pusher, so a non-leader running this would see
+-- their own "Pushed priority data to X" success line with nothing ever
+-- correcting it. Checked here too, same as Broadcast() already does, so the
+-- pusher gets the real answer instead of false confidence.
 function RCPLSync:ForcePush(name)
+    if (IsInRaid() or IsInGroup()) and not IsPlayerTheLeaderUnit() then
+        local leader = GetGroupLeaderName()
+        if leader then
+            print(string.format(
+                "|cFFFF4444[RCLootCouncil_PriorityLoot]|r NOT sent to %s -- only the raid/party leader's data is"
+                    .. " accepted. Ask %s to import, or have raid lead passed to you.",
+                name, leader
+            ))
+            Log.debug("ForcePush to %s blocked: not raid/party leader (leader=%s)", name, tostring(leader))
+            return
+        end
+    end
     local payload, playerCount, priorityCount = CurrentPayload()
     if not payload then
         print("|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Nothing to push -- you have no priority data loaded.")
@@ -253,14 +268,26 @@ end
 -- Silently skips a name the frame doesn't have a row for; the frame is the
 -- only source of "who's missing/different" this module keeps.
 --
--- Checks CommsRestrictions once up front rather than letting ForcePush()'s
--- own per-name check fire once per name -- otherwise a mid-encounter click
--- prints the same "NOT sent" line once per row instead of one line covering
--- the whole batch.
+-- Checks CommsRestrictions and leader status once up front rather than
+-- letting ForcePush()'s own per-name checks fire once per name -- otherwise
+-- a mid-encounter (or non-leader) click prints the same rejection line once
+-- per row instead of one line covering the whole batch.
 function RCPLSync:ForcePushAll(names)
     if not names or #names == 0 then
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Nobody needs a push -- everyone already matches.")
         return
+    end
+    if (IsInRaid() or IsInGroup()) and not IsPlayerTheLeaderUnit() then
+        local leader = GetGroupLeaderName()
+        if leader then
+            print(string.format(
+                "|cFFFF4444[RCLootCouncil_PriorityLoot]|r NOT sent to %d player(s) -- only the raid/party leader's"
+                    .. " data is accepted. Ask %s to import, or have raid lead passed to you.",
+                #names, leader
+            ))
+            Log.debug("ForcePushAll blocked: not raid/party leader (leader=%s, %d name(s))", tostring(leader), #names)
+            return
+        end
     end
     if CommsRestrictions:IsRestricted() then
         print(string.format(
