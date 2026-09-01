@@ -11,6 +11,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.7.0] - 2026-08-31
+
+### Added
+
+- **`/rcpl status` -- see who in the raid/party has your priority data, and force-push to anyone who doesn't.** Opens a Sync Status window listing every current raid/party member with a Match/Different/No data/Waiting... status, computed by comparing their priority data against yours (they reply with the comparison, not the data itself). A per-row Push button (and a bulk "Force Push All") whispers your current data straight to that person instead of waiting for the next roster-change resync -- the answer to "someone installed the addon mid-raid and has nothing loaded." Same leader-only acceptance rule as every other sync path: a push only actually lands if you're the raid/party leader, same as `/rcpl broadcast`. A push attempted while comms are restricted (mid-encounter) or by a non-leader now says so and doesn't send, rather than printing a false "Pushed" confirmation for something that was actually silently dropped or rejected on the other end.
+
+### Changed
+
+- **`/rcpl prio` no longer shows every raider the full ranked list for every item.** Only the master looter and current loot council see the full comparative "who's #1, #2, #3" breakdown -- everyone else sees just their own rank per item (same shape as the WGA Raid Hub website's own wishlist rank pill), and search no longer matches on another player's name for a non-privileged viewer. Full standings broadcast to every raider's SavedVariables so their own rank could show on the loot/voting frame overlay, but that also meant anyone could browse everyone else's spot on everything via `/rcpl prio` -- a comparison surface the website itself deliberately doesn't expose to raiders. The loot/voting frame overlays are unaffected (they only ever showed the viewer's own rank to begin with).
+- **The raider loot frame's "On wishlist" fallback text is easier to read.** Past the top-5 reveal threshold, the overlay showed plain white text, which washed out against several loot frame skins/backgrounds -- it's now a distinct magenta. A first pass tried cyan, but RCLootCouncil's own loot frame already colors the item-type text ("One-Hand, Daggers") that same cyan, so it just blended into that instead of standing out. Magenta clears both the green/yellow/orange/grey rank-tier colors used for ranks 1st-5th and WoW's own item-quality palette, so it can't be misread as either.
+- **Loot frame priority text is more condensed.** "On your wishlist (Heroic)" is now "ON WISHLIST (HERO)", and "Prio: 3rd (Heroic)" is now "PRIO: 3rd (HERO)" -- all-caps and abbreviated (`RCPL_Data_TrackLabelShort`, new), matching the tight space this row already competes for with Upgrade/Catalyst/OS+M+/Pass. The officer voting frame and `/rcpl prio` preview keep the full "Heroic"/"Mythic" wording -- they're not space-constrained the same way.
+- **The Options panel's guild-check shortcut button is now "Check Group Now" and polls the raid/party instead of the guild.** Checking who's actually in your current group is the more common day-to-day need than a guild-wide version sweep -- the full Version Checker window (with its separate Guild/Group buttons) is still there for the guild-wide case.
+- **The import window now says up front that only the raid/party leader needs to do it, and nobody else needs the Base64 string.** A note under the paste-the-string instructions spells out that a successful import shares itself with the whole raid/party automatically -- previously this was only discoverable by reading the README or asking in chat.
+- **The Options panel's Import button is now hidden for a plain raider who isn't council/ML and isn't the current raid/party leader.** Previously every raider saw the button and could click it, only to be told they're not allowed -- it's now only shown to whoever the import confirm handler would actually let through: council/ML (regardless of current leadership), the raid/party leader, or anyone ungrouped (the normal pre-raid workflow). Re-evaluated on every open, so a leadership pass or council roster change is reflected immediately rather than needing a `/reload`.
+- **`/rcpl broadcast` and `/rcpl sync` are now buttons in the Options panel**, not just typed commands -- neither needs an argument, so they belong alongside the panel's other one-click actions rather than being left out.
+
+---
+
 ## [0.6.15] - 2026-08-28
 
 ### Added

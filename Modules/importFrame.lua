@@ -61,7 +61,7 @@ StaticPopupDialogs["RCPL_RELOAD_AFTER_IMPORT"] = {
 
 local function CreateImportFrame()
     local f = CreateFrame("Frame", "RCPL_ImportFrame", UIParent, "BackdropTemplate")
-    f:SetSize(500, 340)
+    f:SetSize(500, 380)
     f:SetPoint("CENTER")
     RCPL_ApplyPanelBackdrop(f)
     f:SetMovable(true)
@@ -86,8 +86,27 @@ local function CreateImportFrame()
     label:SetJustifyH("LEFT")
     label:SetText("Paste the Base64-encoded priority export string below, then click Confirm.")
 
+    -- Only the leader's import ever reaches anyone else (see the leader-check
+    -- below/Modules/prioSync.lua's Broadcast()), and a successful one shares
+    -- itself with the whole raid/party automatically -- but every raid that's
+    -- opened this window has had at least one raider ask "do I need to paste
+    -- this too?" or "where do I get the string?" without knowing the answer
+    -- is simply no. Spelled out here instead of leaving it to word of mouth.
+    local note = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    note:SetPoint("TOPLEFT",  label, "BOTTOMLEFT",  0, -4)
+    note:SetPoint("TOPRIGHT", label, "BOTTOMRIGHT", 0, -4)
+    note:SetJustifyH("LEFT")
+    note:SetTextColor(0.75, 0.75, 0.75)
+    note:SetText("Only the raid/party leader needs to do this. Nobody else needs the string -- "
+        .. "everyone in the raid/party gets the data automatically once you import.")
+
     local scrollFrame = CreateFrame("ScrollFrame", "RCPL_ImportScroll", f, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT",     f, "TOPLEFT",     14, -68)
+    -- Anchored to note's actual rendered bottom rather than a fixed offset
+    -- from f -- note wraps to however many lines the window width actually
+    -- gives it, so a hardcoded pixel gap here would either overlap the note
+    -- or leave a mismatched blank gap depending on font/wrap specifics.
+    scrollFrame:SetPoint("TOPLEFT",  note, "BOTTOMLEFT",  0, -12)
+    scrollFrame:SetPoint("TOPRIGHT", note, "BOTTOMRIGHT", 0, -12)
     scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -32, 40)
 
     local editBox = CreateFrame("EditBox", "RCPL_ImportEditBox", scrollFrame)

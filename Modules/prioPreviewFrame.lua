@@ -1,11 +1,34 @@
 -- Modules/prioPreviewFrame.lua
 -- Scrollable popup showing imported priority data.  Opened via /rcpl prio.
+--
+-- Full comparative rankings (who's #1, #2, #3 on every item) are gated to
+-- council/ML -- RCLootCouncil already treats that as the "who's allowed to
+-- see everyone's standing" boundary for its own voting frame (core.lua:
+-- "only the right people may see the window during a raid since they
+-- otherwise could watch the entire voting"), and handing every raider a
+-- full browsable ranking for every item risks the same thing on a much
+-- wider surface than the addon's other displays (the loot/voting frame
+-- overlays only ever show a viewer their own rank, never anyone else's).
+-- A non-privileged viewer instead sees only their own rank per item, same
+-- shape as the WGA Raid Hub website's own wishlist rank pill.
 
 local LINE_H     = 20   -- px per line for GameFontNormal
 local CONTENT_W  = 500  -- inner text width (frame 560 - margins)
 local PAD        = 4
 
+local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+
 local frame
+
+-- True for the master looter and current loot council members --
+-- addon.isCouncil is populated from the ML's own council-roster broadcast
+-- (RCLootCouncil's OnCouncilReceived), the same signal its own voting frame
+-- gates on. Not cached: isCouncil can flip mid-session (leadership pass,
+-- council roster resync), so this is read fresh every time the window
+-- (re)populates rather than once at open.
+local function IsPrivileged()
+    return addon.isCouncil or addon.isMasterLooter
+end
 
 -- Populate is forward-declared so the GET_ITEM_INFO_RECEIVED handler (wired
 -- up in Build(), which runs before Populate's own definition below) can call
@@ -177,6 +200,8 @@ function Populate()
         add("|cFF3A3A3A" .. string.rep(". ", 24) .. "|r")
     end
 
+    local privileged = IsPrivileged()
+
     if type(RCPL_DB) ~= "table" then
         frame.subtitle:SetText("No data imported.")
         add("|cFFFF6666No priority data found.|r  Use /rcpl import to load data.")
@@ -195,8 +220,9 @@ function Populate()
         local _, ageColor = RCPL_Data_ImportAge()
         local importedHex = ageColor and ColorHex(ageColor) or "ffffff"
         frame.subtitle:SetText(string.format(
-            "Imported: |cFF%s%s|r  |  %d priority items  |  %d players",
-            importedHex, importedAt, itemCount, playerCount
+            "Imported: |cFF%s%s|r  |  %d priority items  |  %d players%s",
+            importedHex, importedAt, itemCount, playerCount,
+            privileged and "" or "  |  |cFFAAAAAAyour standings only|r"
         ))
 
         if itemCount == 0 and playerCount == 0 then
@@ -212,11 +238,15 @@ function Populate()
             -- async fetch for anything not cached yet regardless of whether
             -- it currently matches the filter, so a not-yet-loaded item can
             -- still be found by name once GET_ITEM_INFO_RECEIVED redraws),
-            -- then decide which items the filter actually keeps. An item
-            -- matches on its own name/ID or on any ranked player's name --
+            -- then decide which items the filter actually keeps. Privileged
+            -- (council/ML) search also matches on any ranked player's name --
             -- there's no boss/encounter field in the imported data to filter
-            -- on (see the search box's own comment above).
-            local itemNames, matchedIDs = {}, {}
+            -- on (see the search box's own comment above). A non-privileged
+            -- viewer never matches on someone else's name at all: that would
+            -- let a search box double as "which items is X ranked on",
+            -- leaking exactly the comparative info this gate exists to hide.
+            local myName = not privileged and addon.Utils:UnitName("player") or nil
+            local itemNames, matchedIDs, myRank = {}, {}, {}
             for _, idStr in ipairs(sortedIDs) do
                 local tracks = priority[idStr]
                 local itemID = tonumber(idStr)
@@ -230,7 +260,7 @@ function Populate()
                 itemNames[idStr] = name
 
                 local matches = Matches(filter, name) or Matches(filter, idStr)
-                if not matches then
+                if not matches and privileged then
                     for _, trackKey in ipairs({ "H", "M" }) do
                         local list = tracks[trackKey]
                         if type(list) == "table" then
@@ -244,6 +274,33 @@ function Populate()
                         if matches then break end
                     end
                 end
+
+                if not privileged then
+                    local ranks = {}
+                    for _, trackKey in ipairs({ "H", "M" }) do
+                        local list = tracks[trackKey]
+                        if type(list) == "table" then
+                            for rank, playerName in ipairs(list) do
+                                if playerName == myName then
+                                    ranks[trackKey] = rank
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    myRank[idStr] = ranks
+                    -- Unfiltered view only ever shows items the viewer is
+                    -- actually ranked on -- otherwise every raider's default
+                    -- "/rcpl prio" is the full item catalog, one "not ranked"
+                    -- line each. An explicit search still surfaces a
+                    -- name/ID match even when unranked (see the render loop
+                    -- below), since someone deliberately looking an item up
+                    -- wants an answer either way.
+                    if filter == "" and not (ranks.H or ranks.M) then
+                        matches = false
+                    end
+                end
+
                 if matches then matchedIDs[#matchedIDs + 1] = idStr end
             end
 
@@ -257,12 +314,14 @@ function Populate()
 
             if filter ~= "" and #matchedIDs == 0 and #matchedNames == 0 then
                 add("|cFFFF6666No items or players match \"" .. filter .. "\".|r")
+            elseif filter == "" and not privileged and #matchedIDs == 0 then
+                add("|cFFAAAAAAYou have no priority items to show.|r")
             end
 
             -- ── Priority lists ────────────────────────────────────────────────
             if #matchedIDs > 0 then
-                add("|cFFFFD100Priority Lists  (" .. #matchedIDs .. (filter ~= "" and (" of " .. itemCount) or "")
-                    .. " items)|r")
+                add("|cFFFFD100" .. (privileged and "Priority Lists" or "Your Priority Standings")
+                    .. "  (" .. #matchedIDs .. (filter ~= "" and (" of " .. itemCount) or "") .. " items)|r")
                 sep()
 
                 -- priority[idStr] is { H = {...}, M = {...} } (track-split,
@@ -277,25 +336,42 @@ function Populate()
 
                     add("  " .. label)
 
-                    for _, trackKey in ipairs({ "H", "M" }) do
-                        local list = tracks[trackKey]
-                        if type(list) == "table" and #list > 0 then
-                            -- Larger + white rather than the body's grey so the
-                            -- difficulty heading doesn't recede behind the
-                            -- ranked players it's labeling.
-                            add("    " .. RCPL_Data_TrackLabel(trackKey) .. ":", nil, nil, nil, true)
-                            -- Each rank gets the same green/yellow/orange the
-                            -- voting/loot frame overlay uses, so who's
-                            -- actually top priority reads at a glance instead
-                            -- of everyone blending into one flat grey line.
-                            for rowStart = 1, #list, PLAYERS_PER_ROW do
-                                local parts = {}
-                                for rank = rowStart, math.min(rowStart + PLAYERS_PER_ROW - 1, #list) do
-                                    local hex = ColorHex(RCPL_Data_RankColor(rank))
-                                    parts[#parts + 1] = "|cFF" .. hex .. rank .. ". "
-                                        .. ShortName(list[rank]) .. "|r"
+                    if privileged then
+                        for _, trackKey in ipairs({ "H", "M" }) do
+                            local list = tracks[trackKey]
+                            if type(list) == "table" and #list > 0 then
+                                -- Larger + white rather than the body's grey so the
+                                -- difficulty heading doesn't recede behind the
+                                -- ranked players it's labeling.
+                                add("    " .. RCPL_Data_TrackLabel(trackKey) .. ":", nil, nil, nil, true)
+                                -- Each rank gets the same green/yellow/orange the
+                                -- voting/loot frame overlay uses, so who's
+                                -- actually top priority reads at a glance instead
+                                -- of everyone blending into one flat grey line.
+                                for rowStart = 1, #list, PLAYERS_PER_ROW do
+                                    local parts = {}
+                                    for rank = rowStart, math.min(rowStart + PLAYERS_PER_ROW - 1, #list) do
+                                        local hex = ColorHex(RCPL_Data_RankColor(rank))
+                                        parts[#parts + 1] = "|cFF" .. hex .. rank .. ". "
+                                            .. ShortName(list[rank]) .. "|r"
+                                    end
+                                    add("      " .. table.concat(parts, "   "))
                                 end
-                                add("      " .. table.concat(parts, "   "))
+                            end
+                        end
+                    else
+                        -- Own rank only, one line per track the item has a
+                        -- list for at all -- never another player's name or
+                        -- position, only ever this viewer's own.
+                        local ranks = myRank[idStr] or {}
+                        for _, trackKey in ipairs({ "H", "M" }) do
+                            local list = tracks[trackKey]
+                            if type(list) == "table" and #list > 0 then
+                                local rank = ranks[trackKey]
+                                local rankText = rank
+                                    and ("|cFF" .. ColorHex(RCPL_Data_RankColor(rank)) .. rank .. ".|r")
+                                    or  "|cFF888888Not ranked|r"
+                                add("    " .. RCPL_Data_TrackLabel(trackKey) .. ": " .. rankText)
                             end
                         end
                     end
