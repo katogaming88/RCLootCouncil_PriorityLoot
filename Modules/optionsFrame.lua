@@ -31,6 +31,29 @@ local ACTIONS = {
     { label = "Import", desc = "open the priority data import window",
         action = function() RCPL_ShowImportFrame() end,
         visible = CanImport },
+    { label = "Broadcast", desc = "(re-)send your priority data to the raid/party",
+        action = function()
+            local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+            local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
+            local sync = RCPLAddon:GetModule("RCPLPrioSync", true)
+            if sync then
+                sync:Broadcast("manual")
+            else
+                print("|cFFFF4444[RCPL]|r Sync module not loaded.")
+            end
+        end },
+    { label = "Sync", desc = "ask the raid/party to (re-)send priority data to you",
+        action = function()
+            local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+            local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
+            local sync = RCPLAddon:GetModule("RCPLPrioSync", true)
+            if sync then
+                sync:RequestSync()
+                print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Requested priority data from the raid/party.")
+            else
+                print("|cFFFF4444[RCPL]|r Sync module not loaded.")
+            end
+        end },
     { label = "Priority Preview", desc = "preview imported priority data",
         action = function() RCPL_ShowPrioPreview() end },
     { label = "Season Awards", desc = "open the season awards window",
