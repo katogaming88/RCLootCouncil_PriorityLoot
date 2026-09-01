@@ -24,9 +24,14 @@ local RAIDER_RANK_REVEAL_THRESHOLD = 5
 -- skins/backgrounds -- reported hard to read) and deliberately not any of
 -- Data/db.lua's rank tiers (green/yellow/orange/grey, ranks 1st-3rd plus the
 -- 4th/5th fade) -- this message isn't a rank, so it shouldn't borrow a color
--- that means one elsewhere in the addon. A bright cyan reads as "still
--- relevant info" without implying a specific priority position.
-local WISHLIST_FALLBACK_COLOR = { r = 0.3, g = 0.9, b = 1.0 }
+-- that means one elsewhere in the addon. Cyan was tried first and rejected --
+-- RCLootCouncil's own loot frame already colors the item-type text
+-- ("One-Hand, Daggers") with |cff7fffff (Modules/lootFrame.lua in the base
+-- addon), so our text just blended into that instead of standing out from
+-- it. Also steering clear of WoW's own item-quality palette (white/green/
+-- blue/purple/orange) so this can't misread as a rarity indicator. Magenta
+-- has no meaning anywhere else in this row.
+local WISHLIST_FALLBACK_COLOR = { r = 1.0, g = 0.4, b = 0.75 }
 
 local function GetItemIDFromLink(link)
     return tonumber((link or ""):match("item:(%d+):"))
