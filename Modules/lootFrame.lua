@@ -99,7 +99,7 @@ local function UpdateEntry(entry, item, playerName)
         displayText = "ON WISHLIST" .. trackSuffix
         displayColor = WISHLIST_FALLBACK_COLOR
     else
-        displayText = "Prio: " .. text .. trackSuffix
+        displayText = "PRIO: " .. text .. trackSuffix
         displayColor = color
     end
 
