@@ -283,6 +283,7 @@ SlashCmdList["RCPL"] = function(input)
             print("  /rcpl prio                     preview imported priority data")
             print("  /rcpl broadcast                (re-)send your priority data to the raid/party")
             print("  /rcpl sync                     ask the raid/party to (re-)send priority data to you")
+            print("  /rcpl status                   see who in the raid/party has your priority data")
             print("  /rcpl reset                    clear all stored priority data")
             print("  /rcpl awards                   open the season awards window")
             print("  /rcpl award <player> <item>    manually record an award")
@@ -314,6 +315,8 @@ SlashCmdList["RCPL"] = function(input)
         else
             print("|cFFFF4444[RCPL]|r Sync module not loaded.")
         end
+    elseif cmd == "status" then
+        RCPL_ShowSyncStatusFrame()
     elseif cmd == "awards" then
         RCPL_ShowAwardsFrame()
     elseif cmd == "award" then

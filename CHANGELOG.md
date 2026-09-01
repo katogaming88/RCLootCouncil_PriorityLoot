@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.7.0] - 2026-08-31
+
+### Added
+
+- **`/rcpl status` -- see who in the raid/party has your priority data, and force-push to anyone who doesn't.** Opens a Sync Status window listing every current raid/party member with a Match/Different/No data/Waiting... status, computed by comparing their priority data against yours (they reply with the comparison, not the data itself). A per-row Push button (and a bulk "Force Push All") whispers your current data straight to that person instead of waiting for the next roster-change resync -- the answer to "someone installed the addon mid-raid and has nothing loaded." Same leader-only acceptance rule as every other sync path: a push only actually lands if you're the raid/party leader, same as `/rcpl broadcast`.
+
+---
+
 ## [0.6.15] - 2026-08-28
 
 ### Added

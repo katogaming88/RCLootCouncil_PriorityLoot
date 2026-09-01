@@ -102,6 +102,12 @@ globals = {
     "RCPL_VersionCheck_SeedWaiting",
     "RCPL_VersionCheck_UpdateRow",
     "RCPL_VersionCheck_MarkMissing",
+    "RCPL_ShowSyncStatusFrame",
+    "RCPL_StartSyncStatusCheck",
+    "RCPL_SyncStatus_Reset",
+    "RCPL_SyncStatus_SeedWaiting",
+    "RCPL_SyncStatus_UpdateRow",
+    "RCPL_SyncStatus_MarkMissing",
 
     -- Centralised logger (Modules/log.lua); used across Core.lua and modules
     "RCPL_Log",

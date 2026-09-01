@@ -18,6 +18,8 @@ local ACTIONS = {
         action = function() RCPL_ShowPrioPreview() end },
     { label = "Season Awards", desc = "open the season awards window",
         action = function() RCPL_ShowAwardsFrame() end },
+    { label = "Sync Status", desc = "see who in the raid/party has your priority data, force-push to who doesn't",
+        action = function() RCPL_ShowSyncStatusFrame() end },
     { label = "Version Checker", desc = "open it (Guild/Group buttons trigger the poll)",
         action = function() RCPL_ShowVersionCheckFrame() end },
     { label = "Check Guild Now", desc = "open the version checker and immediately poll your guild",

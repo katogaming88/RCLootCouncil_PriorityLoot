@@ -17,11 +17,19 @@ local RCPLSync = RCPLAddon:NewModule("RCPLPrioSync", "AceEvent-3.0", "AceTimer-3
 RCPLSync:SetEnabledState(true)
 
 local Comms = addon.Require "Services.Comms"
+-- Player cache/lookup (resolves a bare "Name-Realm" string to a GUID via the
+-- group roster or guild) -- the same class Services.Comms requires as its
+-- whisper target, needed by ForcePush() below to whisper directly to one
+-- raid/party member instead of broadcasting to the whole group.
+local PlayerData = addon.Require "Data.Player"
 
-local PREFIX          = "RCPL_Sync"
-local COMMAND_DATA     = "prio_data"
-local COMMAND_REQUEST  = "prio_request"
-local ROSTER_DEBOUNCE  = 3  -- seconds
+local PREFIX             = "RCPL_Sync"
+local COMMAND_DATA        = "prio_data"
+local COMMAND_REQUEST     = "prio_request"
+local COMMAND_STATUS_REQ  = "prio_status_req"
+local COMMAND_STATUS_REPL = "prio_status_repl"
+local ROSTER_DEBOUNCE     = 3   -- seconds
+local STATUS_TIMEOUT      = 10  -- seconds, matches Core.lua's own version-check timeout
 
 local Log = RCPL_Log or {
     debug = function() end, info = function() end,
@@ -63,6 +71,27 @@ local function GetGroupLeaderName()
         end
     end
     return nil
+end
+
+-- Full-name ("Name-Realm") of every other raid/party member, for seeding the
+-- Sync Status window's row list up front (same reasoning as Core.lua's own
+-- StartVersionCheck: show who hasn't replied yet rather than staying blank
+-- until the timeout) and as the pool ForcePushAllMissing() below iterates.
+local function GetGroupMemberNames()
+    local me = addon.Utils:UnitName("player")
+    local names = {}
+    if IsInRaid() then
+        for i = 1, GetNumGroupMembers() do
+            local name = addon.Utils:UnitName("raid" .. i)
+            if name and name ~= "" and name ~= me then names[#names + 1] = name end
+        end
+    elseif IsInGroup() then
+        for i = 1, GetNumGroupMembers() - 1 do
+            local name = addon.Utils:UnitName("party" .. i)
+            if name and name ~= "" and name ~= me then names[#names + 1] = name end
+        end
+    end
+    return names
 end
 
 -- Rebuilds the same {players=..., priority=...} shape RCPL_Data_SaveImportedData
@@ -173,6 +202,122 @@ end
 function RCPLSync:RequestSync()
     self:Send("group", COMMAND_REQUEST)
     Log.debug("Sent prio_request to group")
+end
+
+-- Whispers this client's current data straight to one raid/party member,
+-- bypassing the wait for the next roster-change resync -- the answer to
+-- "someone's status came back Missing/Different, now what". Same leader-only
+-- acceptance rule as a group Broadcast (OnPrioDataReceived below still checks
+-- sender identity), so pushing from a non-leader still gets silently ignored
+-- on their end with the usual "only the leader's data" message -- this
+-- function doesn't duplicate that gate, it just reports send failure instead.
+function RCPLSync:ForcePush(name)
+    local payload, playerCount, priorityCount = CurrentPayload()
+    if not payload then
+        print("|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Nothing to push -- you have no priority data loaded.")
+        return
+    end
+    local ok, target = pcall(function() return PlayerData:Get(name) end)
+    if not ok or not target then
+        print(string.format("|cFFFF4444[RCLootCouncil_PriorityLoot]|r Couldn't resolve %s to push to.", name))
+        Log.debug("ForcePush failed to resolve player: %s", tostring(name))
+        return
+    end
+    self:Send(target, COMMAND_DATA, payload)
+    print(string.format(
+        "|cFF00FF00[RCLootCouncil_PriorityLoot]|r Pushed priority data to %s (%d player(s), %d priority item(s)).",
+        name, playerCount, priorityCount
+    ))
+    Log.debug("Force-pushed prio_data to %s", name)
+end
+
+-- Whispers every currently-known non-matching row (Modules/prioSyncStatusFrame.lua
+-- tracks the last status check's results) -- the bulk "Force Push All" button.
+-- Silently skips a name the frame doesn't have a row for; the frame is the
+-- only source of "who's missing/different" this module keeps.
+function RCPLSync:ForcePushAll(names)
+    if not names or #names == 0 then
+        print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Nobody needs a push -- everyone already matches.")
+        return
+    end
+    for _, name in ipairs(names) do
+        self:ForcePush(name)
+    end
+end
+
+-- True only while this client is waiting on replies from a check it itself
+-- started -- gates OnStatusReplyReceived below so a client that never called
+-- StartStatusCheck() (i.e. everyone but whoever clicked "Check Group") just
+-- ignores the reply traffic passing through the group channel instead of
+-- feeding a status frame it never opened. Reset by FinalizeStatusCheck()
+-- after STATUS_TIMEOUT, same shot-lived-window shape as Core.lua's own
+-- versionCheckResults.
+local statusCheckActive = false
+local statusCheckTimer = nil
+
+-- Starts a sync-status check against the current raid/party: sends this
+-- client's own payload out on the group channel so every recipient can
+-- compare it against what they already have and reply on that same channel
+-- (mirrors Core.lua's StartVersionCheck/OnVersionCheckMessage exactly --
+-- reply-on-distribution rather than a private whisper back, so this needs no
+-- Data.Player resolution for the common case). Modules/prioSyncStatusFrame.lua
+-- renders replies live as they arrive. Returns the list of names seeded (so
+-- the caller can pre-populate "Waiting..." rows) or nil plus a reason string
+-- when the check can't start.
+function RCPLSync:StartStatusCheck()
+    if not (IsInRaid() or IsInGroup()) then
+        return nil, "You must be in a raid or party to check sync status."
+    end
+    local payload = CurrentPayload()
+    if not payload then
+        return nil, "You have no priority data loaded to compare against. Run /rcpl import first."
+    end
+    local names = GetGroupMemberNames()
+    statusCheckActive = true
+    if statusCheckTimer then self:CancelTimer(statusCheckTimer) end
+    statusCheckTimer = self:ScheduleTimer(function()
+        statusCheckTimer = nil
+        statusCheckActive = false
+        if RCPL_SyncStatus_MarkMissing then RCPL_SyncStatus_MarkMissing() end
+    end, STATUS_TIMEOUT)
+    self:Send("group", COMMAND_STATUS_REQ, payload)
+    Log.debug("Sent prio_status_req to group (%d other member(s))", #names)
+    return names
+end
+
+local function OnStatusRequestReceived(data, sender, _, distri)
+    local me = addon.Utils:UnitName("player")
+    if sender == me then return end
+    local theirPayload = data[1]
+    if type(theirPayload) ~= "table" then return end
+    if not (distri == "RAID" or distri == "PARTY") then
+        Log.debug("Ignoring prio_status_req from %s on unexpected distribution %s", sender, tostring(distri))
+        return
+    end
+
+    local mine, playerCount, priorityCount = CurrentPayload()
+    local status
+    if not mine then
+        status = "missing"
+    elseif DeepEqual(mine, theirPayload) then
+        status = "match"
+    else
+        status = "different"
+    end
+    RCPLSync:Send("group", COMMAND_STATUS_REPL,
+        status, playerCount, priorityCount, type(RCPL_DB) == "table" and RCPL_DB.importedAt or nil)
+    Log.debug("Replied prio_status_repl on %s: %s", distri, status)
+end
+
+local function OnStatusReplyReceived(data, sender)
+    if sender == addon.Utils:UnitName("player") then return end
+    if not statusCheckActive then return end
+    local status, playerCount, priorityCount, importedAt = data[1], data[2], data[3], data[4]
+    if type(status) ~= "string" then return end
+    if RCPL_SyncStatus_UpdateRow then
+        RCPL_SyncStatus_UpdateRow(sender, status, playerCount, priorityCount, importedAt)
+    end
+    Log.debug("Received prio_status_repl from %s: %s", sender, tostring(status))
 end
 
 -- Only ever applies data sent by the current raid/party leader -- not just
@@ -333,8 +478,10 @@ end
 function RCPLSync:OnInitialize()
     self.Send = Comms:GetSender(PREFIX)
     Comms:BulkSubscribe(PREFIX, {
-        [COMMAND_DATA]    = function(data, sender) OnPrioDataReceived(data, sender) end,
-        [COMMAND_REQUEST] = function(data, sender) OnPrioRequestReceived(data, sender) end,
+        [COMMAND_DATA]        = function(data, sender) OnPrioDataReceived(data, sender) end,
+        [COMMAND_REQUEST]     = function(data, sender) OnPrioRequestReceived(data, sender) end,
+        [COMMAND_STATUS_REQ]  = function(data, sender, command, distri) OnStatusRequestReceived(data, sender, command, distri) end,
+        [COMMAND_STATUS_REPL] = function(data, sender) OnStatusReplyReceived(data, sender) end,
     })
     Log.debug("prioSync initialized on prefix %s", PREFIX)
 end
