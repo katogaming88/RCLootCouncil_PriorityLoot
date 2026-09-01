@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.7.1] - 2026-08-31
+
+### Changed
+
+- **`/rcpl prio` no longer shows every raider the full ranked list for every item.** Only the master looter and current loot council see the full comparative "who's #1, #2, #3" breakdown -- everyone else sees just their own rank per item (same shape as the WGA Raid Hub website's own wishlist rank pill), and search no longer matches on another player's name for a non-privileged viewer. Full standings broadcast to every raider's SavedVariables so their own rank could show on the loot/voting frame overlay, but that also meant anyone could browse everyone else's spot on everything via `/rcpl prio` -- a comparison surface the website itself deliberately doesn't expose to raiders. The loot/voting frame overlays are unaffected (they only ever showed the viewer's own rank to begin with).
+
+---
+
 ## [0.7.0] - 2026-08-31
 
 ### Added
