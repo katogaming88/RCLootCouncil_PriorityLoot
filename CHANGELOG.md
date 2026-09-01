@@ -11,19 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.7.1] - 2026-08-31
-
-### Changed
-
-- **`/rcpl prio` no longer shows every raider the full ranked list for every item.** Only the master looter and current loot council see the full comparative "who's #1, #2, #3" breakdown -- everyone else sees just their own rank per item (same shape as the WGA Raid Hub website's own wishlist rank pill), and search no longer matches on another player's name for a non-privileged viewer. Full standings broadcast to every raider's SavedVariables so their own rank could show on the loot/voting frame overlay, but that also meant anyone could browse everyone else's spot on everything via `/rcpl prio` -- a comparison surface the website itself deliberately doesn't expose to raiders. The loot/voting frame overlays are unaffected (they only ever showed the viewer's own rank to begin with).
-
----
-
 ## [0.7.0] - 2026-08-31
 
 ### Added
 
 - **`/rcpl status` -- see who in the raid/party has your priority data, and force-push to anyone who doesn't.** Opens a Sync Status window listing every current raid/party member with a Match/Different/No data/Waiting... status, computed by comparing their priority data against yours (they reply with the comparison, not the data itself). A per-row Push button (and a bulk "Force Push All") whispers your current data straight to that person instead of waiting for the next roster-change resync -- the answer to "someone installed the addon mid-raid and has nothing loaded." Same leader-only acceptance rule as every other sync path: a push only actually lands if you're the raid/party leader, same as `/rcpl broadcast`.
+
+### Changed
+
+- **`/rcpl prio` no longer shows every raider the full ranked list for every item.** Only the master looter and current loot council see the full comparative "who's #1, #2, #3" breakdown -- everyone else sees just their own rank per item (same shape as the WGA Raid Hub website's own wishlist rank pill), and search no longer matches on another player's name for a non-privileged viewer. Full standings broadcast to every raider's SavedVariables so their own rank could show on the loot/voting frame overlay, but that also meant anyone could browse everyone else's spot on everything via `/rcpl prio` -- a comparison surface the website itself deliberately doesn't expose to raiders. The loot/voting frame overlays are unaffected (they only ever showed the viewer's own rank to begin with).
 
 ---
 
