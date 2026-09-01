@@ -22,6 +22,14 @@ local Comms = addon.Require "Services.Comms"
 -- whisper target, needed by ForcePush() below to whisper directly to one
 -- raid/party member instead of broadcasting to the whole group.
 local PlayerData = addon.Require "Data.Player"
+-- True during an encounter/challenge mode -- Services.Comms silently drops
+-- (not queues) a plain Send() while this is active, only logging a debug
+-- warning we never see. ForcePush() below checks this itself rather than
+-- letting Comms swallow the send and print a false "Pushed" confirmation --
+-- unlike Broadcast()'s roster-change resync, a push is a deliberate action
+-- the officer is watching for a result from, so a silent drop here is
+-- actively misleading rather than just "catches up on the next resync".
+local CommsRestrictions = addon.Require "Services.CommsRestrictions"
 
 local PREFIX             = "RCPL_Sync"
 local COMMAND_DATA        = "prio_data"
@@ -217,6 +225,15 @@ function RCPLSync:ForcePush(name)
         print("|cFFFFCC00[RCLootCouncil_PriorityLoot]|r Nothing to push -- you have no priority data loaded.")
         return
     end
+    if CommsRestrictions:IsRestricted() then
+        print(string.format(
+            "|cFFFF4444[RCLootCouncil_PriorityLoot]|r NOT sent to %s -- comms are restricted (in an encounter)."
+                .. " Try again once combat ends.",
+            name
+        ))
+        Log.debug("ForcePush to %s blocked: comms restricted", name)
+        return
+    end
     local ok, target = pcall(function() return PlayerData:Get(name) end)
     if not ok or not target then
         print(string.format("|cFFFF4444[RCLootCouncil_PriorityLoot]|r Couldn't resolve %s to push to.", name))
@@ -235,9 +252,23 @@ end
 -- tracks the last status check's results) -- the bulk "Force Push All" button.
 -- Silently skips a name the frame doesn't have a row for; the frame is the
 -- only source of "who's missing/different" this module keeps.
+--
+-- Checks CommsRestrictions once up front rather than letting ForcePush()'s
+-- own per-name check fire once per name -- otherwise a mid-encounter click
+-- prints the same "NOT sent" line once per row instead of one line covering
+-- the whole batch.
 function RCPLSync:ForcePushAll(names)
     if not names or #names == 0 then
         print("|cFF00FF00[RCLootCouncil_PriorityLoot]|r Nobody needs a push -- everyone already matches.")
+        return
+    end
+    if CommsRestrictions:IsRestricted() then
+        print(string.format(
+            "|cFFFF4444[RCLootCouncil_PriorityLoot]|r NOT sent to %d player(s) -- comms are restricted (in an"
+                .. " encounter). Try again once combat ends.",
+            #names
+        ))
+        Log.debug("ForcePushAll blocked: comms restricted (%d name(s))", #names)
         return
     end
     for _, name in ipairs(names) do
