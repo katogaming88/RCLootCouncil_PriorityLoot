@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The import window's paste box no longer stalls the client for several seconds on paste.** It was a multiline EditBox that word-wraps its content, and doing that for a multi-thousand-character unbroken Base64 string means laying out the *entire* blob just to compute the scroll frame's height -- long enough to risk a disconnect. It's now single-line (scrolls horizontally instead of wrapping), which never runs that layout pass regardless of string length (#852).
+
 ---
 
 ## [0.7.0] - 2026-08-31

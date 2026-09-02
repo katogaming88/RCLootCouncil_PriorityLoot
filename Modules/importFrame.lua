@@ -61,7 +61,7 @@ StaticPopupDialogs["RCPL_RELOAD_AFTER_IMPORT"] = {
 
 local function CreateImportFrame()
     local f = CreateFrame("Frame", "RCPL_ImportFrame", UIParent, "BackdropTemplate")
-    f:SetSize(500, 380)
+    f:SetSize(500, 200)
     f:SetPoint("CENTER")
     RCPL_ApplyPanelBackdrop(f)
     f:SetMovable(true)
@@ -100,24 +100,33 @@ local function CreateImportFrame()
     note:SetText("Only the raid/party leader needs to do this. Nobody else needs the string -- "
         .. "everyone in the raid/party gets the data automatically once you import.")
 
-    local scrollFrame = CreateFrame("ScrollFrame", "RCPL_ImportScroll", f, "UIPanelScrollFrameTemplate")
-    -- Anchored to note's actual rendered bottom rather than a fixed offset
-    -- from f -- note wraps to however many lines the window width actually
-    -- gives it, so a hardcoded pixel gap here would either overlap the note
-    -- or leave a mismatched blank gap depending on font/wrap specifics.
-    scrollFrame:SetPoint("TOPLEFT",  note, "BOTTOMLEFT",  0, -12)
-    scrollFrame:SetPoint("TOPRIGHT", note, "BOTTOMRIGHT", 0, -12)
-    scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -32, 40)
+    -- Deliberately single-line, not multiline+wrapped: the export string is a
+    -- multi-thousand-character unbroken blob, and pasting that into a
+    -- multiline EditBox makes the client's word-wrap layout engine lay out
+    -- the whole blob (it has to, to compute content height for the scroll
+    -- frame), which stalls the game for several seconds -- close to enough
+    -- to trigger a disconnect. A single-line EditBox never runs that layout
+    -- pass; it just scrolls horizontally, so pasting is instant regardless
+    -- of string length (#852).
+    local boxBackdrop = CreateFrame("Frame", nil, f, "BackdropTemplate")
+    boxBackdrop:SetPoint("TOPLEFT",  note, "BOTTOMLEFT",  0, -12)
+    boxBackdrop:SetPoint("TOPRIGHT", note, "BOTTOMRIGHT", 0, -12)
+    boxBackdrop:SetHeight(24)
+    boxBackdrop:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    boxBackdrop:SetBackdropColor(0, 0, 0, 0.5)
 
-    local editBox = CreateFrame("EditBox", "RCPL_ImportEditBox", scrollFrame)
+    local editBox = CreateFrame("EditBox", "RCPL_ImportEditBox", boxBackdrop)
     editBox:SetFontObject(ChatFontNormal)
-    editBox:SetMultiLine(true)
     editBox:SetAutoFocus(false)
-    editBox:SetWidth(scrollFrame:GetWidth())
-    editBox:SetHeight(200)
+    editBox:SetPoint("LEFT",  boxBackdrop, "LEFT",  6, 0)
+    editBox:SetPoint("RIGHT", boxBackdrop, "RIGHT", -6, 0)
+    editBox:SetHeight(20)
     editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    editBox:SetScript("OnTextChanged",   function() scrollFrame:UpdateScrollChildRect() end)
-    scrollFrame:SetScrollChild(editBox)
 
     local statusText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     statusText:SetPoint("BOTTOMLEFT",  f, "BOTTOMLEFT",  14, 12)
