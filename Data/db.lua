@@ -134,6 +134,22 @@ end
 -- from another client's broadcast (Modules/prioSync.lua). Modules/prioSync.lua
 -- checks this to avoid letting an automatic group sync silently overwrite
 -- data the player deliberately imported on their own client (#1).
+--
+-- The web app's export string is split by track (Hero/Myth) as of #859 --
+-- a combined export was large enough to stall the WoW client for several
+-- seconds on paste. A "local" import is therefore often just one track's
+-- half of the full dataset, so this MERGES into whatever's already stored
+-- instead of wiping it -- importing Hero then Myth (either order, or
+-- re-importing just one track later) accumulates into one complete
+-- dataset rather than each import discarding the other's data. `/rcpl
+-- reset` (RCPL_Data_ResetData) remains the explicit way to start fresh.
+--
+-- A "sync" payload is different: Broadcast() (Modules/prioSync.lua) always
+-- rebuilds it from the *sender's entire current* RCPL_DB.players/priority,
+-- never a partial slice, so it's the sender's complete, authoritative
+-- state -- applying it as a full replace (not a merge) is correct so a
+-- receiving client doesn't keep its own stale leftover entries the sender
+-- no longer has.
 function RCPL_Data_SaveImportedData(decoded, source)
     if type(decoded) ~= "table" or type(decoded.players) ~= "table" then
         print("|cFFFF4444[RCLootCouncil_PriorityLoot]|r Import failed: invalid data structure.")
@@ -141,10 +157,14 @@ function RCPL_Data_SaveImportedData(decoded, source)
     end
 
     if type(RCPL_DB) ~= "table" then RCPL_DB = {} end
-    RCPL_DB.players      = {}
-    RCPL_DB.priority     = {}
-    RCPL_DB.awarded      = {}
-    RCPL_DB.importSource = source or "local"
+    source = source or "local"
+
+    if source == "sync" or type(RCPL_DB.players) ~= "table" or type(RCPL_DB.priority) ~= "table" then
+        RCPL_DB.players  = {}
+        RCPL_DB.priority = {}
+        RCPL_DB.awarded  = {}
+    end
+    RCPL_DB.importSource = source
 
     -- Optional -- exports from before #760 shipped this have no
     -- statusLabels key at all, so leave whatever's currently stored alone
@@ -155,6 +175,10 @@ function RCPL_Data_SaveImportedData(decoded, source)
         RCPL_DB.statusLabels = decoded.statusLabels
     end
 
+    -- A player's BiS picks aren't track-specific, so a plain per-player
+    -- overwrite is correct regardless of source -- there's nothing to merge
+    -- within one player's slot table the way there is for priority's H/M
+    -- track keys below.
     local playerCount = 0
     for playerKey, slots in pairs(decoded.players) do
         if type(playerKey) == "string" and type(slots) == "table" then
@@ -163,11 +187,22 @@ function RCPL_Data_SaveImportedData(decoded, source)
         end
     end
 
+    -- Merges each item's track keys (H/H_status or M/M_status) into
+    -- whatever's already stored for that item rather than replacing the
+    -- whole entry -- a prior sync/import's other-track data for the same
+    -- item survives. For a sync/first-time import RCPL_DB.priority was just
+    -- wiped above, so "merging" onto an empty table is equivalent to a
+    -- plain assignment there.
     local priorityCount = 0
     if type(decoded.priority) == "table" then
-        for itemIDStr, playerList in pairs(decoded.priority) do
-            if type(playerList) == "table" then
-                RCPL_DB.priority[itemIDStr] = playerList
+        for itemIDStr, trackData in pairs(decoded.priority) do
+            if type(trackData) == "table" then
+                local existing = RCPL_DB.priority[itemIDStr]
+                if type(existing) ~= "table" then existing = {} end
+                for trackKey, trackValue in pairs(trackData) do
+                    existing[trackKey] = trackValue
+                end
+                RCPL_DB.priority[itemIDStr] = existing
                 priorityCount = priorityCount + 1
             end
         end

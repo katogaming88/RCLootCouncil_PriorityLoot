@@ -61,7 +61,7 @@ StaticPopupDialogs["RCPL_RELOAD_AFTER_IMPORT"] = {
 
 local function CreateImportFrame()
     local f = CreateFrame("Frame", "RCPL_ImportFrame", UIParent, "BackdropTemplate")
-    f:SetSize(500, 200)
+    f:SetSize(500, 250)
     f:SetPoint("CENTER")
     RCPL_ApplyPanelBackdrop(f)
     f:SetMovable(true)
@@ -92,13 +92,21 @@ local function CreateImportFrame()
     -- opened this window has had at least one raider ask "do I need to paste
     -- this too?" or "where do I get the string?" without knowing the answer
     -- is simply no. Spelled out here instead of leaving it to word of mouth.
+    --
+    -- The Heroic/Mythic split (#859) is also spelled out here rather than
+    -- left to word of mouth: the two strings import as separate pastes now
+    -- (each one adds to what's already stored, per RCPL_Data_SaveImportedData
+    -- -- neither wipes the other out), and that's not obvious from the
+    -- window alone if you've only ever pasted one combined string before.
     local note = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     note:SetPoint("TOPLEFT",  label, "BOTTOMLEFT",  0, -4)
     note:SetPoint("TOPRIGHT", label, "BOTTOMRIGHT", 0, -4)
     note:SetJustifyH("LEFT")
     note:SetTextColor(0.75, 0.75, 0.75)
     note:SetText("Only the raid/party leader needs to do this. Nobody else needs the string -- "
-        .. "everyone in the raid/party gets the data automatically once you import.")
+        .. "everyone in the raid/party gets the data automatically once you import.\n"
+        .. "Import the Heroic and Mythic strings separately (either order) -- each import adds to "
+        .. "what's already stored. Use /rcpl reset first if you want to start over completely.")
 
     -- Deliberately single-line, not multiline+wrapped: the export string is a
     -- multi-thousand-character unbroken blob, and pasting that into a

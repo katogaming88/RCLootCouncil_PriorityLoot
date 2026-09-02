@@ -11,7 +11,11 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- **The import window's paste box no longer stalls the client for several seconds on paste.** It was a multiline EditBox that word-wraps its content, and doing that for a multi-thousand-character unbroken Base64 string means laying out the *entire* blob just to compute the scroll frame's height -- long enough to risk a disconnect. It's now single-line (scrolls horizontally instead of wrapping), which never runs that layout pass regardless of string length (#852).
+- **The import window's paste box no longer stalls the client for several seconds on paste.** Switching it from a multiline (word-wrapped) EditBox to single-line, on the theory that laying out the whole blob to compute scroll height was the cost, turned out not to fix it -- confirmed live that the stall is inside WoW's own paste-into-EditBox handling, independent of how the box renders text. The actual fix is on the web app side: the export string is now split by track (Heroic/Mythic) instead of one combined string, roughly halving what ever gets pasted at once (WGA-Raid-Hub#859). The single-line box stays -- it's still a minor improvement -- but it wasn't the fix.
+
+### Changed
+
+- **Importing a priority export string now merges into what's already stored instead of replacing it.** Needed for the Heroic/Mythic export split above: importing one track used to wipe out the other track's already-imported data on the next paste. Both tracks can now be imported in either order (or one re-imported later on its own) and accumulate into one complete dataset. `/rcpl reset` is still the explicit way to clear everything and start over. A synced update from another client (`/rcpl broadcast`/`/rcpl sync`) is unaffected -- that's always a full rebuild of the sender's complete data already, so it still replaces rather than merges.
 
 ---
 
