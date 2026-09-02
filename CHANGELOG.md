@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.7.1] - 2026-09-02
+
 ### Fixed
 
 - **The import window's paste box no longer stalls the client for several seconds on paste.** Switching it from a multiline (word-wrapped) EditBox to single-line, on the theory that laying out the whole blob to compute scroll height was the cost, turned out not to fix it -- confirmed live that the stall is inside WoW's own paste-into-EditBox handling, independent of how the box renders text. The actual fix is on the web app side: the export string is now split by track (Heroic/Mythic) instead of one combined string, roughly halving what ever gets pasted at once (WGA-Raid-Hub#859). The single-line box stays -- it's still a minor improvement -- but it wasn't the fix.
