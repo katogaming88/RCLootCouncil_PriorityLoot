@@ -73,14 +73,63 @@ describe("RCPL_Data_SaveImportedData", function()
         assert.is_nil(_G.RCPL_DB.players["Bad-Realm"])
     end)
 
-    it("wipes prior state on each import (current behaviour)", function()
+    -- #859 split the web app's export string by track (Hero/Myth) to keep
+    -- each paste small enough that WoW doesn't stall on it -- a "local"
+    -- import can now be just one track's half of the full dataset, so it
+    -- must merge into whatever's already stored instead of wiping it.
+    it("merges a local import into prior state instead of wiping it", function()
         _G.RCPL_DB = {
-            players  = { ["StalePlayer-Realm"] = { helm = { bis = { 999 } } } },
-            priority = { ["99"] = { "StalePlayer-Realm" } },
+            players  = { ["ExistingPlayer-Realm"] = { helm = { bis = { 999 } } } },
+            priority = { ["99"] = { H = { "ExistingPlayer-Realm" } } },
         }
         RCPL_Data_SaveImportedData({
             players = { ["NewPlayer-Realm"] = { helm = { bis = { 1 } } } },
-        })
+        }, "local")
+        assert.is_table(_G.RCPL_DB.players["ExistingPlayer-Realm"])
+        assert.same({ H = { "ExistingPlayer-Realm" } }, _G.RCPL_DB.priority["99"])
+        assert.is_table(_G.RCPL_DB.players["NewPlayer-Realm"])
+    end)
+
+    it("merges an item's other-track key instead of replacing the whole entry (Hero then Myth)", function()
+        RCPL_Data_SaveImportedData({
+            players  = {},
+            priority = { ["100"] = { H = { "Alice-Realm" }, H_status = {} } },
+        }, "local")
+        RCPL_Data_SaveImportedData({
+            players  = {},
+            priority = { ["100"] = { M = { "Bob-Realm" }, M_status = {} } },
+        }, "local")
+        assert.same(
+            { H = { "Alice-Realm" }, H_status = {}, M = { "Bob-Realm" }, M_status = {} },
+            _G.RCPL_DB.priority["100"]
+        )
+    end)
+
+    it("re-importing the same track for an item overwrites just that track's keys", function()
+        RCPL_Data_SaveImportedData({
+            players  = {},
+            priority = { ["100"] = { H = { "Alice-Realm" }, M = { "Bob-Realm" } } },
+        }, "local")
+        RCPL_Data_SaveImportedData({
+            players  = {},
+            priority = { ["100"] = { H = { "Carol-Realm" } } },
+        }, "local")
+        assert.same({ H = { "Carol-Realm" }, M = { "Bob-Realm" } }, _G.RCPL_DB.priority["100"])
+    end)
+
+    -- A sync payload (Modules/prioSync.lua's Broadcast()) is always a full
+    -- rebuild of the sender's entire current dataset, never a partial
+    -- track slice, so applying it wipes and replaces rather than merging --
+    -- otherwise a receiving client would keep stale entries the sender no
+    -- longer has.
+    it("wipes prior state when the import source is sync", function()
+        _G.RCPL_DB = {
+            players  = { ["StalePlayer-Realm"] = { helm = { bis = { 999 } } } },
+            priority = { ["99"] = { H = { "StalePlayer-Realm" } } },
+        }
+        RCPL_Data_SaveImportedData({
+            players = { ["NewPlayer-Realm"] = { helm = { bis = { 1 } } } },
+        }, "sync")
         assert.is_nil(_G.RCPL_DB.players["StalePlayer-Realm"])
         assert.is_nil(_G.RCPL_DB.priority["99"])
         assert.is_table(_G.RCPL_DB.players["NewPlayer-Realm"])
