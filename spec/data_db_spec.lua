@@ -168,6 +168,42 @@ describe("RCPL_Data_GetPlayerPriority", function()
             local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicLink)
             assert.equals("Awarded", text)
         end)
+
+        -- Regression (real report, 2026-09-11): a trinket awarded on Normal
+        -- weeks earlier showed as "Awarded" against a brand-new Heroic drop
+        -- of the same itemID. Root cause: the stored award link (a bag/award
+        -- link, not a fresh drop link) has no instanceDifficultyID, so
+        -- TrackFromLinkOnly fell back to re-deriving a track from the link's
+        -- *current* item level -- which drifts upward as the piece gets
+        -- crest-upgraded, and can land back in the "unknown" branch that
+        -- unconditionally says Awarded regardless of the real past track.
+        -- RCPL_DB.awardedTrack (recorded once, at the moment of the actual
+        -- award) is the fix: it should always win over re-deriving from the
+        -- link, no matter what the link's item level looks like today.
+        it("uses the recorded awardedTrack instead of re-deriving one from a since-upgraded award link", function()
+            -- No instanceDifficultyID (a real bag/award link, same shape RCLootCouncil
+            -- actually persists) and an item level that now reads as Mythic-range,
+            -- as if the piece had since been crest-upgraded past its original Normal drop.
+            local staleAwardLink = "item:12345"
+            mocks.setItemLevel(staleAwardLink, 330)
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = staleAwardLink } }
+            _G.RCPL_DB.awardedTrack = { ["12345"] = { ["Alice-Realm"] = "N" } }
+            _G.RCPL_DB.priority = { ["12345"] = { H = { "Alice-Realm" } } }
+
+            local heroicDrop = "item:12345:0:0:0:0:0:0:0:0:0:15:0"
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicDrop)
+            assert.equals("1st", text)
+        end)
+
+        it("still honors a recorded awardedTrack that IS same-track-or-better", function()
+            local staleAwardLink = "item:12345"
+            _G.RCPL_DB.awarded = { ["12345"] = { ["Alice-Realm"] = staleAwardLink } }
+            _G.RCPL_DB.awardedTrack = { ["12345"] = { ["Alice-Realm"] = "M" } }
+
+            local heroicDrop = "item:12345:0:0:0:0:0:0:0:0:0:15:0"
+            local text = RCPL_Data_GetPlayerPriority("Alice-Realm", 12345, "INVTYPE_HEAD", heroicDrop)
+            assert.equals("Awarded", text)
+        end)
     end)
 
     -- ── Layer 1: item-centric priority list ──────────────────────────────────
