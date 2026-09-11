@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.7.2] - 2026-09-11
+
+### Fixed
+
+- **The Priority column no longer falsely shows "Awarded" for a player whose only prior award of that item was on a lower difficulty.** `RCPL_DB.awarded` stores the item link from the moment of award, and the "same track or better" check re-derived that award's raid difficulty from the link's *current* item level. Once the item gets crest-upgraded, that level climbs over time, so a real past Normal/Heroic award could eventually read back as Mythic (or an unresolvable item-level overlap) -- which fell into the "unknown track, count it anyway" branch and showed "Awarded" against a brand-new, strictly-higher-track drop that player had never actually received. The track is now captured live at the moment of award (before any upgrades apply) and stored alongside the link, so the lookup no longer has to guess it back from a since-upgraded link.
+
+---
+
 ## [0.7.1] - 2026-09-02
 
 ### Fixed
