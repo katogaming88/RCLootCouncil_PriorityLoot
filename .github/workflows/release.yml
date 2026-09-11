@@ -47,6 +47,13 @@ jobs:
             --exclude='*.gs' \
             --exclude='*.md' \
             . "dist/${ADDON}/"
+          # The .toc's ## Version line is the literal token @project-version@
+          # in the repo (BigWigsMods/packager substitutes it automatically
+          # for the CurseForge upload below) -- this plain rsync copy doesn't
+          # go through packager, so it needs the same substitution by hand or
+          # the GitHub Release zip would ship with a literal "@project-version@".
+          sed -i "s/@project-version@/${{ steps.ver.outputs.version }}/" \
+            "dist/${ADDON}/${ADDON}.toc"
           # Sanity check: only ship files that .toc loads, plus libs,
           # the .toc itself, and LICENSE. If anything else slips through,
           # fail the build so dead code does not silently rejoin the zip.
