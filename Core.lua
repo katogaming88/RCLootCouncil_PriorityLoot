@@ -67,6 +67,7 @@ function RCPLAddon:OnInitialize()
     if type(RCPL_DB.players)  ~= "table" then RCPL_DB.players  = {} end
     if type(RCPL_DB.priority) ~= "table" then RCPL_DB.priority = {} end
     if type(RCPL_DB.awarded)  ~= "table" then RCPL_DB.awarded  = {} end
+    if type(RCPL_DB.awardedTrack) ~= "table" then RCPL_DB.awardedTrack = {} end
     if type(RCPL_DB.minimap)  ~= "table" then RCPL_DB.minimap  = { hide = false } end
     if self.InitMinimapButton then self:InitMinimapButton() end
     self:RegisterComm(RCPL_COMM_PREFIX, "OnVersionReceived")
@@ -93,8 +94,11 @@ function RCPLAddon:OnAwardSuccess(_, session, winner, status, link, responseText
     end
     local itemID = link and link:match("|Hitem:(%d+)")
     if not itemID or not winner then return end
-    RCPL_Data_MarkAwarded(winner, itemID, link)
-    Log.debug("Award tracked: %s received %s (session=%s)", winner, itemID, tostring(session))
+    -- Captured now, while the item is fresh off the boss -- link-based ilvl
+    -- detection is only reliable before any crest upgrades are applied.
+    local track = RCPL_Data_CurrentTrack and RCPL_Data_CurrentTrack(link)
+    RCPL_Data_MarkAwarded(winner, itemID, link, track)
+    Log.debug("Award tracked: %s received %s track=%s (session=%s)", winner, itemID, tostring(track), tostring(session))
 end
 
 function RCPLAddon:BroadcastVersion()
@@ -244,7 +248,8 @@ local function HandleAwardSubcommand(args, undo)
         RCPL_Data_UnmarkAwarded(player, itemID)
         print(string.format("|cFF00FF00[RCPL]|r Award removed: %s -- %s", player, link))
     else
-        RCPL_Data_MarkAwarded(player, itemID, link)
+        local track = RCPL_Data_CurrentTrack and RCPL_Data_CurrentTrack(link)
+        RCPL_Data_MarkAwarded(player, itemID, link, track)
         print(string.format("|cFF00FF00[RCPL]|r Award recorded: %s -- %s", player, link))
     end
 end

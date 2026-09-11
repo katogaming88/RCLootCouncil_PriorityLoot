@@ -160,9 +160,10 @@ function RCPL_Data_SaveImportedData(decoded, source)
     source = source or "local"
 
     if source == "sync" or type(RCPL_DB.players) ~= "table" or type(RCPL_DB.priority) ~= "table" then
-        RCPL_DB.players  = {}
-        RCPL_DB.priority = {}
-        RCPL_DB.awarded  = {}
+        RCPL_DB.players      = {}
+        RCPL_DB.priority     = {}
+        RCPL_DB.awarded      = {}
+        RCPL_DB.awardedTrack = {}
     end
     RCPL_DB.importSource = source
 
@@ -218,6 +219,7 @@ function RCPL_Data_ResetData()
         RCPL_DB.players          = {}
         RCPL_DB.priority         = {}
         RCPL_DB.awarded          = {}
+        RCPL_DB.awardedTrack     = {}
         RCPL_DB.importedAt       = nil
         RCPL_DB.importedAtEpoch  = nil
         RCPL_DB.importSource     = nil
@@ -263,11 +265,25 @@ function RCPL_Data_ImportAge()
     return age, color
 end
 
-function RCPL_Data_MarkAwarded(playerName, itemID, link)
+-- track is the raid difficulty ("N"/"H"/"M") in effect *at the moment of the
+-- award*, when the caller can determine it -- recorded up front because
+-- re-deriving a track later from the stored link's item level breaks once
+-- the item has been upgraded via crests: GetDetailedItemLevelInfo then
+-- reports the item's current (upgraded) level, not the level it dropped at,
+-- so a past Heroic award can start looking like Mythic (or ambiguous) months
+-- later. Optional -- nil here just means "unknown", same as before this was
+-- tracked at all.
+function RCPL_Data_MarkAwarded(playerName, itemID, link, track)
     if type(RCPL_DB) ~= "table" then return end
     if type(RCPL_DB.awarded) ~= "table" then RCPL_DB.awarded = {} end
     if not RCPL_DB.awarded[itemID] then RCPL_DB.awarded[itemID] = {} end
     RCPL_DB.awarded[itemID][playerName] = link or true
+
+    if track then
+        if type(RCPL_DB.awardedTrack) ~= "table" then RCPL_DB.awardedTrack = {} end
+        if not RCPL_DB.awardedTrack[itemID] then RCPL_DB.awardedTrack[itemID] = {} end
+        RCPL_DB.awardedTrack[itemID][playerName] = track
+    end
 end
 
 function RCPL_Data_UnmarkAwarded(playerName, itemID)
@@ -276,6 +292,13 @@ function RCPL_Data_UnmarkAwarded(playerName, itemID)
     RCPL_DB.awarded[itemID][playerName] = nil
     if not next(RCPL_DB.awarded[itemID]) then
         RCPL_DB.awarded[itemID] = nil
+    end
+
+    if type(RCPL_DB.awardedTrack) == "table" and type(RCPL_DB.awardedTrack[itemID]) == "table" then
+        RCPL_DB.awardedTrack[itemID][playerName] = nil
+        if not next(RCPL_DB.awardedTrack[itemID]) then
+            RCPL_DB.awardedTrack[itemID] = nil
+        end
     end
 end
 
@@ -494,8 +517,19 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
             -- are actually resolvable and the past award is the same track
             -- or better; an unknown track on either side keeps the old
             -- "any award at all counts" behavior rather than risk silently
-            -- hiding a genuine dupe from council.
-            local awardedTrack = type(awardedValue) == "string" and TrackFromLinkOnly(awardedValue)
+            -- hiding a genuine dupe from council. Prefer the track recorded
+            -- at award time (RCPL_DB.awardedTrack) over re-deriving one from
+            -- the stored link now -- GetDetailedItemLevelInfo on that link
+            -- reports the item's *current* level, which climbs as the piece
+            -- gets crest-upgraded, so a real past Heroic award can start
+            -- reading back as Mythic (or an ambiguous overlap) well after
+            -- the fact. Awards recorded before this tracking existed have no
+            -- entry here and still fall back to the old link-based guess.
+            local awardedTrackTable = type(RCPL_DB.awardedTrack) == "table" and RCPL_DB.awardedTrack[tostring(itemID)]
+            local storedTrack = type(awardedTrackTable) == "table"
+                and (awardedTrackTable[playerName] or awardedTrackTable[baseName])
+            local awardedTrack = storedTrack
+                or (type(awardedValue) == "string" and TrackFromLinkOnly(awardedValue))
             local dropTrack = awardedTrack and CurrentTrack(itemLink)
             if not awardedTrack or not dropTrack or TRACK_RANK[awardedTrack] >= TRACK_RANK[dropTrack] then
                 return "Awarded", COLOR_GREY
