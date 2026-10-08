@@ -45,41 +45,28 @@ One PR per branch, off `main`. Frozen after merge: do not push more commits to a
 | `refactor/<topic>` | Internal refactor with no behaviour change |
 | `docs/<topic>` | Doc-only change |
 
-### Commit messages
+### Pull request titles and commit messages
 
-```
-Short imperative description (vX.Y.Z)
+PRs are squash-merged, so a PR's title becomes its commit subject on `main`, and release-please reads those subjects to build the changelog and pick the next version. Start every PR title with a Conventional Commit type:
 
-Optional longer body explaining why (not what; the diff shows what).
+| Type | Use | Effect on the next release |
+|---|---|---|
+| `feat:` | A new user-visible feature | Minor bump (`0.7.2` to `0.8.0`) |
+| `fix:` | A bug fix | Patch bump (`0.7.2` to `0.7.3`) |
+| `feat!:` or `fix!:` | A breaking change: a removed slash subcommand, an incompatible SavedVariables change, a newer RCLootCouncil major version required | Major bump (`0.7.2` to `1.0.0`) |
+| `docs:`, `chore:`, `refactor:`, `test:`, `ci:` | Everything else | None on its own |
 
-Co-Authored-By: ...
-```
-
-Subject line max 72 characters, ends with `(vX.Y.Z)` when the commit bumps the version.
+A title with no type is skipped: the change still ships in the next release, but the changelog never mentions it. Keep the subject under 72 characters with no version number in it. The body says why, not what, since the diff shows what.
 
 ### Versioning
 
-Every commit that ships behaviour bumps `## Version:` in `RCLootCouncil_PriorityLoot.toc`:
+No file holds a version number to bump by hand. The `.toc` line is `## Version: @project-version@`, which the packager replaces with the release's version when it builds the zip, and `Core.lua` reads the version back from the `.toc` at runtime. release-please records the last released version in `.release-please-manifest.json` and updates it itself.
 
-| Bump | When |
-|---|---|
-| **patch** (`0.1.0 → 0.1.1`) | Bug fixes, lint cleanup, internal refactors, doc updates that ship in the addon zip |
-| **minor** (`0.1.0 → 0.2.0`) | New slash subcommand, new SavedVariable key, new module, new UI surface |
-| **major** (`0.1.0 → 1.0.0`) | Removed slash subcommand, breaking SavedVariable schema change, RCLootCouncil major-version dependency change |
+### Releases and the changelog
 
-Stale version strings are bugs. Before committing, search for the old version string and update every occurrence (`.toc`, `CHANGELOG.md` header, any inline `Core.lua` version constant if added later).
+Once a `feat:` or `fix:` PR has merged, release-please keeps a Release PR open against `main` that drafts the next version and its `CHANGELOG.md` section from the merged PR titles. Merging the Release PR tags the merge commit `vX.Y.Z`. The tag runs `release.yml`, which builds the zip, creates the GitHub Release and uploads the zip to CurseForge.
 
-### CHANGELOG entries
-
-Every commit adds an entry under `## [Unreleased]` describing the user-visible effect. Categories follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/): **Added**, **Changed**, **Fixed**, **Removed**, **Deprecated**, **Security**.
-
-When releasing:
-
-1. Rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`.
-2. Add a fresh empty `## [Unreleased]` section above it.
-3. Tag the merge commit `vX.Y.Z` and push the tag - the release workflow builds the zip and creates the GitHub Release.
-
-Never tag a commit whose `.toc` Version, CHANGELOG header, or inline constants disagree.
+Never edit `CHANGELOG.md` or push a tag by hand: both belong to the Release PR. The entries already in `CHANGELOG.md` from before release-please keep their old Keep a Changelog form.
 
 ---
 
@@ -91,10 +78,9 @@ Before requesting review, every PR should pass:
 - [ ] `luacheck .` exits 0.
 - [ ] `bash scripts/run_tests.sh` exits 0.
 - [ ] New or changed behaviour is covered by a spec under `spec/`.
-- [ ] CHANGELOG entry under `## [Unreleased]` describes the user-visible change.
-- [ ] Version bump in `.toc` if the commit ships behaviour.
+- [ ] The PR title starts with a Conventional Commit type and reads as a changelog line a raider or officer would understand.
 - [ ] README, `docs/`, or relevant inline docs updated if the change affects them.
-- [ ] Commit message follows the subject + body format above.
+- [ ] The PR body says why the change is needed.
 - [ ] No em dashes or AI-flavoured filler ("ensure", "robust", "leverage", "seamless") in committed prose.
 
 CI enforces lint and tests automatically. The other items rely on reviewer attention.
@@ -133,8 +119,7 @@ git rebase origin/main
 
 Canonical conflict resolution:
 
-- **`CHANGELOG.md`**: keep all entries, ascending by version. Drop duplicate `## [Unreleased]` blocks.
-- **`RCLootCouncil_PriorityLoot.toc` Version line**: take the higher of the two versions, then bump again if your branch is supposed to ship a new version.
+- **`CHANGELOG.md` and the `.toc` version line** are never edited by hand, so neither should conflict. If one does, take `main`'s side: the Release PR owns both.
 - After resolving, run `luacheck .` and `bash scripts/run_tests.sh` before `git rebase --continue`.
 
 If a downstream PR's purpose collapses into the upstream merge (e.g. a series of small dev-infra PRs combined into one), close the redundant PR with a comment linking to the consolidated one.
