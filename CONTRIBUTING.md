@@ -147,6 +147,8 @@ If a downstream PR's purpose collapses into the upstream merge (e.g. a series of
 - **Slot keys**, **equipLoc constants**, and **WoW event names** are case-sensitive and inconsistent (some `GUILD_BANK_*`, some `GUILDBANK*`). Verify against `FrameXML/` source or wowpedia rather than guessing.
 - **Mocks**: when adding a new external API surface, prefer cross-checking against the vendor source over guessing field names. Mocks built from wrong assumptions produce green tests and red production behaviour.
 - **Comments**: explain *why* something is non-obvious, not *what* the code does. Identifiers should carry the *what*.
+- **Addon files are ASCII only**: `.lua`, `.xml` and `.toc`.
+- **The voting window and the loot frame popup lean on RCLootCouncil's internals**, not a supported API. Check them against each new RCLootCouncil release before a release of ours ships.
 
 ---
 
