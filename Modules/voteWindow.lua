@@ -243,17 +243,40 @@ local function CreateTab(i)
     return t
 end
 
+-- Size and position live in RCPL_DB.voteWindowLayout rather than WoW's own
+-- layout cache, which doesn't restore frames created after login (ours is
+-- built on first open).
+local function SaveLayout(f)
+    f:StopMovingOrSizing()
+    local point, _, relPoint, x, y = f:GetPoint(1)
+    RCPL_DB.voteWindowLayout = {
+        point = point, relPoint = relPoint, x = x, y = y,
+        w = f:GetWidth(), h = f:GetHeight(),
+    }
+end
+
+local function RestoreLayout(f)
+    local saved = type(RCPL_DB.voteWindowLayout) == "table" and RCPL_DB.voteWindowLayout
+    f:ClearAllPoints()
+    if saved and saved.point then
+        f:SetSize(math.max(WIDTH, saved.w or WIDTH), math.max(300, saved.h or HEIGHT))
+        f:SetPoint(saved.point, UIParent, saved.relPoint, saved.x, saved.y)
+    else
+        f:SetSize(WIDTH, HEIGHT)
+        f:SetPoint("CENTER")
+    end
+end
+
 local function Build()
     frame = CreateFrame("Frame", "RCPLVoteWindow", UIParent)
-    frame:SetSize(WIDTH, HEIGHT)
-    frame:SetPoint("CENTER")
+    frame:SetDontSavePosition(true)
     frame:SetFrameStrata("HIGH")
     frame:SetMovable(true)
     frame:SetClampedToScreen(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", function(f) f:StopMovingOrSizing(); f:SetUserPlaced(true) end)
+    frame:SetScript("OnDragStop", SaveLayout)
     frame:Hide()
 
     local bg = Solid(frame, C.canvas); bg:SetAllPoints()
@@ -329,8 +352,7 @@ local function Build()
     frame.content:SetSize(WIDTH - 26, 1)
     scroll:SetScrollChild(frame.content)
 
-    -- Drag the bottom-right corner to resize. Being a named, user-placed
-    -- frame, WoW remembers the size and position between sessions.
+    -- Drag the bottom-right corner to resize; SaveLayout keeps the result.
     frame:SetResizable(true)
     frame:SetResizeBounds(WIDTH, 300, 1400, 1100)
     local grip = CreateFrame("Button", nil, frame)
@@ -341,13 +363,15 @@ local function Build()
     grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
     grip:SetScript("OnMouseDown", function() frame:StartSizing("BOTTOMRIGHT") end)
-    grip:SetScript("OnMouseUp", function() frame:StopMovingOrSizing(); frame:SetUserPlaced(true) end)
+    grip:SetScript("OnMouseUp", function() SaveLayout(frame) end)
     frame:SetScript("OnSizeChanged", function(f, w)
         extraW = math.max(0, math.floor(w - WIDTH))
         f.content:SetWidth(w - 26)
         PlaceCells(f.headCells)
         for _, r in ipairs(rows) do PlaceRow(r) end
     end)
+    RestoreLayout(frame)
+    frame:GetScript("OnSizeChanged")(frame, frame:GetWidth())
 
     -- The full priority order panel docks to whichever voting window is shown.
     frame:SetScript("OnShow", function(f) if RCPL_VotingPanel_AttachTo then RCPL_VotingPanel_AttachTo(f) end end)
