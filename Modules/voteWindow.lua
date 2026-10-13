@@ -179,6 +179,30 @@ local function Award(session, name)
     LibDialog:Spawn("RCLOOTCOUNCIL_CONFIRM_AWARD", RCVotingFrame:GetAwardPopupData(session, name, cand))
 end
 
+-- Right-click and alt-click on a row, as on RCLootCouncil's own rows. The
+-- right-click menu is RCLootCouncil's own (Award for, Award later, Change
+-- Response, Reannounce, rolls, ...): its rows open it by setting .name and
+-- toggling it, and it acts on RCLootCouncil's current session, which our
+-- item tabs keep in step via SwitchSession. Like RCLootCouncil's, the menu
+-- only has entries for the loot master.
+local function OnRowClick(row, button)
+    local name = row.candidate
+    if not name then return end
+    if button == "RightButton" then
+        local menu = _G.RCLootCouncil_VotingFrame_RightclickMenu
+        if menu and _G.MSA_ToggleDropDownMenu then
+            menu.name = name
+            _G.MSA_ToggleDropDownMenu(1, nil, menu, "cursor", 0, 0)
+        end
+    elseif button == "LeftButton" and IsAltKeyDown() then
+        local CommsRestrictions = addon.Require and addon.Require "Services.CommsRestrictions"
+        if CommsRestrictions and CommsRestrictions:IsRestricted() then
+            return addon:Print(L.chat_restrictions_enabled)
+        end
+        Award(RCVotingFrame:GetCurrentSession(), name)
+    end
+end
+
 -- Mirrors RCVotingFrame.SetCellVotes: what this player may see of the votes.
 local function VisibleVotes(entry, cand)
     local mldb = addon.mldb or {}
@@ -215,8 +239,11 @@ local function CreateRow(i)
         local hit = CreateFrame("Frame", nil, r)
         hit:SetAllPoints(r.cells[key])
         hit:SetScript("OnLeave", HideTooltip)
+        hit:SetMouseClickEnabled(false)  -- clicks fall through to the row
         r[key .. "Hit"] = hit
     end
+    r:EnableMouse(true)
+    r:SetScript("OnMouseUp", OnRowClick)
     r.vote = Button(r, BTN_W, ROW_H - 4, L["Vote"])
     r.award = Button(r, BTN_W, ROW_H - 4, L["Award"], true)
     PlaceRow(r)
@@ -302,8 +329,8 @@ local function Build()
         end
     end)
 
-    -- Everything our window doesn't do (award for a reason, change response,
-    -- reannounce, rolls, filters) stays in RCLootCouncil's frame.
+    -- What our window doesn't do itself (filters, more info, the
+    -- disenchant list) stays in RCLootCouncil's frame.
     frame.rcBtn = Button(frame, 150, 22, "RCLootCouncil window")
     frame.rcBtn:SetPoint("RIGHT", frame.close, "LEFT", -6, 0)
     frame.rcBtn:SetScript("OnClick", function()
@@ -311,7 +338,10 @@ local function Build()
         RCVotingFrame:SwitchSession(RCVotingFrame:GetCurrentSession())
     end)
     frame.rcBtn:SetScript("OnEnter", function(b)
-        Tooltip(b, "RCLootCouncil window", { "Award for a reason, change responses, reannounce, rolls and filters." })
+        Tooltip(b, "RCLootCouncil window", {
+            "Filters, more info and the disenchant list.",
+            "Right-click a row here for award options, responses, reannounce and rolls.",
+        })
     end)
     frame.rcBtn:SetScript("OnLeave", HideTooltip)
 
@@ -452,6 +482,7 @@ end
 
 local function DrawRow(r, session, entry, item)
     local name, cand = item.name, item.cand
+    r.candidate = name
     local c = addon:GetClassColor(cand.class)
     r.cells.name:SetText(addon.Ambiguate(name))
     r.cells.name:SetTextColor(c.r, c.g, c.b)
