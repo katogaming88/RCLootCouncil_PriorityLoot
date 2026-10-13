@@ -10,6 +10,13 @@ Entries above this line predate that and follow the old [Keep a Changelog](https
 
 ---
 
+## [0.7.3](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.2...v0.7.3) (2026-10-13)
+
+
+### Bug Fixes
+
+* load on patch 12.1.5 (interface 120105) ([#68](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/68)) ([a24cc29](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/commit/a24cc2937a0dcc38ac976deaf67bc49bf49af849))
+
 ## [0.7.2] - 2026-09-11
 
 ### Fixed
