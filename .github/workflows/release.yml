@@ -43,6 +43,8 @@ jobs:
             --exclude='.luacheckrc' \
             --exclude='.busted' \
             --exclude='.pkgmeta' \
+            --exclude='.release-please-manifest.json' \
+            --exclude='release-please-config.json' \
             --exclude='dist/' \
             --exclude='docs/' \
             --exclude='spec/' \
