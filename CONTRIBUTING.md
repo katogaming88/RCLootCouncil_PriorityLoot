@@ -64,7 +64,7 @@ No file holds a version number to bump by hand. The `.toc` line is `## Version: 
 
 ### Releases and the changelog
 
-Once a `feat:` or `fix:` PR has merged, release-please keeps a Release PR open against `main` that drafts the next version and its `CHANGELOG.md` section from the merged PR titles. Merging the Release PR tags the merge commit `vX.Y.Z`. The tag runs `release.yml`, which builds the zip, creates the GitHub Release and uploads the zip to CurseForge.
+Once a `feat:` or `fix:` PR has merged, release-please keeps a Release PR open against `main` that drafts the next version and its `CHANGELOG.md` section from the merged PR titles. Merging the Release PR tags the merge commit `vX.Y.Z`, and release-please's workflow then starts `release.yml` on that tag, which builds the zip, creates the GitHub Release and uploads the zip to CurseForge. A tag made by a workflow can't start another workflow by itself, so release-please's workflow starts it directly.
 
 Never edit `CHANGELOG.md` or push a tag by hand: both belong to the Release PR. The entries already in `CHANGELOG.md` from before release-please keep their old Keep a Changelog form.
 
