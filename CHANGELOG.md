@@ -12,14 +12,15 @@ Entries above this line predate that and follow the old [Keep a Changelog](https
 
 ## [1.0.0-beta.1](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.5...v1.0.0-beta.1) (2026-10-13)
 
+This is a beta. Officers: please try it in raid and report anything odd.
 
-### ⚠ BREAKING CHANGES
+### New: our own voting window
 
-* our own voting window, replacing RCLootCouncil's by default ([#75](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/75))
-
-### Features
-
-* our own voting window, replacing RCLootCouncil's by default ([#75](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/75)) ([d289296](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/commit/d289296e71c350e9d30149e8d1906d5f59c8478c))
+* Officers get a new voting window in place of RCLootCouncil's, styled like the WGA Raid Hub site. Each candidate's response, priority rank, item level, equipped gear, roll, votes and note are in one list, sorted by response and then by priority. The Full Priority Order sits beside it, with ranked players who aren't in the group greyed out.
+* Voting works exactly as before: Vote, Unvote, Award, alt-click to award, and the right-click menu (Award for, Award later, Change Response, Reannounce, rolls) all go through RCLootCouncil, and the loot master's vote settings still apply.
+* Resize the window from its bottom-right corner; it remembers its size and position.
+* Prefer RCLootCouncil's window? Type `/rcpl window alongside` to see both, or `/rcpl window off` for RCLootCouncil's only. The same setting is a button in `/rcpl` Options.
+* If the new window ever hits an error, or RCLootCouncil updates to a version we haven't checked yet, RCLootCouncil's own window opens instead and chat says why. ([#75](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/75))
 
 ## [0.7.5](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.4...v0.7.5) (2026-10-13)
 
