@@ -10,6 +10,13 @@ Entries above this line predate that and follow the old [Keep a Changelog](https
 
 ---
 
+## [0.7.4](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.3...v0.7.4) (2026-10-13)
+
+
+### Bug Fixes
+
+* priority panel and preview use C_Item.GetItemInfo ([#70](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/70)) ([a73a5ee](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/commit/a73a5ee627eea7038890fc23954b0554c10ca24f))
+
 ## [0.7.3](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.2...v0.7.3) (2026-10-13)
 
 
