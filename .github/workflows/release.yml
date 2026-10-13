@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*'
+  # Started by release-please.yml on the tag it just made (see the comment
+  # there for why the tag push alone doesn't start this).
+  workflow_dispatch:
 
 permissions:
   contents: write

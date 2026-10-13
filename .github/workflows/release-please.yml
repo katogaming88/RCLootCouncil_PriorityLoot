@@ -7,12 +7,25 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # The tag release-please just made was created with GITHUB_TOKEN, and
+      # GitHub never lets a GITHUB_TOKEN push start another workflow -- so
+      # release.yml's tag trigger would silently not fire and nothing would
+      # reach CurseForge. A workflow_dispatch is the one start GITHUB_TOKEN
+      # is allowed to make, so start the release build directly, on the tag.
+      - name: Start the release build for the new tag
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run release.yml --repo "${{ github.repository }}" --ref "${{ steps.release.outputs.tag_name }}"
