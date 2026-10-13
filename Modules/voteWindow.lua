@@ -32,7 +32,7 @@ local C = {
 }
 
 local ROW_H   = 22
-local WIDTH   = 760
+local WIDTH   = 808
 local HEIGHT  = 520
 local TAB_SZ  = 30
 
@@ -43,11 +43,15 @@ local COLS = {
     { key = "prio",     x = 320, w = 90,  title = "Priority" },
     { key = "ilvl",     x = 415, w = 45,  title = "ilvl",  just = "CENTER" },
     { key = "diff",     x = 460, w = 40,  title = "Diff",  just = "CENTER" },
-    { key = "roll",     x = 500, w = 40,  title = "Roll",  just = "CENTER" },
-    { key = "votes",    x = 540, w = 45,  title = "Votes", just = "CENTER" },
-    { key = "note",     x = 590, w = 22,  title = "" },
+    -- What the candidate has equipped in this slot (two for rings/trinkets),
+    -- as in RCLootCouncil's own g1/g2 columns.
+    { key = "gear1",    x = 502, w = 20,  title = L["g1"], just = "CENTER", gear = true },
+    { key = "gear2",    x = 526, w = 20,  title = L["g2"], just = "CENTER", gear = true },
+    { key = "roll",     x = 548, w = 40,  title = "Roll",  just = "CENTER" },
+    { key = "votes",    x = 588, w = 45,  title = "Votes", just = "CENTER" },
+    { key = "note",     x = 638, w = 22,  title = "" },
 }
-local VOTE_X, AWARD_X, BTN_W = 615, 680, 60
+local VOTE_X, AWARD_X, BTN_W = 663, 728, 60
 local RESPONSE_X = 145
 
 local frame
@@ -197,7 +201,14 @@ local function CreateRow(i)
     r.bg:SetAllPoints()
     r.cells = {}
     for _, col in ipairs(COLS) do
-        r.cells[col.key] = Text(r, "GameFontHighlightSmall", col.just)
+        if col.gear then
+            local g = CreateFrame("Button", nil, r)
+            g:SetHeight(ROW_H - 4)
+            g:SetScript("OnLeave", HideTooltip)
+            r.cells[col.key] = g
+        else
+            r.cells[col.key] = Text(r, "GameFontHighlightSmall", col.just)
+        end
     end
     -- Hover targets for the votes and note tooltips.
     for _, key in ipairs({ "votes", "note", "response" }) do
@@ -438,6 +449,21 @@ local function DrawRow(r, session, entry, item)
     r.cells.diff:SetText(diff or "")
     r.cells.diff:SetTextColor(unpack(diff and diff > 0 and { 0, 1, 0 } or diff and diff < 0 and { 1, 0.3, 0.3 } or C.muted))
     r.cells.roll:SetText(cand.roll or "")
+
+    for _, key in ipairs({ "gear1", "gear2" }) do
+        local g, gear = r.cells[key], cand[key]
+        local texture = gear and select(5, C_Item.GetItemInfoInstant(gear))
+        if texture then
+            g:SetNormalTexture(texture)
+            g:SetScript("OnEnter", function() addon:CreateHypertip(gear) end)
+            g:SetScript("OnClick", function()
+                if IsModifiedClick() then HandleModifiedItemClick(select(2, C_Item.GetItemInfo(gear))) end
+            end)
+            g:Show()
+        else
+            g:Hide()
+        end
+    end
 
     local count, showVoters = VisibleVotes(entry, cand)
     r.cells.votes:SetText(count)

@@ -60,7 +60,7 @@ read_globals = {
     "StaticPopup_Show", "C_UI", "ReloadUI",
     "C_AddOns", "IsAddOnLoaded", "GetAddOnMetadata",
     "GetNumGuildMembers", "GetGuildRosterInfo",
-    "IsAltKeyDown", "GameFontHighlightSmall",
+    "IsAltKeyDown", "GameFontHighlightSmall", "IsModifiedClick", "HandleModifiedItemClick",
 }
 
 -- ── Globals defined by this addon --------------------------------------------
