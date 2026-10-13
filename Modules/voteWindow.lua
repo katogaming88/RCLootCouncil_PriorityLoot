@@ -48,9 +48,32 @@ local COLS = {
     { key = "note",     x = 590, w = 22,  title = "" },
 }
 local VOTE_X, AWARD_X, BTN_W = 615, 680, 60
+local RESPONSE_X = 145
 
 local frame
 local rows = {}
+local extraW = 0   -- how much wider than WIDTH the window has been dragged
+
+-- Places a set of column cells. Extra width from resizing goes to the
+-- Response column; everything to its right shifts over.
+local function PlaceCells(cells)
+    for _, col in ipairs(COLS) do
+        local fs = cells[col.key]
+        local shift = col.x > RESPONSE_X and extraW or 0
+        fs:ClearAllPoints()
+        fs:SetPoint("LEFT", col.x + shift, 0)
+        fs:SetWidth(col.w + (col.key == "response" and extraW or 0))
+    end
+end
+
+local function PlaceRow(r)
+    PlaceCells(r.cells)
+    r.vote:ClearAllPoints()
+    r.vote:SetPoint("LEFT", VOTE_X + extraW, 0)
+    r.award:ClearAllPoints()
+    r.award:SetPoint("LEFT", AWARD_X + extraW, 0)
+end
+
 local tabs = {}
 local fellBack = false   -- error already reported this session
 local versionWarned = false
@@ -88,7 +111,11 @@ local function Button(parent, w, h, label, primary)
     b.label = Text(b, "GameFontHighlightSmall", "CENTER")
     b.label:SetPoint("CENTER")
     b.label:SetText(label)
-    if primary then b.label:SetTextColor(0.05, 0.07, 0.1) end
+    if primary then
+        b.label:SetTextColor(0.05, 0.07, 0.1)
+        -- WoW's default black text shadow smears dark text on a light fill.
+        b.label:SetShadowOffset(0, 0)
+    end
     local hl = b:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints()
     hl:SetColorTexture(1, 1, 1, 0.08)
@@ -170,10 +197,7 @@ local function CreateRow(i)
     r.bg:SetAllPoints()
     r.cells = {}
     for _, col in ipairs(COLS) do
-        local fs = Text(r, "GameFontHighlightSmall", col.just)
-        fs:SetPoint("LEFT", col.x, 0)
-        fs:SetWidth(col.w)
-        r.cells[col.key] = fs
+        r.cells[col.key] = Text(r, "GameFontHighlightSmall", col.just)
     end
     -- Hover targets for the votes and note tooltips.
     for _, key in ipairs({ "votes", "note", "response" }) do
@@ -183,9 +207,8 @@ local function CreateRow(i)
         r[key .. "Hit"] = hit
     end
     r.vote = Button(r, BTN_W, ROW_H - 4, L["Vote"])
-    r.vote:SetPoint("LEFT", VOTE_X, 0)
     r.award = Button(r, BTN_W, ROW_H - 4, L["Award"], true)
-    r.award:SetPoint("LEFT", AWARD_X, 0)
+    PlaceRow(r)
     rows[i] = r
     return r
 end
@@ -279,13 +302,14 @@ local function Build()
     headRow:SetPoint("TOPRIGHT", -1, -132)
     headRow:SetHeight(20)
     local hb = Solid(headRow, C.surface); hb:SetAllPoints()
+    frame.headCells = {}
     for _, col in ipairs(COLS) do
         local fs = Text(headRow, "GameFontNormalSmall", col.just)
-        fs:SetPoint("LEFT", col.x, 0)
-        fs:SetWidth(col.w)
         fs:SetText(col.title)
         fs:SetTextColor(unpack(C.muted))
+        frame.headCells[col.key] = fs
     end
+    PlaceCells(frame.headCells)
 
     local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 1, -152)
@@ -293,6 +317,26 @@ local function Build()
     frame.content = CreateFrame("Frame", nil, scroll)
     frame.content:SetSize(WIDTH - 26, 1)
     scroll:SetScrollChild(frame.content)
+
+    -- Drag the bottom-right corner to resize. Being a named, user-placed
+    -- frame, WoW remembers the size and position between sessions.
+    frame:SetResizable(true)
+    frame:SetResizeBounds(WIDTH, 300, 1400, 1100)
+    local grip = CreateFrame("Button", nil, frame)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", -2, 2)
+    grip:SetFrameLevel(scroll:GetFrameLevel() + 5)
+    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    grip:SetScript("OnMouseDown", function() frame:StartSizing("BOTTOMRIGHT") end)
+    grip:SetScript("OnMouseUp", function() frame:StopMovingOrSizing(); frame:SetUserPlaced(true) end)
+    frame:SetScript("OnSizeChanged", function(f, w)
+        extraW = math.max(0, math.floor(w - WIDTH))
+        f.content:SetWidth(w - 26)
+        PlaceCells(f.headCells)
+        for _, r in ipairs(rows) do PlaceRow(r) end
+    end)
 
     -- The full priority order panel docks to whichever voting window is shown.
     frame:SetScript("OnShow", function(f) if RCPL_VotingPanel_AttachTo then RCPL_VotingPanel_AttachTo(f) end end)
