@@ -250,7 +250,7 @@ function Populate()
             for _, idStr in ipairs(sortedIDs) do
                 local tracks = priority[idStr]
                 local itemID = tonumber(idStr)
-                local name   = itemID and GetItemInfo(itemID)
+                local name   = itemID and C_Item.GetItemInfo(itemID)
                 if itemID and not name then
                     pendingItemIDs[itemID] = true
                     if C_Item and C_Item.RequestLoadItemDataByID then

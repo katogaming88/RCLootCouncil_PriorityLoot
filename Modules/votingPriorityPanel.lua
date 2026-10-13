@@ -93,7 +93,7 @@ local function Refresh()
         return
     end
 
-    local itemName = GetItemInfo(entry.itemID)
+    local itemName = C_Item.GetItemInfo(entry.itemID)
     panel.itemText:SetText(itemName and ("|cFFffd200" .. itemName .. "|r") or ("Item #" .. entry.itemID))
 
     local itemPriority = type(RCPL_DB) == "table" and type(RCPL_DB.priority) == "table"
