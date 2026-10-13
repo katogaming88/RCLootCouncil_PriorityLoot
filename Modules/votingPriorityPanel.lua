@@ -118,6 +118,14 @@ local function Refresh()
             trackOrder = { "M", "H" }
         end
 
+        -- Short names of this item's candidates, so ranked players who
+        -- aren't in the raid can be marked instead of read as contenders.
+        local rcEntry = RCVotingFrame:GetLootTable()[currentSession]
+        local present = {}
+        for name in pairs(rcEntry and rcEntry.candidates or {}) do
+            present[ShortName(name)] = true
+        end
+
         local any = false
         for _, trackKey in ipairs(trackOrder) do
             local list = itemPriority[trackKey]
@@ -142,7 +150,11 @@ local function Refresh()
                     -- same for all three (#760).
                     local statusLabel = RCPL_Data_WishlistStatusLabel(itemPriority, trackKey, playerName)
                     local statusSuffix = statusLabel and (" |cFF999999(" .. statusLabel .. ")|r") or ""
-                    add("  |cFF" .. hex .. rank .. ". " .. ShortName(playerName) .. "|r" .. statusSuffix)
+                    if next(present) and not present[ShortName(playerName)] then
+                        add("  |cFF666666" .. rank .. ". " .. ShortName(playerName) .. " - not in group|r")
+                    else
+                        add("  |cFF" .. hex .. rank .. ". " .. ShortName(playerName) .. "|r" .. statusSuffix)
+                    end
                 end
                 add("")
             end
@@ -186,8 +198,7 @@ function RCPLVotingPanel:OnInitialize()
     -- fire for every real visibility change to the frame no matter which
     -- internal code path caused it, so this can't drift out of sync with
     -- what's actually on screen the way a method hook can.
-    RCVotingFrame.frame:HookScript("OnShow", function() panel:Show(); Refresh() end)
-    RCVotingFrame.frame:HookScript("OnHide", function() panel:Hide() end)
+    RCVotingFrame.frame:HookScript("OnShow", function() RCPL_VotingPanel_AttachTo(RCVotingFrame.frame) end)
 
     -- RCSessionChangedPre is delivered before RCVotingFrame's own session
     -- index updates, but it passes the new session number as the message
@@ -204,7 +215,19 @@ function RCPLVotingPanel:OnInitialize()
     -- so without this the panel would stay hidden despite the voting frame
     -- already being visible.
     if RCVotingFrame.frame:IsShown() then
-        panel:Show()
-        Refresh()
+        RCPL_VotingPanel_AttachTo(RCVotingFrame.frame)
     end
+end
+
+-- Docks the panel to the right of whichever voting window just opened --
+-- RCLootCouncil's or ours (Modules/voteWindow.lua). Parenting it to that
+-- window means it hides with it, with no OnHide hook needed.
+function RCPL_VotingPanel_AttachTo(host)
+    if not panel then return end
+    panel:SetParent(host)
+    panel:SetFrameStrata(host:GetFrameStrata())
+    panel:ClearAllPoints()
+    panel:SetPoint("TOPLEFT", host, "TOPRIGHT", 8, 0)
+    panel:Show()
+    Refresh()
 end

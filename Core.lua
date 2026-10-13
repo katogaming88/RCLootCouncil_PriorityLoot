@@ -295,6 +295,7 @@ SlashCmdList["RCPL"] = function(input)
             print("  /rcpl unaward <player> <item>  undo a recorded award")
             print("  /rcpl version                  open the version checker (Guild/Group buttons)")
             print("  /rcpl version guild            open it and immediately check your guild")
+            print("  /rcpl window <mode>            voting window: replace, alongside or off")
             print("  /rcpl debug                    toggle debug logging on or off")
             print("  /rcpl log                      open the log window (also: dump, clear)")
         end
@@ -336,6 +337,13 @@ SlashCmdList["RCPL"] = function(input)
         if RCPL_ShowVersionCheckFrame then RCPL_ShowVersionCheckFrame() end
         if rest == "guild" then
             RCPLAddon:StartVersionCheck("guild")
+        end
+    elseif cmd == "window" then
+        if rest == "replace" or rest == "alongside" or rest == "off" then
+            RCPL_SetVotingWindowMode(rest)
+        else
+            print("|cFF00FF00[RCPL]|r Voting window is " .. (RCPL_DB.votingWindow or "replace")
+                .. ". Use /rcpl window replace, alongside or off.")
         end
     elseif cmd == "debug" then
         local state

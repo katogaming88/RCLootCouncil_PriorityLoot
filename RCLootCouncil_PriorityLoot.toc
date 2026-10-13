@@ -21,6 +21,7 @@ Modules\frameStyle.lua
 Modules\votingFrame.lua
 Modules\bonusRollFlag.lua
 Modules\votingPriorityPanel.lua
+Modules\voteWindow.lua
 Modules\lootFrame.lua
 Modules\importFrame.lua
 Modules\prioSync.lua

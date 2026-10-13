@@ -60,6 +60,7 @@ read_globals = {
     "StaticPopup_Show", "C_UI", "ReloadUI",
     "C_AddOns", "IsAddOnLoaded", "GetAddOnMetadata",
     "GetNumGuildMembers", "GetGuildRosterInfo",
+    "IsAltKeyDown", "GameFontHighlightSmall", "IsModifiedClick", "HandleModifiedItemClick",
 }
 
 -- ── Globals defined by this addon --------------------------------------------
@@ -88,6 +89,9 @@ globals = {
     "RCPL_Data_ImportAge",
     "RCPL_Data_StaleAlertSeconds",
     "RCPL_Data_WishlistStatusLabel",
+    "RCPL_Data_VotingWindowMode",
+    "RCPL_SetVotingWindowMode",
+    "RCPL_VotingPanel_AttachTo",
     "RCPL_ApplyPanelBackdrop",
     "RCPL_CreateHeaderStrip",
     "RCPL_CreateStyledTitle",

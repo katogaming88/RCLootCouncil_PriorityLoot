@@ -69,6 +69,13 @@ local ACTIONS = {
             local RCPLAddon = addon:GetModule("RCLootCouncil_PriorityLoot")
             RCPLAddon:StartVersionCheck()
         end },
+    { label = "Voting Window", desc = "cycle: replace RCLootCouncil's, show alongside it, or off",
+        labelFn = function() return "Voting Window: " .. (RCPL_DB.votingWindow or "replace") end,
+        keepOpen = true,  -- stays open so you can click through the modes
+        action = function()
+            local nextMode = { replace = "alongside", alongside = "off", off = "replace" }
+            RCPL_SetVotingWindowMode(nextMode[RCPL_DB.votingWindow or "replace"])
+        end },
     { label = "Toggle Debug Logging", desc = "turn debug logging on or off",
         action = function()
             local state = RCPL_Log and RCPL_Log.ToggleDebug()
@@ -115,8 +122,9 @@ local function Build()
     for _, entry in ipairs(ACTIONS) do
         local btn = RCPL_CreateStyledButton(frame, BTN_W, BTN_H, entry.label)
         btn:SetScript("OnClick", function()
-            frame:Hide()
+            if not entry.keepOpen then frame:Hide() end
             entry.action()
+            if entry.labelFn then btn:SetText(entry.labelFn()) end
         end)
 
         local desc = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -175,6 +183,7 @@ local function Layout()
     for _, entry in ipairs(ACTIONS) do
         local visible = entry.visible == nil or entry.visible()
         if visible then
+            if entry.labelFn then entry._btn:SetText(entry.labelFn()) end
             entry._btn:ClearAllPoints()
             entry._btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
             entry._btn:Show()
