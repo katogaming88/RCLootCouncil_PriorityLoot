@@ -10,6 +10,17 @@ Entries above this line predate that and follow the old [Keep a Changelog](https
 
 ---
 
+## [1.0.0-beta.1](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.5...v1.0.0-beta.1) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* our own voting window, replacing RCLootCouncil's by default ([#75](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/75))
+
+### Features
+
+* our own voting window, replacing RCLootCouncil's by default ([#75](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/75)) ([d289296](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/commit/d289296e71c350e9d30149e8d1906d5f59c8478c))
+
 ## [0.7.5](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.4...v0.7.5) (2026-10-13)
 
 
