@@ -228,7 +228,7 @@ local function CreateRow(i)
         if col.gear then
             local g = CreateFrame("Button", nil, r)
             g:SetHeight(20)  -- square with the 20px column, like the icons it shows
-            g:SetScript("OnLeave", HideTooltip)
+            g:SetScript("OnLeave", function() addon:HideTooltip() end)
             r.cells[col.key] = g
         else
             r.cells[col.key] = Text(r, "GameFontHighlight", col.just)
@@ -352,6 +352,20 @@ local function Build()
     frame.itemLink = Text(frame, "GameFontNormalLarge")
     frame.itemLink:SetPoint("TOPLEFT", frame.itemIcon, "TOPRIGHT", 10, -2)
     frame.itemLink:SetWidth(420)
+    -- Hover/click target over the icon and name, as on RCLootCouncil's item
+    -- icon: its tooltip (with the equipped-item comparison), shift-click links.
+    local itemHit = CreateFrame("Button", nil, frame)
+    itemHit:SetPoint("TOPLEFT", frame.itemIcon)
+    itemHit:SetPoint("BOTTOMLEFT", frame.itemIcon)
+    itemHit:SetPoint("RIGHT", frame.itemLink, "LEFT", frame.itemLink:GetStringWidth() + 10, 0)
+    itemHit:SetScript("OnEnter", function()
+        if frame.currentLink then addon:CreateHypertip(frame.currentLink) end
+    end)
+    itemHit:SetScript("OnLeave", function() addon:HideTooltip() end)
+    itemHit:SetScript("OnClick", function()
+        if frame.currentLink and IsModifiedClick() then HandleModifiedItemClick(frame.currentLink) end
+    end)
+    frame.itemHit = itemHit
     frame.itemInfo = Text(frame, "GameFontHighlightSmall")
     frame.itemInfo:SetPoint("TOPLEFT", frame.itemLink, "BOTTOMLEFT", 0, -4)
     frame.itemInfo:SetTextColor(unpack(C.muted))
@@ -423,10 +437,9 @@ local function DrawTabs(lootTable, session)
         t.check:SetShown(entry.awarded and true or false)
         Paint(t.border, i == session and C.blue or C.line)
         t:SetScript("OnEnter", function(b)
-            GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
-            GameTooltip:SetHyperlink(entry.link)
-            GameTooltip:Show()
+            addon:CreateHypertip(entry.link)
         end)
+        t:SetScript("OnLeave", function() addon:HideTooltip() end)
         t:Show()
     end
 end
@@ -434,6 +447,9 @@ end
 local function DrawHeader(entry)
     frame.itemIcon:SetTexture(entry.texture)
     frame.itemLink:SetText(entry.link)
+    frame.currentLink = entry.link
+    -- Cover the icon plus however wide this item's name actually is.
+    frame.itemHit:SetPoint("RIGHT", frame.itemLink, "LEFT", frame.itemLink:GetStringWidth() + 10, 0)
     local typeText = addon:GetItemTypeText(entry.link, entry.subType, entry.equipLoc, entry.typeID,
         entry.subTypeID, entry.classes, entry.token, entry.relic) or ""
     local owner = entry.owner and ("  -  " .. addon.Ambiguate(entry.owner)) or ""
