@@ -3,7 +3,7 @@
 [![CI](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/actions/workflows/ci.yml/badge.svg)](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A World of Warcraft addon (patch **12.0.7 – Midnight**) that integrates with [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) to surface BiS priority data directly inside the voting frame and raider loot popup.
+A World of Warcraft addon (patch **12.1.5 – Midnight**) that integrates with [RCLootCouncil](https://www.curseforge.com/wow/addons/rclootcouncil) to surface BiS priority data directly inside the voting frame and raider loot popup.
 
 ---
 
