@@ -615,3 +615,26 @@ function RCPL_Data_GetPlayerPriority(playerName, itemID, equipLoc, itemLink)
 
     return "N/A", COLOR_GREY
 end
+
+-- RCLootCouncil versions (major.minor) our voting window has been checked
+-- against. It leans on RCLootCouncil internals, not a supported API, so an
+-- untested version gets RCLootCouncil's own frame instead (#64). Add a line
+-- here only after checking a new RCLootCouncil release in game.
+local TESTED_RC_VERSIONS = {
+    ["3.23"] = true,
+    ["3.24"] = true,
+}
+
+-- Which voting window to use: "replace" (ours only), "alongside" (both) or
+-- "off" (RCLootCouncil's only). Returns the mode plus, when it had to fall
+-- back to "off", a reason to show in chat.
+function RCPL_Data_VotingWindowMode(setting, rcVersion)
+    if setting == "off" then return "off" end
+    if setting ~= "alongside" then setting = "replace" end
+    local majorMinor = type(rcVersion) == "string" and rcVersion:match("^(%d+%.%d+)")
+    if not (majorMinor and TESTED_RC_VERSIONS[majorMinor]) then
+        return "off", "RCLootCouncil " .. tostring(rcVersion)
+            .. " has not been tested with our voting window yet, so RCLootCouncil's own window is open instead."
+    end
+    return setting
+end

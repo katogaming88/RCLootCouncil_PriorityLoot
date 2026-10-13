@@ -9,6 +9,7 @@ A World of Warcraft addon (patch **12.1.5 – Midnight**) that integrates with [
 
 ## Features
 
+- **Our own voting window** — opens in place of RCLootCouncil's voting frame by default, styled to match WGA Raid Hub: each candidate's response, priority rank, item level, roll and votes in one list, with Vote, Unvote and Award buttons that go through RCLootCouncil exactly as its own frame does (the loot master's hidden-votes, anonymous, self-vote and multi-vote settings still apply). `/rcpl window alongside` shows both windows; `/rcpl window off` keeps RCLootCouncil's only. If the window errors, or RCLootCouncil is a version it hasn't been tested with, RCLootCouncil's own frame opens instead and chat says why.
 - **Officer voting frame** — adds a sortable *Priority* column showing each candidate's BiS rank (1st / 2nd / 3rd) for the dropped item, plus a side panel showing the *full* saved priority order (every ranked player, both Heroic and Mythic) for whichever item is currently selected — not just the candidates who happened to roll on it.
 - **Raider loot frame** — overlays the local player's own priority rank below each item button so raiders can immediately see where an item sits on their wishlist. Ranks 1st-5th show the exact position; beyond that it just says "ON WISHLIST" instead, so a low rank doesn't discourage someone from clicking Upgrade/OS/M+ at all (a raider who never clicks reads to the loot council as "doesn't want it right now," which can hide them from a deliberate priority override).
 - **Priority preview** — `/rcpl prio` opens a scrollable popup so anyone can verify their own data. The master looter and current loot council see the full comparative ranked list (every player, every item) plus the roster, same as before; everyone else sees only their own rank per item -- not other raiders' names or positions.
@@ -62,6 +63,7 @@ A World of Warcraft addon (patch **12.1.5 – Midnight**) that integrates with [
 | `/rcpl reset` | Wipe all stored priority data from SavedVariables. |
 | `/rcpl version` | Open the version checker -- shows your own version immediately; Guild/Group buttons trigger the actual poll (never an automatic one, matching base RCLootCouncil's own version checker). Aliases: `ver`, `v`. |
 | `/rcpl version guild` | Same window, but also fires the guild poll immediately -- a shortcut for chat-only workflows. |
+| `/rcpl window <mode>` | Which voting window opens: `replace` (ours only, the default), `alongside` (both) or `off` (RCLootCouncil's only). With no mode, says the current one. Also a button in the Options window. |
 | `/rcpl debug` | Toggle debug logging on or off. Persisted across sessions in `RCPL_DB.debug`. Accepts `on`, `off`, `1`, `0`. |
 | `/rcpl log` | Open the in-memory log window. Subcommands: `dump` (prints to chat), `clear` (empties the buffer). |
 | `/rcpl` | Open the Options panel -- a button per action that opens a window or fires immediately, no typed arguments needed (Import, Broadcast, Sync, Priority Preview, Season Awards, Sync Status, Version Checker, Check Group Now, Toggle Debug Logging, Open Log). Commands needing typed arguments or that are destructive (`reset`, `award`, `unaward`) are listed as reference text only, not buttons. The Import button only shows for council/ML, the current raid/party leader, or anyone ungrouped -- the same people the import window itself would actually let through. |
@@ -141,6 +143,7 @@ RCLootCouncil_PriorityLoot/
 │   └── db.lua                        SavedVariable read/write, priority lookup
 ├── Modules/
 │   ├── log.lua                       centralised logger, ring buffer, /rcpl log
+│   ├── voteWindow.lua                our own voting window (replaces RCLootCouncil's by default)
 │   ├── votingFrame.lua               voting frame column injection
 │   ├── lootFrame.lua                 raider loot frame overlay
 │   ├── importFrame.lua               in-game import UI, Base64 decoder
