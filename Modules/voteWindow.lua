@@ -31,8 +31,8 @@ local C = {
     muted   = { 0.55, 0.60, 0.67, 1 },
 }
 
-local ROW_H   = 22
-local WIDTH   = 808
+local ROW_H   = 28
+local WIDTH   = 832
 local HEIGHT  = 520
 local TAB_SZ  = 30
 
@@ -51,7 +51,7 @@ local COLS = {
     { key = "votes",    x = 588, w = 45,  title = "Votes", just = "CENTER" },
     { key = "note",     x = 638, w = 22,  title = "" },
 }
-local VOTE_X, AWARD_X, BTN_W = 663, 728, 60
+local VOTE_X, AWARD_X, BTN_W = 663, 741, 72
 local RESPONSE_X = 145
 
 local frame
@@ -112,7 +112,7 @@ local function Button(parent, w, h, label, primary)
     b.bg = Solid(b, primary and C.blue or C.raised)
     b.bg:SetAllPoints()
     Outline(b, primary and C.blue or C.line)
-    b.label = Text(b, "GameFontHighlightSmall", "CENTER")
+    b.label = Text(b, "GameFontHighlight", "CENTER")
     b.label:SetPoint("CENTER")
     b.label:SetText(label)
     if primary then
@@ -203,11 +203,11 @@ local function CreateRow(i)
     for _, col in ipairs(COLS) do
         if col.gear then
             local g = CreateFrame("Button", nil, r)
-            g:SetHeight(ROW_H - 4)
+            g:SetHeight(20)  -- square with the 20px column, like the icons it shows
             g:SetScript("OnLeave", HideTooltip)
             r.cells[col.key] = g
         else
-            r.cells[col.key] = Text(r, "GameFontHighlightSmall", col.just)
+            r.cells[col.key] = Text(r, "GameFontHighlight", col.just)
         end
     end
     -- Hover targets for the votes and note tooltips.
@@ -311,11 +311,11 @@ local function Build()
     local headRow = CreateFrame("Frame", nil, frame)
     headRow:SetPoint("TOPLEFT", 1, -132)
     headRow:SetPoint("TOPRIGHT", -1, -132)
-    headRow:SetHeight(20)
+    headRow:SetHeight(24)
     local hb = Solid(headRow, C.surface); hb:SetAllPoints()
     frame.headCells = {}
     for _, col in ipairs(COLS) do
-        local fs = Text(headRow, "GameFontNormalSmall", col.just)
+        local fs = Text(headRow, "GameFontNormal", col.just)
         fs:SetText(col.title)
         fs:SetTextColor(unpack(C.muted))
         frame.headCells[col.key] = fs
@@ -323,7 +323,7 @@ local function Build()
     PlaceCells(frame.headCells)
 
     local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 1, -152)
+    scroll:SetPoint("TOPLEFT", 1, -156)
     scroll:SetPoint("BOTTOMRIGHT", -24, 8)
     frame.content = CreateFrame("Frame", nil, scroll)
     frame.content:SetSize(WIDTH - 26, 1)
