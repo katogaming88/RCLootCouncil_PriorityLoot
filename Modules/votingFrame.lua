@@ -76,7 +76,7 @@ function RCPLVotingFrame.SetCellPriority(rowFrame, frame, data, cols, row, realr
     local itemID  = entry.itemID
     local equipLoc = entry.equipLoc
     if not equipLoc and itemID then
-        local _, _, _, _, _, _, _, _, loc = GetItemInfo(itemID)
+        local _, _, _, _, _, _, _, _, loc = C_Item.GetItemInfo(itemID)
         equipLoc = loc
     end
 

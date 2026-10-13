@@ -30,7 +30,9 @@ read_globals = {
     "CreateFrame", "UIParent", "UISpecialFrames", "GameTooltip",
 
     -- Item / unit info
-    "GetItemInfo", "GetItemInfoInstant", "Item", "C_Item",
+    -- Not the bare GetItemInfo/GetItemInfoInstant: removed from the game,
+    -- they only exist under C_Item now. Leaving them out makes luacheck flag them.
+    "Item", "C_Item",
     "UnitName", "UnitGUID", "UnitClass", "UnitRace", "UnitFactionGroup",
     "UnitIsPlayer", "UnitIsConnected", "UnitExists", "UnitIsGroupLeader",
     "UnitIsUnit",
