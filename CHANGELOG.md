@@ -10,6 +10,14 @@ Entries above this line predate that and follow the old [Keep a Changelog](https
 
 ---
 
+## [0.7.4](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.3...v0.7.4) (2026-10-13)
+
+
+### Bug Fixes
+
+* The addon loads again on patch 12.1.5. 0.7.3 had this fix but never reached CurseForge. ([#68](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/68))
+* The Full Priority Order panel beside the voting frame shows the priority list again instead of staying blank, and so does the Priority Preview window (/rcpl prio). ([#70](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/70))
+
 ## [0.7.3](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.2...v0.7.3) (2026-10-13)
 
 
