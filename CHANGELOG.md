@@ -10,6 +10,13 @@ Entries above this line predate that and follow the old [Keep a Changelog](https
 
 ---
 
+## [0.7.5](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.4...v0.7.5) (2026-10-13)
+
+
+### Bug Fixes
+
+* release build no longer fails on release-please's config files ([#73](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/issues/73)) ([bd6b501](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/commit/bd6b5011fa24871b6decff26fe53ae488bf79ca5))
+
 ## [0.7.4](https://github.com/katogaming88/RCLootCouncil_PriorityLoot/compare/v0.7.3...v0.7.4) (2026-10-13)
 
 
